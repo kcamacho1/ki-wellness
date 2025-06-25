@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-<<<<<<< HEAD
     "baseUrl": ".",
-=======
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -29,7 +26,4 @@
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12

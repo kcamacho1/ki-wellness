@@ -12,6 +12,21 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [journalEntry, setJournalEntry] = useState({
+  date: new Date().toISOString().slice(0, 10),
+  meal_type: '',
+  food_name: '',
+  servings: 1,
+  protein_g: '',
+  carbs_g: '',
+  fat_g: '',
+  calories: '',
+  mood: '',
+  notes: ''
+});
+
+const [entries, setEntries] = useState<any[]>([]);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) {
@@ -21,6 +36,23 @@ export default function DashboardPage() {
         setLoading(false);
       }
     });
+  useEffect(() => {
+    const fetchEntries = async () => {
+    const { data, error } = await supabase
+      .from('food_journal')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (!error && data) {
+      setEntries(data);
+    } else {
+      console.error('Failed to fetch entries', error);
+    }
+  };
+
+  fetchEntries();
+}, []);
+
   }, [router]);
 
   if (loading) {
