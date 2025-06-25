@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root {
+  --background: aliceblue;
+  --foreground: darkgreen;
+}
+
+.papyrus {
+  font-family: Papyrus, fantasy;
+}
