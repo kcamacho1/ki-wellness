@@ -6,13 +6,8 @@ export default function ResourcesPage() {
     <main className="min-h-screen bg-green-900 text-gray-200 font-sans p-6 space-y-8">
 
       {/* Header */}
-<<<<<<< HEAD
       <section className="max-w-6xl mx-auto text-center border-2 border-green-900 rounded-xl p-6 bg-amber-50 text-gray-800">
         <h1 className="text-3xl font-bold text-green-800 papyrus mb-4">Free Resources</h1>
-=======
-      <section className="max-w-6xl mx-auto text-center border-2 border-green-900 rounded-xl p-6 bg-[aliceblue] text-gray-800">
-        <h1 className="text-4xl font-bold text-green-800 papyrus mb-4">Free Resources</h1>
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
         <p className="text-lg text-gray-700">
           Download guides and explore practical health & fitness tools created to empower you.
         </p>
@@ -40,11 +35,7 @@ export default function ResourcesPage() {
             desc: "Foundational tips and guidance for starting meditation practice."
           },
         ].map(({ title, href, img, desc }) => (
-<<<<<<< HEAD
           <div key={title} className="bg-amber-50 border border-green-800 rounded-xl shadow-md p-4 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition">
-=======
-          <div key={title} className="bg-[aliceblue] border border-green-800 rounded-xl shadow-md p-4 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition">
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
             <Image
               src={img}
               alt={title}
@@ -66,11 +57,7 @@ export default function ResourcesPage() {
       </section>
 
       {/* Medium Section */}
-<<<<<<< HEAD
       <section className="max-w-6xl mx-auto border-2 border-green-900 rounded-xl p-6 text-center bg-amber-50 text-gray-800">
-=======
-      <section className="max-w-6xl mx-auto border-2 border-green-900 rounded-xl p-6 text-center bg-[aliceblue] text-gray-800">
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
         <h2 className="text-3xl font-bold text-green-800 papyrus mb-4">More Articles & FAQs</h2>
         <p className="text-lg text-gray-700 mb-4">
           For deeper dives, practical tips, and frequently asked questions, visit our Medium page.
@@ -87,8 +74,4 @@ export default function ResourcesPage() {
 
     </main>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12

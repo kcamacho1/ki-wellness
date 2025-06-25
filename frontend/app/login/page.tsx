@@ -13,56 +13,69 @@ export default function LoginPage() {
 
   const handleAuth = async () => {
     setLoading(true);
-    const { error } = isLogin
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
+
+    let authResponse;
+    if (isLogin) {
+      authResponse = await supabase.auth.signInWithPassword({ email, password });
+    } else {
+      authResponse = await supabase.auth.signUp({ email, password });
+    }
+
+    const { error } = authResponse;
 
     if (error) {
       alert(error.message);
       setLoading(false);
-    } else {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.push('/dashboard');
-      } else {
-        alert('Check your email to verify your account.');
-      }
-      setLoading(false);
+      return;
     }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    if (sessionData.session) {
+      router.push('/dashboard'); // ✅ change if your dashboard route is different
+    } else {
+      alert('Check your email to verify your account.');
+    }
+
+    setLoading(false);
   };
 
-  
   return (
     <main className="min-h-screen bg-green-900 text-gray-100 font-sans p-6 flex justify-center items-center">
       <div className="bg-amber-50 text-gray-800 rounded-xl p-6 w-full max-w-md shadow-md space-y-4">
         <h1 className="text-2xl font-bold text-green-800 text-center papyrus">
-        {isLogin ? 'Log in to Ki Wellness' : 'Create Your Account'}
+          {isLogin ? 'Log in to Ki Wellness' : 'Create Your Account'}
         </h1>
+
         <input
           type="email"
-          placeholder="email"
+          placeholder="Email"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full max-w-sm p-2 border bg-white rounded text-black"
-      />
-      <input
+          className="w-full p-2 border bg-white rounded text-black"
+        />
+
+        <input
           type="password"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full max-w-sm p-2 bg-white border rounded text-black"
+          className="w-full p-2 border bg-white rounded text-black"
         />
+
         <button
           onClick={handleAuth}
           disabled={loading}
-          className="bg-green-600 px-6 py-2 rounded hover:bg-green-700"
+          className="w-full bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
         >
           {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
         </button>
-        <p className="text-sm">
+
+        <p className="text-sm text-center">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="underline text-green hover:text-green-300"
+            className="underline text-green-800 hover:text-green-600"
           >
             {isLogin ? 'Sign up' : 'Log in'}
           </button>

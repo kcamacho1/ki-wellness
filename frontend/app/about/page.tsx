@@ -7,11 +7,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-green-900 text-gray-200 font-sans p-6 space-y-4 rounded-xl">
 
       {/* Top Section: Photo and Credentials */}
-<<<<<<< HEAD
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-start p-4 border-2 border-green-900 rounded-xl bg-amber-50 text-gray-800">
-=======
-      <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-start p-4 border-2 border-green-900 rounded-xl bg-[aliceblue] text-gray-800">
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
         <div className="text-center">
           <Image
             src="/profileBooks.png"
@@ -39,11 +35,7 @@ export default function AboutPage() {
       </section>
 
       {/* Heartfelt Message and Certificates Side by Side */}
-<<<<<<< HEAD
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 p-4 border-2 border-green-900 rounded-xl bg-amber-50 text-gray-800">
-=======
-      <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 p-4 border-2 border-green-900 rounded-xl bg-[aliceblue] text-gray-800">
->>>>>>> 30688121eaa0cdf5693a64bf0980cd04666f9d12
         <div className="text-left">
             <br></br>
           <h2 className="text-3xl font-bold text-green-800 papyrus mb-6 text-center md:text-left">Why I Built Ki Wellness</h2>
