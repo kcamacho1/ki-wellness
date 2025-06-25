@@ -9,7 +9,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [analysis, setAnalysis] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);      
 
+  
   const [journalEntry, setJournalEntry] = useState({
     date: new Date().toISOString().slice(0, 10),
     meal_type: '',
@@ -25,34 +28,46 @@ export default function DashboardPage() {
 
   const [entries, setEntries] = useState<any[]>([]);
 
-    useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-        if (!data?.user) {
-        router.push('/login');
-        } else {
-        setUser(data.user);
-        setLoading(false);
-        }
+  const runAnalysis = async () => {
+    setAnalyzing(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const res = await fetch('/api/analyze-nutrition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id }),
     });
-    }, [router]); // ✅ CLOSE this useEffect properly
-
-    useEffect(() => {
-    const fetchEntries = async () => {
-        const { data, error } = await supabase
-        .from('food_journal')
-        .select('*')
-        .order('date', { ascending: false });
-
-        if (!error && data) {
-        setEntries(data);
-        } else {
-        console.error('Failed to fetch entries', error);
-        }
+    const json = await res.json();
+    setAnalysis(json.analysis || 'No analysis available.');
+    setAnalyzing(false);
     };
 
-    fetchEntries();
-    }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+        setLoading(false);
+      }
+    });
+  }, [router]);
 
+  const fetchEntries = async () => {
+    const { data, error } = await supabase
+      .from('food_journal')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (!error && data) {
+      setEntries(data);
+    } else {
+      console.error('Failed to fetch entries', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
 
   if (loading) {
     return (
@@ -122,22 +137,22 @@ export default function DashboardPage() {
               <p><strong>Calories:</strong> {journalEntry.calories}</p>
             </div>
             <div className="space-y-2">
-              <select name="meal_type" value={journalEntry.meal_type} onChange={(e) => setJournalEntry(prev => ({ ...prev, meal_type: e.target.value }))} className="w-full p-2 border rounded  bg-white">
+              <select name="meal_type" value={journalEntry.meal_type} onChange={(e) => setJournalEntry(prev => ({ ...prev, meal_type: e.target.value }))} className="w-full p-2 border rounded bg-white">
                 <option value="">Select Meal Type</option>
                 <option value="Breakfast">Breakfast</option>
                 <option value="Lunch">Lunch</option>
                 <option value="Dinner">Dinner</option>
                 <option value="Snack">Snack</option>
               </select>
-              <input type="number" name="servings" value={journalEntry.servings} onChange={(e) => setJournalEntry(prev => ({ ...prev, servings: e.target.value }))} className="w-full p-2 border rounded  bg-white" placeholder="Servings" />
-              <select name="mood" value={journalEntry.mood} onChange={(e) => setJournalEntry(prev => ({ ...prev, mood: e.target.value }))} className="w-full p-2 border rounded  bg-white">
+              <input type="number" name="servings" value={journalEntry.servings} onChange={(e) => setJournalEntry(prev => ({ ...prev, servings: e.target.value }))} className="w-full p-2 border rounded bg-white" placeholder="Servings" />
+              <select name="mood" value={journalEntry.mood} onChange={(e) => setJournalEntry(prev => ({ ...prev, mood: e.target.value }))} className="w-full p-2 border rounded bg-white">
                 <option value="">Mood</option>
                 <option value="Sad">Sad</option>
                 <option value="Okay">Okay</option>
                 <option value="Good">Good</option>
                 <option value="Great">Great</option>
               </select>
-              <textarea name="notes" value={journalEntry.notes} onChange={(e) => setJournalEntry(prev => ({ ...prev, notes: e.target.value }))} className="w-full p-2 border rounded  bg-white" placeholder="Any notes..." />
+              <textarea name="notes" value={journalEntry.notes} onChange={(e) => setJournalEntry(prev => ({ ...prev, notes: e.target.value }))} className="w-full p-2 border rounded bg-white" placeholder="Any notes..." />
             </div>
             <button
               onClick={async () => {
@@ -158,8 +173,8 @@ export default function DashboardPage() {
                 if (error) {
                   alert('Error saving entry: ' + error.message);
                 } else {
-                  alert('Entry saved!');
                   setJournalEntry(prev => ({ ...prev, food_name: '', protein_g: '', carbs_g: '', fat_g: '', calories: '', servings: 1, meal_type: '', mood: '', notes: '' }));
+                  await fetchEntries();
                 }
               }}
               className="w-full bg-green-700 text-white p-2 rounded hover:bg-green-800"
@@ -194,6 +209,23 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+                        {/* AI Button */}
+            <div className="mt-4">
+                <button
+                    onClick={runAnalysis}
+                    className="bg-green-700 text-white p-2 rounded hover:bg-green-900"
+                    disabled={analyzing}
+                >
+                    {analyzing ? 'Analyzing...' : '🧠 Run AI Nutrition Analysis'}
+                </button>
+                </div>
+
+                {analysis && (
+                <div className="bg-white text-gray-900 p-4 mt-4 rounded shadow max-w-4xl">
+                    <h3 className="font-bold text-lg mb-2">AI Nutrition Summary:</h3>
+                    <pre className="whitespace-pre-wrap">{analysis}</pre>
+                </div>
+                )}
           </div>
         </div>
       </section>
@@ -281,6 +313,6 @@ export default function DashboardPage() {
         ))}
         </div>
       </section>
-    </main>
+     </main>
   );
 }
