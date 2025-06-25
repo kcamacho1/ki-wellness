@@ -198,7 +198,89 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Meal Planner, Exercise Playlist, and Spiritual Playlist sections remain unchanged */}
+      {/* SECTION: Meal Planner */}
+      <section className="w-full max-w-6xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow-md space-y-2">
+        <h2 className="text-2xl font-bold text-green-800 papyrus">📅 Meal Planner</h2>
+        <p>Get personalized meal ideas based on your health goals.</p>
+        {/* Add dropdowns or GPT-driven planner here */}
+      </section>
+
+      {/* SECTION: Exercise Playlist */}
+      <section className="w-full max-w-6xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow-md space-y-2">
+        <h2 className="text-2xl font-bold text-green-800 papyrus">💪 Exercise Playlist</h2>
+        <p>Curated workouts and suggestions based on your fitness level.</p>
+        {/* Add exercise suggestions, playlist builder, etc. */}
+        {/* Example Card inside Exercise Playlist section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {[
+            {
+            title: "10-Minute Morning Workout",
+            url: "https://www.youtube.com/watch?v=UBMk30rjy0o",
+            thumbnail: "https://img.youtube.com/vi/UBMk30rjy0o/0.jpg",
+            duration: "10:21"
+            },
+            {
+            title: "15-Min Bodyweight HIIT",
+            url: "https://www.youtube.com/watch?v=ml6cT4AZdqI",
+            thumbnail: "https://img.youtube.com/vi/ml6cT4AZdqI/0.jpg",
+            duration: "15:12"
+            }
+        ].map(({ title, url, thumbnail, duration }) => (
+            <a
+            key={title}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
+            >
+            <img src={thumbnail} alt={title} className="w-full h-48 object-cover" />
+            <div className="p-4 text-gray-800">
+                <h3 className="text-lg font-bold">{title}</h3>
+                <p className="text-sm text-green-700">Duration: {duration}</p>
+            </div>
+            </a>
+        ))}
+        </div>
+
+      </section>
+
+      {/* SECTION: Spiritual Playlist */}
+      <section className="w-full max-w-6xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow-md space-y-2">
+        <h2 className="text-2xl font-bold text-green-800 papyrus">🧘‍♀️ Spiritual Playlist</h2>
+        <p>Mindful practices, meditations, and journaling prompts.</p>
+        {/* Could embed YouTube/audio or AI-generated prompts */}
+                {/* Example Card inside Spiritual Playlist section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        {[
+            {
+            title: "10-Minute Meditation Workout",
+            url: "https://www.youtube.com/watch?v=-9KLB2HI9BI",
+            thumbnail: "https://img.youtube.com/vi/-9KLB2HI9BI/0.jpg",
+            duration: "10:54"
+            },
+            {
+            title: "Breathwork for Stress Relief",
+            url: "https://www.youtube.com/watch?v=DbDoBzGY3vo",
+            thumbnail: "https://img.youtube.com/vi/DbDoBzGY3vo/0.jpg",
+            duration: "15:12"
+            }
+        ].map(({ title, url, thumbnail, duration }) => (
+            <a
+            key={title}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
+            >
+            <img src={thumbnail} alt={title} className="w-full h-48 object-cover" />
+            <div className="p-4 text-gray-800">
+                <h3 className="text-lg font-bold">{title}</h3>
+                <p className="text-sm text-green-700">Duration: {duration}</p>
+            </div>
+            </a>
+        ))}
+        </div>
+      </section>
     </main>
   );
 }
