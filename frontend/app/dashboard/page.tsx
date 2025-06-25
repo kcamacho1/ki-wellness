@@ -113,7 +113,7 @@ export default function DashboardPage() {
                 }
               }}
               placeholder="e.g. oatmeal"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border bg-white rounded"
             />
             <div className="text-sm space-y-1">
               <p><strong>Protein:</strong> {journalEntry.protein_g}g</p>
@@ -122,22 +122,22 @@ export default function DashboardPage() {
               <p><strong>Calories:</strong> {journalEntry.calories}</p>
             </div>
             <div className="space-y-2">
-              <select name="meal_type" value={journalEntry.meal_type} onChange={(e) => setJournalEntry(prev => ({ ...prev, meal_type: e.target.value }))} className="w-full p-2 border rounded">
+              <select name="meal_type" value={journalEntry.meal_type} onChange={(e) => setJournalEntry(prev => ({ ...prev, meal_type: e.target.value }))} className="w-full p-2 border rounded  bg-white">
                 <option value="">Select Meal Type</option>
                 <option value="Breakfast">Breakfast</option>
                 <option value="Lunch">Lunch</option>
                 <option value="Dinner">Dinner</option>
                 <option value="Snack">Snack</option>
               </select>
-              <input type="number" name="servings" value={journalEntry.servings} onChange={(e) => setJournalEntry(prev => ({ ...prev, servings: e.target.value }))} className="w-full p-2 border rounded" placeholder="Servings" />
-              <select name="mood" value={journalEntry.mood} onChange={(e) => setJournalEntry(prev => ({ ...prev, mood: e.target.value }))} className="w-full p-2 border rounded">
+              <input type="number" name="servings" value={journalEntry.servings} onChange={(e) => setJournalEntry(prev => ({ ...prev, servings: e.target.value }))} className="w-full p-2 border rounded  bg-white" placeholder="Servings" />
+              <select name="mood" value={journalEntry.mood} onChange={(e) => setJournalEntry(prev => ({ ...prev, mood: e.target.value }))} className="w-full p-2 border rounded  bg-white">
                 <option value="">Mood</option>
                 <option value="Sad">Sad</option>
                 <option value="Okay">Okay</option>
                 <option value="Good">Good</option>
                 <option value="Great">Great</option>
               </select>
-              <textarea name="notes" value={journalEntry.notes} onChange={(e) => setJournalEntry(prev => ({ ...prev, notes: e.target.value }))} className="w-full p-2 border rounded" placeholder="Any notes..." />
+              <textarea name="notes" value={journalEntry.notes} onChange={(e) => setJournalEntry(prev => ({ ...prev, notes: e.target.value }))} className="w-full p-2 border rounded  bg-white" placeholder="Any notes..." />
             </div>
             <button
               onClick={async () => {

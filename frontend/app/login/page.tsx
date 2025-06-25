@@ -11,33 +11,26 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const handleAuth = async () => {
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form refresh
     setLoading(true);
 
-    let authResponse;
-    if (isLogin) {
-      authResponse = await supabase.auth.signInWithPassword({ email, password });
-    } else {
-      authResponse = await supabase.auth.signUp({ email, password });
-    }
-
-    const { error } = authResponse;
+    const { error } = isLogin
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
 
     if (error) {
       alert(error.message);
       setLoading(false);
-      return;
-    }
-
-    const { data: sessionData } = await supabase.auth.getSession();
-
-    if (sessionData.session) {
-      router.push('/dashboard'); // ✅ change if your dashboard route is different
     } else {
-      alert('Check your email to verify your account.');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/dashboard');
+      } else {
+        alert('Check your email to verify your account.');
+      }
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -47,35 +40,37 @@ export default function LoginPage() {
           {isLogin ? 'Log in to Ki Wellness' : 'Create Your Account'}
         </h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 border bg-white rounded text-black"
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border bg-white rounded text-black"
-        />
-
-        <button
-          onClick={handleAuth}
-          disabled={loading}
-          className="w-full bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
-        >
-          {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
-        </button>
+        <form onSubmit={handleAuth} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-2 border bg-white rounded text-black"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full p-2 bg-white border rounded text-black"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-green-600 px-6 py-2 rounded hover:bg-green-700"
+          >
+            {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
+          </button>
+        </form>
 
         <p className="text-sm text-center">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button
+            type="button"
             onClick={() => setIsLogin(!isLogin)}
-            className="underline text-green-800 hover:text-green-600"
+            className="underline text-green hover:text-green-300"
           >
             {isLogin ? 'Sign up' : 'Log in'}
           </button>
@@ -84,3 +79,4 @@ export default function LoginPage() {
     </main>
   );
 }
+
