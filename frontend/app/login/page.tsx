@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js'
+
 
 export default function LoginPage() {
   const router = useRouter();
