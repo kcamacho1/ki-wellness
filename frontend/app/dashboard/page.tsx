@@ -9,15 +9,15 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [analysis, setAnalysis] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);      
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
 
-  
   const [journalEntry, setJournalEntry] = useState({
     date: new Date().toISOString().slice(0, 10),
     meal_type: '',
     food_name: '',
     servings: 1,
+    serving_unit: '',
     protein_g: '',
     carbs_g: '',
     fat_g: '',
@@ -27,19 +27,6 @@ export default function DashboardPage() {
   });
 
   const [entries, setEntries] = useState<any[]>([]);
-
-  const runAnalysis = async () => {
-    setAnalyzing(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const res = await fetch('/api/analyze-nutrition', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id }),
-    });
-    const json = await res.json();
-    setAnalysis(json.analysis || 'No analysis available.');
-    setAnalyzing(false);
-    };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -52,22 +39,77 @@ export default function DashboardPage() {
     });
   }, [router]);
 
-  const fetchEntries = async () => {
-    const { data, error } = await supabase
-      .from('food_journal')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (!error && data) {
-      setEntries(data);
-    } else {
-      console.error('Failed to fetch entries', error);
-    }
-  };
-
   useEffect(() => {
+    const fetchEntries = async () => {
+      const { data, error } = await supabase
+        .from('food_journal')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (!error && data) {
+        setEntries(data);
+      } else {
+        console.error('Failed to fetch entries', error);
+      }
+    };
+
     fetchEntries();
   }, []);
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true);
+    const response = await fetch('/api/ai-nutrition-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries })
+    });
+    const data = await response.json();
+    setAiFeedback(data.message || 'No feedback returned.');
+    setAnalyzing(false);
+  };
+
+  const handleSaveEntry = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('Please log in.');
+      return;
+    }
+
+    const { error } = await supabase.from('food_journal').insert({
+      ...journalEntry,
+      user_id: user.id,
+      servings: parseFloat(journalEntry.servings),
+      serving_unit: journalEntry.serving_unit,
+      protein_g: parseFloat(journalEntry.protein_g),
+      carbs_g: parseFloat(journalEntry.carbs_g),
+      fat_g: parseFloat(journalEntry.fat_g),
+      calories: parseFloat(journalEntry.calories)
+    });
+
+    if (error) {
+      alert('Error saving entry: ' + error.message);
+    } else {
+      setJournalEntry(prev => ({
+        ...prev,
+        food_name: '',
+        servings: 1,
+        serving_unit: '',
+        protein_g: '',
+        carbs_g: '',
+        fat_g: '',
+        calories: '',
+        meal_type: '',
+        mood: '',
+        notes: ''
+      }));
+      const { data, error } = await supabase
+        .from('food_journal')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (!error && data) setEntries(data);
+    }
+  };
 
   if (loading) {
     return (
@@ -96,138 +138,73 @@ export default function DashboardPage() {
         <p>Set reminders and stay balanced 🧘</p>
       </section>
 
-      {/* Food Journal Section */}
       <section className="w-full max-w-6xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow-md space-y-4">
         <h2 className="text-2xl font-bold text-green-800 papyrus">🥗 Food Journal</h2>
         <p>Track your meals, moods, and hydration with ease.</p>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Form */}
-          <div>
-            <input
-              type="text"
-              name="food_name"
-              value={journalEntry.food_name}
-              onChange={async (e) => {
-                const value = e.target.value;
-                setJournalEntry((prev) => ({ ...prev, food_name: value }));
-                if (value.length < 3) return;
-                const res = await fetch('/api/food-lookup', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ food: value })
-                });
-                const data = await res.json();
-                if (!data.error) {
-                  setJournalEntry((prev) => ({
-                    ...prev,
-                    protein_g: data.protein_g,
-                    carbs_g: data.carbs_g,
-                    fat_g: data.fat_g,
-                    calories: data.calories
-                  }));
-                }
-              }}
-              placeholder="e.g. oatmeal"
-              className="w-full p-2 border bg-white rounded"
-            />
-            <div className="text-sm space-y-1">
-              <p><strong>Protein:</strong> {journalEntry.protein_g}g</p>
-              <p><strong>Carbs:</strong> {journalEntry.carbs_g}g</p>
-              <p><strong>Fat:</strong> {journalEntry.fat_g}g</p>
-              <p><strong>Calories:</strong> {journalEntry.calories}</p>
-            </div>
-            <div className="space-y-2">
-              <select name="meal_type" value={journalEntry.meal_type} onChange={(e) => setJournalEntry(prev => ({ ...prev, meal_type: e.target.value }))} className="w-full p-2 border rounded bg-white">
-                <option value="">Select Meal Type</option>
-                <option value="Breakfast">Breakfast</option>
-                <option value="Lunch">Lunch</option>
-                <option value="Dinner">Dinner</option>
-                <option value="Snack">Snack</option>
-              </select>
-              <input type="number" name="servings" value={journalEntry.servings} onChange={(e) => setJournalEntry(prev => ({ ...prev, servings: e.target.value }))} className="w-full p-2 border rounded bg-white" placeholder="Servings" />
-              <select name="mood" value={journalEntry.mood} onChange={(e) => setJournalEntry(prev => ({ ...prev, mood: e.target.value }))} className="w-full p-2 border rounded bg-white">
-                <option value="">Mood</option>
-                <option value="Sad">Sad</option>
-                <option value="Okay">Okay</option>
-                <option value="Good">Good</option>
-                <option value="Great">Great</option>
-              </select>
-              <textarea name="notes" value={journalEntry.notes} onChange={(e) => setJournalEntry(prev => ({ ...prev, notes: e.target.value }))} className="w-full p-2 border rounded bg-white" placeholder="Any notes..." />
-            </div>
-            <button
-              onClick={async () => {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                  alert('Please log in.');
-                  return;
-                }
-                const { error } = await supabase.from('food_journal').insert({
-                  ...journalEntry,
-                  user_id: user.id,
-                  servings: parseFloat(journalEntry.servings),
-                  protein_g: parseFloat(journalEntry.protein_g),
-                  carbs_g: parseFloat(journalEntry.carbs_g),
-                  fat_g: parseFloat(journalEntry.fat_g),
-                  calories: parseFloat(journalEntry.calories)
-                });
-                if (error) {
-                  alert('Error saving entry: ' + error.message);
-                } else {
-                  setJournalEntry(prev => ({ ...prev, food_name: '', protein_g: '', carbs_g: '', fat_g: '', calories: '', servings: 1, meal_type: '', mood: '', notes: '' }));
-                  await fetchEntries();
-                }
-              }}
-              className="w-full bg-green-700 text-white p-2 rounded hover:bg-green-800"
-            >
-              Save Food Entry
-            </button>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-auto max-h-[500px]">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-green-100 text-left">
-                  <th className="p-2">Date</th>
-                  <th className="p-2">Food</th>
-                  <th className="p-2">Protein</th>
-                  <th className="p-2">Carbs</th>
-                  <th className="p-2">Fat</th>
-                  <th className="p-2">Calories</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry: any) => (
-                  <tr key={entry.id} className="border-t">
-                    <td className="p-2">{entry.date}</td>
-                    <td className="p-2">{entry.food_name}</td>
-                    <td className="p-2">{entry.protein_g}</td>
-                    <td className="p-2">{entry.carbs_g}</td>
-                    <td className="p-2">{entry.fat_g}</td>
-                    <td className="p-2">{entry.calories}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-                        {/* AI Button */}
-            <div className="mt-4">
-                <button
-                    onClick={runAnalysis}
-                    className="bg-green-700 text-white p-2 rounded hover:bg-green-900"
-                    disabled={analyzing}
-                >
-                    {analyzing ? 'Analyzing...' : '🧠 Run AI Nutrition Analysis'}
-                </button>
-                </div>
-
-                {analysis && (
-                <div className="bg-white text-gray-900 p-4 mt-4 rounded shadow max-w-4xl">
-                    <h3 className="font-bold text-lg mb-2">AI Nutrition Summary:</h3>
-                    <pre className="whitespace-pre-wrap">{analysis}</pre>
-                </div>
-                )}
-          </div>
+          <select
+            name="serving_unit"
+            value={journalEntry.serving_unit || ''}
+            onChange={(e) => setJournalEntry((prev) => ({ ...prev, serving_unit: e.target.value }))}
+            className="w-full p-2 border rounded bg-white"
+          >
+            <option value="">Select Unit</option>
+            <option value="g">grams (g)</option>
+            <option value="oz">ounces (oz)</option>
+            <option value="cup">cup</option>
+            <option value="tbsp">tablespoon</option>
+            <option value="tsp">teaspoon</option>
+            <option value="slice">slice</option>
+            <option value="piece">piece</option>
+          </select>
         </div>
+
+        <div className="overflow-auto max-h-[500px]">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-green-100 text-left">
+                <th className="p-2">Date</th>
+                <th className="p-2">Food</th>
+                <th className="p-2">Servings</th>
+                <th className="p-2">Unit</th>
+                <th className="p-2">Protein</th>
+                <th className="p-2">Carbs</th>
+                <th className="p-2">Fat</th>
+                <th className="p-2">Calories</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry: any) => (
+                <tr key={entry.id} className="border-t">
+                  <td className="p-2">{entry.date}</td>
+                  <td className="p-2">{entry.food_name}</td>
+                  <td className="p-2">{entry.servings}</td>
+                  <td className="p-2">{entry.serving_unit}</td>
+                  <td className="p-2">{entry.protein_g}</td>
+                  <td className="p-2">{entry.carbs_g}</td>
+                  <td className="p-2">{entry.fat_g}</td>
+                  <td className="p-2">{entry.calories}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4">
+          <button
+            onClick={handleAnalyze}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            {analyzing ? 'Analyzing...' : '🧠 Analyze My Nutrition'}
+          </button>
+        </div>
+        {aiFeedback && (
+          <div className="mt-3 text-green-900 bg-green-100 p-3 rounded">
+            <strong>AI Recommendation:</strong>
+            <p>{aiFeedback}</p>
+          </div>
+        )}
       </section>
 
       {/* SECTION: Meal Planner */}
