@@ -44,7 +44,7 @@ export default function FoodJournalForm({ user, onEntrySaved }: FoodJournalFormP
    */
   const fetchNutrition = async (food: string) => {
     try {
-      const res = await fetch('/api/food-lookup', {
+      const res = await fetch('https://ki-wellness-75gt.onrender.com/api/ai-nutrition-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ food })

@@ -132,7 +132,7 @@ export default function DashboardPage() {
     setAnalyzing(true); // Set analyzing state to true to show loading indicator
 
     try {
-      const res = await fetch('/api/ai-nutrition-analysis', {
+      const res = await fetch('https://ki-wellness-75gt.onrender.com/api/ai-nutrition-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entries }) // Send current entries for analysis
