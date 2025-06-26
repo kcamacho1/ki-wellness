@@ -1,44 +1,49 @@
-'use client';
+'use client'; // Enable client-side rendering for this Next.js page
 
+// Import necessary hooks and tools
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import './papyrus.css';
+import { User } from '@supabase/supabase-js';
+
+
+// Import modular components
+import FoodJournalForm from '@/components/FoodJournalForm';
+import FoodJournalTable from '@/components/FoodJournalTable';
+
+import './papyrus.css'; // Custom styling (e.g. Papyrus font)
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Track logged-in user
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // App loading state
+
+  // Food journal entries pulled from database
+  const [entries, setEntries] = useState<any[]>([]);
+
+  // Nutrition AI feedback and status
   const [aiFeedback, setAiFeedback] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
 
-  const [journalEntry, setJournalEntry] = useState({
-    date: new Date().toISOString().slice(0, 10),
-    meal_type: '',
-    food_name: '',
-    servings: 1,
-    serving_unit: '',
-    protein_g: '',
-    carbs_g: '',
-    fat_g: '',
-    calories: '',
-    mood: '',
-    notes: ''
-  });
-
-  const [entries, setEntries] = useState<any[]>([]);
-
+  /**
+   * 1️⃣ Check authentication on page load
+   */
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) {
-        router.push('/login');
+        router.push('/login'); // Redirect if not logged in
       } else {
         setUser(data.user);
-        setLoading(false);
+        setLoading(false); // Allow dashboard to load
       }
     });
   }, [router]);
 
+  /**
+   * 2️⃣ Fetch food journal entries from Supabase on load
+   */
   useEffect(() => {
     const fetchEntries = async () => {
       const { data, error } = await supabase
@@ -46,82 +51,52 @@ export default function DashboardPage() {
         .select('*')
         .order('date', { ascending: false });
 
-      if (!error && data) {
-        setEntries(data);
+      if (data && !error) {
+        setEntries(data); // Populate journal entries
       } else {
-        console.error('Failed to fetch entries', error);
+        console.error('Failed to fetch entries:', error);
       }
     };
 
     fetchEntries();
   }, []);
 
+  /**
+   * 3️⃣ Handle AI Nutrition Analysis
+   */
   const handleAnalyze = async () => {
     setAnalyzing(true);
-    const response = await fetch('/api/ai-nutrition-analysis', {
+
+    const res = await fetch('/api/ai-nutrition-analysis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries })
     });
-    const data = await response.json();
+
+    const data = await res.json();
     setAiFeedback(data.message || 'No feedback returned.');
     setAnalyzing(false);
   };
 
-  const handleSaveEntry = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      alert('Please log in.');
-      return;
-    }
-
-    const { error } = await supabase.from('food_journal').insert({
-      ...journalEntry,
-      user_id: user.id,
-      servings: parseFloat(journalEntry.servings),
-      serving_unit: journalEntry.serving_unit,
-      protein_g: parseFloat(journalEntry.protein_g),
-      carbs_g: parseFloat(journalEntry.carbs_g),
-      fat_g: parseFloat(journalEntry.fat_g),
-      calories: parseFloat(journalEntry.calories)
-    });
-
-    if (error) {
-      alert('Error saving entry: ' + error.message);
-    } else {
-      setJournalEntry(prev => ({
-        ...prev,
-        food_name: '',
-        servings: 1,
-        serving_unit: '',
-        protein_g: '',
-        carbs_g: '',
-        fat_g: '',
-        calories: '',
-        meal_type: '',
-        mood: '',
-        notes: ''
-      }));
-      const { data, error } = await supabase
-        .from('food_journal')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (!error && data) setEntries(data);
-    }
-  };
-
+  /**
+   * 4️⃣ Display a loading screen until the dashboard is ready
+   */
   if (loading) {
     return (
-      <main className="min-h-screen bg-green-900 text-white p-6 flex items-center justify-center">
+      <main className="min-h-screen bg-green-900 text-white flex items-center justify-center">
         <p>Loading your dashboard...</p>
       </main>
     );
   }
 
+  /**
+   * 5️⃣ Render the main dashboard UI
+   */
   return (
-    <main className="min-h-screen bg-green-900 text-gray-100 font-sans p-6 space-y-4">
-      <section className="max-w-6xl mx-auto text-center border-2 border-green-900 rounded-xl p-6 bg-amber-50 text-gray-800">
+    <main className="min-h-screen bg-green-900 text-gray-100 p-6 space-y-4">
+
+      {/* Header: App Name and Log Out */}
+      <section className="max-w-6xl mx-auto bg-amber-50 p-6 rounded-xl shadow text-gray-800">
         <div className="text-right">
           <button
             onClick={async () => {
@@ -133,78 +108,40 @@ export default function DashboardPage() {
             Log out
           </button>
         </div>
-        <h1 className="text-4xl font-bold text-green-800 papyrus mb-4">your dashboard</h1>
-        <p className="text-lg text-gray-700">Journal your food, save meals, favorite exercises and spiritual videos.</p>
-        <p>Set reminders and stay balanced 🧘</p>
+        <h1 className="text-4xl font-bold text-green-800 papyrus mb-2">your dashboard</h1>
+        <p className="text-gray-700">Journal your food, track your wellness, and analyze nutrition.</p>
       </section>
 
-      <section className="w-full max-w-6xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow-md space-y-4">
-        <h2 className="text-2xl font-bold text-green-800 papyrus">🥗 Food Journal</h2>
-        <p>Track your meals, moods, and hydration with ease.</p>
+      {/* Food Journal Entry + Table + AI Analysis */}
+      <section className="max-w-6xl mx-auto bg-amber-50 p-6 rounded-xl shadow text-gray-800 space-y-6">
+        <h2 className="text-2xl font-bold text-green-800 papyrus mb-4">🥗 Food Journal</h2>
 
+        {/* Two-column layout for form and table */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <select
-            name="serving_unit"
-            value={journalEntry.serving_unit || ''}
-            onChange={(e) => setJournalEntry((prev) => ({ ...prev, serving_unit: e.target.value }))}
-            className="w-full p-2 border rounded bg-white"
-          >
-            <option value="">Select Unit</option>
-            <option value="g">grams (g)</option>
-            <option value="oz">ounces (oz)</option>
-            <option value="cup">cup</option>
-            <option value="tbsp">tablespoon</option>
-            <option value="tsp">teaspoon</option>
-            <option value="slice">slice</option>
-            <option value="piece">piece</option>
-          </select>
+          <div>
+            <FoodJournalForm user={user} onEntrySaved={() => location.reload()} />
+          </div>
+          <div className="overflow-auto max-h-[500px]">
+            <FoodJournalTable entries={entries} />
+          </div>
         </div>
 
-        <div className="overflow-auto max-h-[500px]">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-green-100 text-left">
-                <th className="p-2">Date</th>
-                <th className="p-2">Food</th>
-                <th className="p-2">Servings</th>
-                <th className="p-2">Unit</th>
-                <th className="p-2">Protein</th>
-                <th className="p-2">Carbs</th>
-                <th className="p-2">Fat</th>
-                <th className="p-2">Calories</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry: any) => (
-                <tr key={entry.id} className="border-t">
-                  <td className="p-2">{entry.date}</td>
-                  <td className="p-2">{entry.food_name}</td>
-                  <td className="p-2">{entry.servings}</td>
-                  <td className="p-2">{entry.serving_unit}</td>
-                  <td className="p-2">{entry.protein_g}</td>
-                  <td className="p-2">{entry.carbs_g}</td>
-                  <td className="p-2">{entry.fat_g}</td>
-                  <td className="p-2">{entry.calories}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4">
+        {/* AI Analysis in a full-width row below */}
+        <div className="mt-6 flex flex-col items-center">
           <button
             onClick={handleAnalyze}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-green-800 text-white px-4 py-2 rounded hover:bg-green-900"
           >
-            {analyzing ? 'Analyzing...' : '🧠 Analyze My Nutrition'}
+            {analyzing ? 'Analyzing...' : '🧠 AI review gaps and recommend'}
           </button>
+
+          {aiFeedback && (
+            <div className="mt-4 bg-green-100 text-green-900 p-4 rounded text-sm">
+              <strong>AI Recommendation:</strong>
+              <p>{aiFeedback}</p>
+            </div>
+          )}
         </div>
-        {aiFeedback && (
-          <div className="mt-3 text-green-900 bg-green-100 p-3 rounded">
-            <strong>AI Recommendation:</strong>
-            <p>{aiFeedback}</p>
-          </div>
-        )}
       </section>
 
       {/* SECTION: Meal Planner */}
