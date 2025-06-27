@@ -53,7 +53,7 @@ export default function ComingSoonPage() {
   return (
     <main className="min-h-screen bg-green-50 text-gray-800 p-6 flex flex-col items-center justify-center">
       <section className="max-w-2xl w-full bg-white p-8 rounded-lg shadow space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-green-800">Ki Wellness</h1>
+        <h1 className="text-3xl font-bold text-green-800 papyrus">Ki Wellness</h1>
         <p className="text-gray-700">
           Ki means life force—energy, movement, and the potential to thrive.
           It’s also the key to unlocking a healthier, more balanced life.
