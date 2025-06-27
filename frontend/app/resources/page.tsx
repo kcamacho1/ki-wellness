@@ -63,7 +63,7 @@ export default function ResourcesPage() {
           For deeper dives, practical tips, and frequently asked questions, visit our Medium page.
         </p>
         <a
-          href="https://medium.com/@cassie.camacho"
+          href="https://medium.com/@ki_wellness"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-green-700 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-800 transition"

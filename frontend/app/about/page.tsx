@@ -72,7 +72,7 @@ export default function AboutPage() {
         </p>
         <p>
           <a href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02">Donate to support this mission </a> or 
-          <a href="#"> Follow us on socials</a>
+          <a href="https://medium.com/@ki_wellness"> Follow us on socials</a>
         </p>
 
       </section>
