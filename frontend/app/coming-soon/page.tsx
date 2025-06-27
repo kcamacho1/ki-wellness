@@ -87,7 +87,6 @@ export default function ComingSoonPage() {
             <p className="text-red-600">⚠️ Something went wrong. Please try again.</p>
           )}
         </form>
-
         <p className="text-sm text-gray-500">
           No spam. Unsubscribe anytime.
         </p>
