@@ -17,6 +17,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+
       <body className="bg-green-100 text-gray-800 font-sans">
         <header className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center p-6">
           <div className="flex items-center space-x-4">
