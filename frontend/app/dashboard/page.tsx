@@ -2,14 +2,6 @@
 // app/dashboard/page.tsx
 import { useState } from "react";
 
-import {
-  Notebook,
-  BarChart3,
-  BrainCircuit,
-  BookOpen,
-  Dumbbell,
-  Sparkles,
-} from "lucide-react";
 
 export default function DashboardPage() {
   const [activePanel, setActivePanel] = useState("AIAnalysis");
