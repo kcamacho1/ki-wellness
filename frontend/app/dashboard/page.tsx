@@ -1,10 +1,7 @@
 "use client";
 // app/dashboard/page.tsx
-import { useState } from "react";
-
 
 export default function DashboardPage() {
-  const [activePanel, setActivePanel] = useState("AIAnalysis");
 
   return (
     <main className="min-h-screen bg-green-900 text-green-700 p-6 space-y-4 font-inter">

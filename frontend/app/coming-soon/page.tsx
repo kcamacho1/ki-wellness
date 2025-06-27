@@ -10,7 +10,7 @@ export default function DashboardPage() {
       "🏃‍♂️ A 10-minute walk can boost your mood and energy.",
       "💤 Prioritize 7-8 hours of quality sleep each night.",
       "🍎 Add colorful veggies to your meals for more nutrients.",
-      "🙏 Practice gratitude: Write down 3 things you’re thankful for.",
+      "🙏 Practice gratitude: Write down 3 things you&apos;re thankful for.",
       "✨ Visualize your goals for 5 minutes every morning.",
       "🥗 Eat mindfully and slow down to savor each bite.",
       "📵 Take a digital detox break for 30 minutes today.",
