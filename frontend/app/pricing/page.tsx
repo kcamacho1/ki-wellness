@@ -1,6 +1,4 @@
 'use client';
-import Link from 'next/link';
-
 // app/pricing/page.tsx
 
 export default function PricingPage() {

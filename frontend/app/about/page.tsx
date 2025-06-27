@@ -1,5 +1,4 @@
 // app/about/page.tsx
-import Image from 'next/image';
 
 export default function AboutPage() {
   return (
@@ -95,17 +94,7 @@ export default function AboutPage() {
           <a href="https://donate.stripe.com/aFa14n5ldbvN7idege3Je00">Donate to support this mission </a> or 
           <a href="#"> Follow us on socials</a>
         </p>
-        <p>
-          <script async
-          src="https://js.stripe.com/v3/buy-button.js">
-        </script>
 
-        <stripe-buy-button
-          buy-button-id="buy_btn_1Ree5JDcXGvRm8GInrfwJpgd"
-          publishable-key="pk_live_51Rc5ciDcXGvRm8GIbueJ2MiMwm5eGMpR7nkxEVkRNWiKMQGH66La2Z6xm3rbXwUKpKZGkmTQCv4e3K24ruJByCe800M89o4Qwa"
-        >
-        </stripe-buy-button>
-        </p>
       </section>
 
     </main>
