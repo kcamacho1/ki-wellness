@@ -15,7 +15,9 @@ export default function FoodJournal() {
 
   return (
     <div className="space-y-2">
-Food Journal
+      <p>
+        Food Journal
+      </p>
     </div>
   );
 }
