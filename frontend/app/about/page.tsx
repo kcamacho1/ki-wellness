@@ -71,7 +71,7 @@ export default function AboutPage() {
           Together, we can create positive, generational change—one healthy habit at a time.
         </p>
         <p>
-          <a href="https://donate.stripe.com/aFa14n5ldbvN7idege3Je00">Donate to support this mission </a> or 
+          <a href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02">Donate to support this mission </a> or 
           <a href="#"> Follow us on socials</a>
         </p>
 
