@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav className="flex gap-4 text-green-900 text-sm md:text-base font-medium mt-4 md:mt-0">
             <Link href="/about" className="hover:underline">About</Link>
             <Link href="/pricing" className="hover:underline">Services & Pricing</Link>
-            <Link href="/dashboard" className="hover:underline">AI Assistant</Link>
+            <Link href="/coming-soon" className="hover:underline">AI Assistant</Link>
             <Link href="/resources" className="hover:underline">Free Resources</Link>
           </nav>
         </header>
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
 
         <footer className="text-center text-sm py-6 bg-green-50 text-green-800 mt-20">
-          &copy; 2025 Ki Wellness. All rights reserved.
+          &copy; 2025 Ki Wellness LLC. All rights reserved.
         </footer>
       </body>
     </html>
