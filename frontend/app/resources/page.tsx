@@ -1,13 +1,15 @@
-import Image from 'next/image';
-import './papyrus.css';
+"use client";
+import Image from "next/image";
 
 export default function ResourcesPage() {
   return (
-    <main className="min-h-screen bg-green-900 text-gray-200 font-sans p-6 space-y-8">
+    <main className="min-h-screen bg-green-50 text-gray-800 font-sans p-6 space-y-8">
 
       {/* Header */}
-      <section className="max-w-6xl mx-auto text-center border-2 border-green-900 rounded-xl p-6 bg-amber-50 text-gray-800">
-        <h1 className="text-3xl font-bold text-green-800 papyrus mb-4">Free Resources</h1>
+      <section className="max-w-6xl mx-auto text-center bg-white p-6 rounded-lg shadow">
+        <h1 className="text-4xl font-bold text-green-800 papyrus mb-2">
+          🌿 Free Resources
+        </h1>
         <p className="text-lg text-gray-700">
           Download guides and explore practical health & fitness tools created to empower you.
         </p>
@@ -31,11 +33,14 @@ export default function ResourcesPage() {
           {
             title: "Meditation for Beginners",
             href: "/documents/meditationguide.pdf",
-            img: "/documents/meditationguide.png", // Add preview image if desired
+            img: "/documents/meditationguide.png",
             desc: "Foundational tips and guidance for starting meditation practice."
           },
         ].map(({ title, href, img, desc }) => (
-          <div key={title} className="bg-amber-50 border border-green-800 rounded-xl shadow-md p-4 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition">
+          <div
+            key={title}
+            className="bg-white border border-green-200 rounded-lg shadow p-4 flex flex-col items-center text-center space-y-4 hover:shadow-md transition"
+          >
             <Image
               src={img}
               alt={title}
@@ -48,7 +53,8 @@ export default function ResourcesPage() {
             <a
               href={href}
               target="_blank"
-              className="bg-green-700 text-white px-4 py-2 rounded-full hover:bg-green-800 transition"
+              rel="noopener noreferrer"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
             >
               Download PDF
             </a>
@@ -57,8 +63,10 @@ export default function ResourcesPage() {
       </section>
 
       {/* Medium Section */}
-      <section className="max-w-6xl mx-auto border-2 border-green-900 rounded-xl p-6 text-center bg-amber-50 text-gray-800">
-        <h2 className="text-3xl font-bold text-green-800 papyrus mb-4">More Articles & FAQs</h2>
+      <section className="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow text-center">
+        <h2 className="text-2xl font-bold text-green-800 papyrus mb-2">
+          📝 More Articles & FAQs
+        </h2>
         <p className="text-lg text-gray-700 mb-4">
           For deeper dives, practical tips, and frequently asked questions, visit our Medium page.
         </p>
@@ -66,7 +74,7 @@ export default function ResourcesPage() {
           href="https://medium.com/@ki_wellness"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-green-700 text-white font-semibold px-6 py-3 rounded-full hover:bg-green-800 transition"
+          className="inline-block bg-green-600 text-white font-semibold px-6 py-3 rounded hover:bg-green-700 transition"
         >
           Visit Blog on Medium
         </a>
