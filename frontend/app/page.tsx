@@ -13,7 +13,7 @@ export default function Home() {
           <Link href="/pricing" className="bg-green-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow hover:bg-green-100 transition">
             Book One on One
           </Link>
-          <Link href="/dashboard" className="bg-green-500 text-gray-700 font-semibold px-6 py-3 rounded-full hover:bg-green-100 transition">
+          <Link href="/coming-soon" className="bg-green-500 text-gray-700 font-semibold px-6 py-3 rounded-full hover:bg-green-100 transition">
             Use AI Assistant
           </Link>
         </div>
