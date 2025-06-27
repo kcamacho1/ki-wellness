@@ -1,15 +1,19 @@
+
 // app/layout.tsx
 import './globals.css';
 import './papyrus.css';
 import Link from 'next/link';
-import type { Metadata } from 'next';
-import Image from 'next/image';
+import { Inter } from 'next/font/google'
+import Image from "next/image";
 
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Ki Wellness',
-  description: 'AI-powered holistic wellness support',
-};
+  description: 'Your AI-powered wellness companion',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
