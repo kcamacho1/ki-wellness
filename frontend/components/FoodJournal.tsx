@@ -15,15 +15,9 @@ export default function FoodJournal() {
 
   return (
     <div className="space-y-2">
-      {entries.map((e) => (
-        <div
-          key={e.id}
-          className="p-2 border rounded bg-gray-50 flex justify-between"
-        >
-          <span>{e.food_name}</span>
-          <span>{e.calories} kcal</span>
-        </div>
-      ))}
+      <p>
+        Food Journal
+      </p>
     </div>
   );
 }
