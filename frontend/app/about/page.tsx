@@ -43,27 +43,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Section 3: Pricing */}
-      <section className="max-w-5xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow space-y-4">
-        <h2 className="text-2xl font-bold text-green-800 text-center papyrus">Pricing & Accessibility</h2>
-        <p className="text-lg text-center">
-          We believe health should be affordable for everyone.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-          <div className="bg-white rounded-lg p-4 shadow text-center">
-            <h3 className="text-xl font-semibold text-green-700 mb-2">Basic Tier</h3>
-            <p className="text-lg">$2/month</p>
-            <p className="text-gray-600 mt-2">Essential tools to track your health and progress.</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 shadow text-center">
-            <h3 className="text-xl font-semibold text-green-700 mb-2">Premium Tier</h3>
-            <p className="text-lg">$5/month</p>
-            <p className="text-gray-600 mt-2">Includes AI analysis, GPT recommendations, and personalized wellness insights.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: Mission & Vision */}
+      {/* Section 3: Mission & Vision */}
       <section className="max-w-5xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow space-y-4">
         <h2 className="text-2xl font-bold text-green-800 text-center papyrus">Our Mission & Vision</h2>
         <p className="text-lg leading-relaxed">
@@ -80,7 +60,7 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      {/* Section 5: Closing Message */}
+      {/* Section 4: Closing Message */}
       <section className="max-w-5xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow text-center space-y-4">
         <h2 className="text-2xl font-bold text-green-800 papyrus">Join Us</h2>
         <p className="text-lg leading-relaxed">
