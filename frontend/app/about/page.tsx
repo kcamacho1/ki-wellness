@@ -67,7 +67,7 @@ export default function AboutPage() {
       <section className="max-w-5xl mx-auto bg-amber-50 text-gray-800 p-6 rounded-xl shadow space-y-4">
         <h2 className="text-2xl font-bold text-green-800 text-center papyrus">Our Mission & Vision</h2>
         <p className="text-lg leading-relaxed">
-          Ki Wellness is more than an app—it's a movement to empower healthier, happier communities.
+          Ki Wellness is more than an app—it&#39;s a movement to empower healthier, happier communities.
           <br /><br />
           Our goals include:
         </p>

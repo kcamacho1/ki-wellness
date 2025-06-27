@@ -21,7 +21,7 @@ export default function DashboardPage() {
     useEffect(() => {
       const tip = tips[Math.floor(Math.random() * tips.length)];
       setRandomTip(tip);
-      }, []);
+      }, [tips]);
 
   return (
     <main className="min-h-screen bg-green-900 text-green-700 p-6 space-y-4 font-inter">
