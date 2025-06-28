@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { FoodJournalEntry } from "@/types";
+import type { User } from "@supabase/auth-js";
 
 type Entry = {
   id: string;
@@ -20,8 +22,8 @@ type Entry = {
 };
 
 export default function FoodJournalPage() {
-  const [user, setUser] = useState<any>(null);
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+const [entries, setEntries] = useState<FoodJournalEntry[]>([]);
   const [mealType, setMealType] = useState("Breakfast");
   const [meal, setMeal] = useState("");
   const [servingQuantity, setServingQuantity] = useState("");

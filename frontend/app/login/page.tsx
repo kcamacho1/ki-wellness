@@ -3,14 +3,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import AuthForm from "@/components/AuthForm";
 import SignOutButton from "@/components/SignOutButton";
+import type { User } from "@supabase/auth-js";
+
 
 export default function LoginPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const session = supabase.auth.getSession().then(({ data }) => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
       setUser(data.session?.user ?? null);
-    });
+    };
+    init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
