@@ -1,22 +1,85 @@
 "use client";
-// app/dashboard/page.tsx
+import Link from "next/link";
 
 export default function DashboardPage() {
-
   return (
-    <main className="min-h-screen bg-green-900 text-green-700 p-6 space-y-4 font-inter">
-      <section className="max-w-6xl mx-auto bg-amber-50 p-6 rounded-xl shadow text-gray-800">
+    <main className="min-h-screen bg-green-50 text-gray-800 font-sans p-6 space-y-8">
+
+      {/* Header */}
+      <section className="max-w-6xl mx-auto text-center bg-white p-6 rounded-lg shadow">
         <h1 className="text-4xl font-bold text-green-800 papyrus mb-2">
-          your dashboard
+          🌿 Your Dashboard
         </h1>
-        <p className="text-gray-700">
-          Keep it Simple ~ Stay on Track ~ Journal your food, track your wellness, and analyze nutrition.
+        <p className="text-lg text-gray-700">
+          Track your progress, log meals and workouts, and stay inspired.
         </p>
       </section>
 
-      <section className="max-w-6xl mx-auto bg-amber-50 p-6 rounded-xl shadow text-gray-800 space-y-6">
+      {/* Quick Stats */}
+      <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          {
+            title: "Meals Logged",
+            count: "12",
+            desc: "Meals tracked this week"
+          },
+          {
+            title: "Workouts",
+            count: "4",
+            desc: "Workouts completed"
+          },
+          {
+            title: "Mindful Sessions",
+            count: "3",
+            desc: "Meditation & self-care"
+          },
+        ].map(({ title, count, desc }) => (
+          <div
+            key={title}
+            className="bg-white border border-green-200 rounded-lg shadow p-4 flex flex-col items-center text-center space-y-2 hover:shadow-md transition"
+          >
+            <h3 className="text-xl font-bold text-green-800 papyrus">{title}</h3>
+            <p className="text-3xl font-bold">{count}</p>
+            <p className="text-sm text-gray-700">{desc}</p>
+          </div>
+        ))}
+      </section>
 
-        </section>
+      {/* Quick Actions */}
+      <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          {
+            label: "➕ Log a Meal",
+            href: "/food-journal",
+          },
+          {
+            label: "➕ Log a Workout",
+            href: "/exercise",
+          },
+          {
+            label: "✨ See Recommendations",
+            href: "/recommendations",
+          },
+        ].map(({ label, href }) => (
+          <Link
+            key={label}
+            href={href}
+            className="bg-white border border-green-200 rounded-lg shadow p-6 text-center hover:bg-green-50 transition flex items-center justify-center font-semibold text-green-800"
+          >
+            {label}
+          </Link>
+        ))}
+      </section>
+
+      {/* Motivation Section */}
+      <section className="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow text-center">
+        <h2 className="text-2xl font-bold text-green-800 papyrus mb-2">
+          🌱 Keep Going!
+        </h2>
+        <p className="text-lg text-gray-700">
+          Every small action adds up to big changes. You’re doing great.
+        </p>
+      </section>
     </main>
   );
 }
