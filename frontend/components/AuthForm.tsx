@@ -6,36 +6,39 @@ export default function AuthForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function handleSignUp() {
+  const handleEmailSignIn = async (type: "signIn" | "signUp") => {
     setLoading(true);
-    setError("");
-    const { error } = await supabase.auth.signUp({
+    const fn =
+      type === "signUp"
+        ? supabase.auth.signUp
+        : supabase.auth.signInWithPassword;
+
+    const { error } = await fn({
       email,
       password,
     });
-    if (error) setError(error.message);
-    setLoading(false);
-  }
 
-  async function handleSignIn() {
-    setLoading(true);
-    setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) setError(error.message);
+    if (error) {
+      alert(error.message);
+    } else {
+      alert("Check your email for confirmation.");
+    }
+
     setLoading(false);
-  }
+  };
+
+  const handleOAuthSignIn = async (provider: "google" | "apple") => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+    });
+    if (error) alert(error.message);
+    setLoading(false);
+  };
 
   return (
-    <div className="max-w-md mx-auto bg-white p-6 rounded shadow space-y-4">
-      <h2 className="text-xl font-bold text-center text-green-800">
-        Sign Up / Sign In
-      </h2>
-      {error && <p className="text-red-600 text-center">{error}</p>}
+    <div className="w-full max-w-sm space-y-4">
       <input
         type="email"
         placeholder="Email"
@@ -50,20 +53,39 @@ export default function AuthForm() {
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
       />
-      <button
-        onClick={handleSignUp}
-        disabled={loading}
-        className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-      >
-        {loading ? "Loading..." : "Sign Up"}
-      </button>
-      <button
-        onClick={handleSignIn}
-        disabled={loading}
-        className="w-full bg-gray-600 text-white py-2 rounded hover:bg-gray-700 transition"
-      >
-        {loading ? "Loading..." : "Sign In"}
-      </button>
+      <div className="flex space-x-2">
+        <button
+          onClick={() => handleEmailSignIn("signIn")}
+          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Log In
+        </button>
+        <button
+          onClick={() => handleEmailSignIn("signUp")}
+          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <div className="flex items-center justify-center space-x-2">
+        <button
+          onClick={() => handleOAuthSignIn("google")}
+          className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Sign in with Google
+        </button>
+        <button
+          onClick={() => handleOAuthSignIn("apple")}
+          className="flex-1 bg-black text-white py-2 rounded hover:bg-gray-800 transition disabled:opacity-50"
+          disabled={loading}
+        >
+          Sign in with Apple
+        </button>
+      </div>
     </div>
   );
 }
