@@ -1,44 +1,23 @@
-
 // app/layout.tsx
-import './globals.css';
-import './papyrus.css';
-import Link from 'next/link';
-import Image from "next/image";
-
+import "./globals.css";
+import "./papyrus.css";
+import { ReactNode } from "react";
+import Header from "../components/Header";
 
 export const metadata = {
-  title: 'Ki Wellness',
-  description: 'Your AI-powered wellness companion',
+  title: "Ki Wellness",
+  description: "Your AI-powered wellness companion",
   icons: {
-    icon: '/favicon.ico',
+    icon: "/favicon.ico",
   },
-}
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-
       <body className="bg-green-100 text-gray-800 font-sans">
-        <header className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center p-6">
-          <div className="flex items-center space-x-4">
-
-            <Link href="/" className="hover:underline">
-              <Image src="/logoname.png" alt="Ki Wellness Logo" width={180} height={60} className="rounded" />
-            </Link>
-          </div>
-          <nav className="flex gap-4 text-green-900 text-sm md:text-base font-medium mt-4 md:mt-0">
-            <Link href="/about" className="hover:underline">About</Link>
-            <Link href="/pricing" className="hover:underline">Services & Pricing</Link>
-            <Link href="/dashboard" className="hover:underline">AI Assistant</Link>
-            <Link href="/resources" className="hover:underline">Free Resources</Link>
-          </nav>
-        </header>
-
+        <Header />
         {children}
-
         <footer className="text-center text-sm py-6 bg-green-50 text-green-800 mt-20">
           &copy; 2025 Ki Wellness LLC. All rights reserved.
         </footer>
