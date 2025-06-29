@@ -1,30 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import type { User } from "@supabase/auth-js";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
   return (
     <main className="min-h-screen bg-green-50 text-gray-800 font-sans p-6 space-y-8 relative">
-
       {/* Header */}
       <section className="max-w-6xl mx-auto text-center bg-white p-6 rounded-lg shadow">
         <h1 className="text-4xl font-bold text-green-800 papyrus mb-2">
@@ -34,7 +13,6 @@ export default function DashboardPage() {
           Track your progress, log meals and workouts, and stay inspired.
         </p>
       </section>
-
 
       {/* Quick Stats */}
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
