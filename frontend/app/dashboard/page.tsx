@@ -1,9 +1,29 @@
 "use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
+import type { User } from "@supabase/auth-js";
 
 export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-green-50 text-gray-800 font-sans p-6 space-y-8">
+    <main className="min-h-screen bg-green-50 text-gray-800 font-sans p-6 space-y-8 relative">
 
       {/* Header */}
       <section className="max-w-6xl mx-auto text-center bg-white p-6 rounded-lg shadow">
@@ -15,23 +35,24 @@ export default function DashboardPage() {
         </p>
       </section>
 
+
       {/* Quick Stats */}
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
             title: "Meals Logged",
             count: "12",
-            desc: "Meals tracked this week"
+            desc: "Meals tracked this week",
           },
           {
             title: "Workouts",
             count: "4",
-            desc: "Workouts completed"
+            desc: "Workouts completed",
           },
           {
             title: "Mindful Sessions",
             count: "3",
-            desc: "Meditation & self-care"
+            desc: "Meditation & self-care",
           },
         ].map(({ title, count, desc }) => (
           <div
@@ -48,18 +69,9 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <section className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          {
-            label: "➕ Log a Meal",
-            href: "/food-journal",
-          },
-          {
-            label: "➕ Log a Workout",
-            href: "/exercise",
-          },
-          {
-            label: "✨ See Recommendations",
-            href: "/recommendations",
-          },
+          { label: "➕ Log a Meal", href: "/food-journal" },
+          { label: "➕ Log a Workout", href: "/exercise" },
+          { label: "✨ See Recommendations", href: "/recommendations" },
         ].map(({ label, href }) => (
           <Link
             key={label}

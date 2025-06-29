@@ -1,44 +1,64 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function AuthForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleEmailSignIn = async (type: "signIn" | "signUp") => {
+  const handleSignIn = async () => {
     setLoading(true);
-    const fn =
-      type === "signUp"
-        ? supabase.auth.signUp
-        : supabase.auth.signInWithPassword;
+    setError("");
 
-    const { error } = await fn({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      alert(error.message);
+      setError(error.message);
+      setLoading(false);
     } else {
-      alert("Check your email for confirmation.");
+      router.push("/dashboard");
     }
-
-    setLoading(false);
   };
 
-  const handleOAuthSignIn = async (provider: "google" | "apple") => {
+  const handleSignUp = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+    setError("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
     });
-    if (error) alert(error.message);
-    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push("/dashboard");
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSignIn();
   };
 
   return (
-    <div className="w-full max-w-sm space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white p-6 rounded shadow max-w-md mx-auto space-y-4"
+    >
+      <h2 className="text-xl font-bold text-green-800">
+        Sign in or Create an Account
+      </h2>
+      {error && <p className="text-red-600">{error}</p>}
+
       <input
         type="email"
         placeholder="Email"
@@ -53,39 +73,24 @@ export default function AuthForm() {
         onChange={(e) => setPassword(e.target.value)}
         className="w-full border border-gray-300 rounded px-3 py-2"
       />
-      <div className="flex space-x-2">
-        <button
-          onClick={() => handleEmailSignIn("signIn")}
-          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition disabled:opacity-50"
-          disabled={loading}
-        >
-          Log In
-        </button>
-        <button
-          onClick={() => handleEmailSignIn("signUp")}
-          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition disabled:opacity-50"
-          disabled={loading}
-        >
-          Sign Up
-        </button>
-      </div>
 
-      <div className="flex items-center justify-center space-x-2">
+      <div className="flex gap-2">
         <button
-          onClick={() => handleOAuthSignIn("google")}
-          className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600 transition disabled:opacity-50"
+          type="submit"
           disabled={loading}
+          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
         >
-          Sign in with Google
+          {loading ? "Signing in..." : "Sign In"}
         </button>
         <button
-          onClick={() => handleOAuthSignIn("apple")}
-          className="flex-1 bg-black text-white py-2 rounded hover:bg-gray-800 transition disabled:opacity-50"
+          type="button"
+          onClick={handleSignUp}
           disabled={loading}
+          className="flex-1 bg-gray-300 text-gray-800 py-2 rounded hover:bg-gray-400 transition"
         >
-          Sign in with Apple
+          {loading ? "Creating..." : "Sign Up"}
         </button>
       </div>
-    </div>
+    </form>
   );
 }
