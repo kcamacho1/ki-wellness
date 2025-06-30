@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <h2 class="text-2xl mb-4">Food Journal</h2>
+
+  <form method="post" class="bg-white p-4 rounded shadow max-w-md mb-6">
+    <input type="date" name="date_logged" class="border p-2 w-full mb-2" required />
+    <input type="text" name="meal" placeholder="Meal" class="border p-2 w-full mb-2" required />
+    <input type="number" name="calories" placeholder="Calories" class="border p-2 w-full mb-2" required />
+    <input type="number" name="protein" placeholder="Protein (g)" class="border p-2 w-full mb-2" required />
+    <input type="number" name="carbs" placeholder="Carbs (g)" class="border p-2 w-full mb-2" required />
+    <input type="number" name="fat" placeholder="Fat (g)" class="border p-2 w-full mb-2" required />
+    <textarea name="notes" placeholder="Notes (optional)" class="border p-2 w-full mb-2"></textarea>
+    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Entry</button>
+  </form>
+
+  <h3 class="text-xl mb-2">Entries</h3>
+  <ul>
+    {% for entry in entries %}
+      <li class="bg-white p-2 rounded shadow mb-2">
+        <strong>{{ entry.date_logged }}</strong>: {{ entry.meal }} ({{ entry.calories }} kcal)
+        <div>Protein: {{ entry.protein }}g, Carbs: {{ entry.carbs }}g, Fat: {{ entry.fat }}g</div>
+        {% if entry.notes %}
+        <div><em>{{ entry.notes }}</em></div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
