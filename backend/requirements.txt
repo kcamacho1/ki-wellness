@@ -1,8 +1,0 @@
-Flask==2.3.2
-python-dotenv==1.0.0
-supabase==2.16.0  # Explicitly set to a version known to work or recent stable
-requests==2.31.0
-fastapi
-uvicorn
-python-multipart
-pydantic
