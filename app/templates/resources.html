@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<section class="max-w-3xl mx-auto text-center bg-white p-6 rounded-lg shadow mb-6">
+  <h1 class="text-3xl font-bold text-green-800 font-papyrus mb-2">🌿 Free Resources</h1>
+  <p class="text-lg text-gray-700">
+    Download guides and explore practical health & fitness tools created to empower you.
+  </p>
+</section>
+
+<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+  {% set resources = [
+    {
+      "title": "7-Day Meal Tracker",
+      "href": "/static/documents/7daymealtracker.pdf",
+      "img": "/static/documents/7daymealtracker.png",
+      "desc": "A printable meal and mood tracker to support healthy routines."
+    },
+    {
+      "title": "Home Workout Plan",
+      "href": "/static/documents/homeworkoutplan.pdf",
+      "img": "/static/documents/homeworkoutplan.png",
+      "desc": "A no-equipment plan to keep you active at home or on the go."
+    },
+    {
+      "title": "Meditation for Beginners",
+      "href": "/static/documents/meditationguide.pdf",
+      "img": "/static/documents/meditationguide.png",
+      "desc": "Foundational tips and guidance for starting meditation practice."
+    }
+  ] %}
+
+  {% for item in resources %}
+  <div class="bg-white border border-green-200 rounded-lg shadow p-4 flex flex-col items-center text-center space-y-4 hover:shadow-md transition">
+    <img src="{{ item.img }}" alt="{{ item.title }}" class="rounded w-full h-auto" />
+    <h3 class="text-xl font-bold text-green-800 font-papyrus">{{ item.title }}</h3>
+    <p class="text-sm text-gray-700">{{ item.desc }}</p>
+    <a href="{{ item.href }}" target="_blank" rel="noopener noreferrer"
+       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+      Download PDF
+    </a>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow text-center">
+  <h2 class="text-2xl font-bold text-green-800 font-papyrus mb-2">📝 More Articles & FAQs</h2>
+  <p class="text-lg text-gray-700 mb-4">
+    For deeper dives, practical tips, and frequently asked questions, visit our Medium page.
+  </p>
+  <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer"
+     class="inline-block bg-green-600 text-white font-semibold px-6 py-3 rounded hover:bg-green-700 transition">
+    Visit Blog on Medium
+  </a>
+</section>
+
+{% endblock %}

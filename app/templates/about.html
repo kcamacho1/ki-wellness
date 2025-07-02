@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6">
+  <h1 class="text-3xl font-papyrus text-forest text-center mb-4">🌿 About Ki Wellness</h1>
+  <p class="text-lg text-gray-700 leading-relaxed text-center">
+    Ki Wellness exists to make holistic health accessible, affordable, and empowering for everyone. 
+    Whether you prefer working with a compassionate human health coach or our friendly AI assistant, 
+    you'll find tools and support to nurture mind, body, and spirit.
+  </p>
+</section>
+
+<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white p-6 rounded-lg shadow space-y-4">
+    <h2 class="text-2xl font-papyrus text-forest">💡 Why We Exist</h2>
+    <p class="text-gray-700">
+      We believe everyone deserves the tools to feel well, no matter their income or background. 
+      Our platform combines AI-powered suggestions with the option to work with real coaches when you need personal guidance.
+    </p>
+    <p class="text-gray-700">
+      Subscriptions help fund free access for those in need, research into better health practices, and the vision of creating a retreat center for rest, learning, and community care.
+    </p>
+  </div>
+  <div class="bg-white p-6 rounded-lg shadow space-y-4">
+    <h2 class="text-2xl font-papyrus text-forest">✨ What You Can Do</h2>
+    <ul class="list-disc list-inside space-y-2 text-gray-700">
+      <li>Track meals and nutrition with your Food Journal</li>
+      <li>Visualize progress with helpful graphs</li>
+      <li>Plan meals that fit your lifestyle</li>
+      <li>Get AI prompts, suggestions, or analysis each month</li>
+      <li>Connect with human coaches anytime</li>
+    </ul>
+  </div>
+</section>
+
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6">
+  <h2 class="text-2xl font-papyrus text-forest text-center mb-4">🌱 Plans for Every Journey</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Free Plan -->
+    <div class="border rounded-lg p-4 text-center">
+      <h3 class="text-xl font-semibold text-forest mb-2">Free Plan</h3>
+      <ul class="space-y-1 text-gray-700">
+        <li>✅ Manual journaling</li>
+        <li>✅ 10 AI credits/month</li>
+        <li>✅ Save up to 7 meals</li>
+        <li>✅ Upgrade anytime</li>
+      </ul>
+    </div>
+    <!-- Starter Plan -->
+    <div class="border rounded-lg p-4 text-center">
+      <h3 class="text-xl font-semibold text-forest mb-2">$2 Starter</h3>
+      <ul class="space-y-1 text-gray-700">
+        <li>✅ 100 AI credits/month</li>
+        <li>✅ Unlimited meal entries</li>
+        <li>✅ Recipe suggestions</li>
+      </ul>
+    </div>
+    <!-- Pro Plan -->
+    <div class="border rounded-lg p-4 text-center">
+      <h3 class="text-xl font-semibold text-forest mb-2">$5 Pro</h3>
+      <ul class="space-y-1 text-gray-700">
+        <li>✅ 300 AI credits/month</li>
+        <li>✅ Priority AI responses (GPT-4)</li>
+        <li>✅ Early access to new features</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6 text-center">
+  <h2 class="text-2xl font-papyrus text-forest mb-4">💖 Where Your Subscription Goes</h2>
+  <p class="text-lg text-gray-700 leading-relaxed">
+    Every subscription helps keep Ki Wellness free or low-cost for those in need.
+    Funds go toward:
+  </p>
+  <ul class="list-disc list-inside text-left mt-4 text-gray-700 space-y-1">
+    <li>🌍 Providing free plans for low-income users</li>
+    <li>🤝 Sponsoring volunteer health coaching sessions</li>
+    <li>📊 Supporting research into better wellness practices</li>
+    <li>🏡 Building our vision of a retreat and education center</li>
+  </ul>
+</section>
+
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow text-center space-y-4">
+  <h2 class="text-2xl font-papyrus text-forest mb-2">🌿 Learn & Connect</h2>
+  <p class="text-lg text-gray-700">
+    Explore more resources, read our blog, and connect with us:
+  </p>
+  <div class="flex flex-col md:flex-row justify-center gap-4 mt-4">
+    <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer"
+       class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
+      📖 Visit Our Medium Blog
+    </a>
+    <a href="#" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
+      📱 Follow Us on Social Media
+    </a>
+    <a href="#" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
+      📩 Email to say hello or Sponsor
+    </a>
+  </div>
+</section>
+{% endblock %}
