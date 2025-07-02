@@ -1,6 +1,47 @@
 {% extends "layout.html" %}
 
 {% block content %}
-  <h2 class="text-2xl mb-4">Welcome to your AI-powered health coach</h2>
-  <p>Track your meals, set goals, and feel your best.</p>
+
+<section class="bg-white rounded-lg shadow p-8 max-w-3xl mx-auto text-center space-y-6">
+  <h1 class="text-4xl font-papyrus text-forest">
+    🌿 Ki Wellness
+  </h1>
+  <p class="text-lg text-gray-700">
+    Your personal, AI-powered health companion to guide you toward better nutrition, balance, and well-being.
+  </p>
+  <a href="/login" class="inline-block mt-4 bg-green-700 text-white font-semibold px-6 py-3 rounded hover:bg-green-800 transition">
+    🌱 Start Your Wellness Journey
+  </a>
+</section>
+
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-3xl mx-auto">
+  <div class="bg-white rounded-lg p-6 shadow space-y-3 text-center">
+    <h3 class="text-xl font-papyrus text-forest">🥗 Food Journal</h3>
+    <p class="text-gray-700 text-sm">
+      Easily track meals, nutrients, and progress.
+    </p>
+  </div>
+  <div class="bg-white rounded-lg p-6 shadow space-y-3 text-center">
+    <h3 class="text-xl font-papyrus text-forest">💡 AI Insights</h3>
+    <p class="text-gray-700 text-sm">
+      Personalized suggestions and analysis to support your goals.
+    </p>
+  </div>
+  <div class="bg-white rounded-lg p-6 shadow space-y-3 text-center">
+    <h3 class="text-xl font-papyrus text-forest">🤝 Human Coaching</h3>
+    <p class="text-gray-700 text-sm">
+      Connect with caring professionals anytime.
+    </p>
+  </div>
+</section>
+
+<section class="mt-10 max-w-3xl mx-auto text-center text-gray-600 text-sm">
+  <p>
+    Ki Wellness is built for everyone—offering free and affordable plans to make holistic health accessible to all.
+  </p>
+  <a href="/about" class="text-green-700 hover:underline mt-2 inline-block">
+    Learn more about our mission
+  </a>
+</section>
+
 {% endblock %}
