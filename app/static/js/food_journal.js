@@ -1,4 +1,36 @@
+// Helper to format numbered lists into <ol>
+function formatSection(text) {
+  const lines = text.split("\n").filter(line => line.trim() !== "");
+  const items = [];
+
+  lines.forEach(line => {
+    const match = line.match(/^(\d+)\.\s+(.*)/);
+    if (match) {
+      // It's a numbered item
+      items.push(`<li>${match[2]}</li>`);
+    }
+  });
+
+  if (items.length > 0) {
+    return `<ol class="list-decimal pl-5 space-y-1">${items.join("")}</ol>`;
+  } else {
+    // No numbered items
+    return `<p>${text}</p>`;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Show/hide loader
+  function showLoader() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('hidden');
+  }
+  function hideLoader() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  // AI Summary
   const aiSummaryBtn = document.getElementById('aiSummaryBtn');
   if (aiSummaryBtn) {
     aiSummaryBtn.addEventListener('click', async () => {
@@ -16,11 +48,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const data = await response.json();
-        const summary = data.summary;
 
         const container = document.getElementById("aiSummaryContainer");
         const text = document.getElementById("aiSummaryText");
-        text.textContent = summary;
+        text.innerHTML = `
+          <h4 class="font-semibold">Summary</h4>
+          <p>${data.summary}</p>
+          <h4 class="font-semibold mt-2">Nutritional Gaps</h4>
+          ${formatSection(data.gaps)}
+          <h4 class="font-semibold mt-2">Suggestions</h4>
+          ${formatSection(data.suggestions)}
+        `;
         container.classList.remove("hidden");
         container.scrollIntoView({ behavior: "smooth" });
       } catch (err) {
@@ -31,16 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-  
-  function showLoader() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.remove('hidden');
-  }
-
-  function hideLoader() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.classList.add('hidden');
+  // AI Meal Plans
+  const aiMealPlansBtn = document.getElementById('aiMealPlansBtn');
+  if (aiMealPlansBtn) {
+    aiMealPlansBtn.addEventListener('click', () => {
+      alert("AI Meal Plans coming soon!");
+    });
   }
 
   // Toggle form
@@ -58,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
   }
-
 
   // Upload CSV
   const uploadInput = document.getElementById('uploadCsvInput');
@@ -129,27 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Delete All
-  const deleteAllBtn = document.getElementById('deleteAllBtn');
-  if (deleteAllBtn) {
-    deleteAllBtn.addEventListener('click', async () => {
-      if (!confirm("⚠️ Are you absolutely sure you want to delete ALL entries? This cannot be undone.")) return;
-
-      showLoader();
-
-      await fetch(`/api/food_journal`, {
-        method: "DELETE"
-      });
-
-      hideLoader();
-      location.reload();
-    });
-  }
-
   // Select All checkbox
   const selectAllCheckbox = document.getElementById('selectAll');
   const entryCheckboxes = document.querySelectorAll('.entryCheckbox');
-
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener('change', () => {
       entryCheckboxes.forEach(cb => {
@@ -188,20 +203,4 @@ function generateCsv(entries, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-// AI Summery of Food Journal and nutritional gaps
-const aiSummaryBtn = document.getElementById('aiSummaryBtn');
-if (aiSummaryBtn) {
-  aiSummaryBtn.addEventListener('click', () => {
-    alert("AI Summary coming soon!");
-  });
-}
-
-// AI Meal Plans buttons
-const aiMealPlansBtn = document.getElementById('aiMealPlansBtn');
-if (aiMealPlansBtn) {
-  aiMealPlansBtn.addEventListener('click', () => {
-    alert("AI Meal Plans coming soon!");
-  });
 }
