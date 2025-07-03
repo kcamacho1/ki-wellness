@@ -146,11 +146,14 @@ async def generate_summary(data: dict = Body(...)):
 
     prompt = (
         "You are a friendly, motivational nutrition assistant. "
-        "Analyze this food journal for the past 4 weeks. "
-        "Provide a short, positive summary, highlight any potential nutritional gaps "
-        "compared to common RDAs, and suggest vitamins or foods to supplement. "
-        "Keep it encouraging and concise.\n\n"
-        f"Food Journal Entries:\n{entry_text}\n\nSummary:"
+        "Analyze this food journal for the past 4 weeks. Return the response in three clearly separated sections titled "
+        "'Summary', 'Nutritional Gaps', and 'Suggestions'. Each section should be concise, motivational and educational.\n\n"
+        "Food Journal Entries:\n"
+        f"{entry_text}\n\n"
+        "Format:\n"
+        "Summary:\n<summary text>\n\n"
+        "Nutritional Gaps:\n<nutritional gaps text>\n\n"
+        "Suggestions:\n<suggestions text>"
     )
 
     try:
@@ -164,7 +167,16 @@ async def generate_summary(data: dict = Body(...)):
             max_tokens=300
         )
         summary = completion.choices[0].message.content.strip()
-        return {"summary": summary}
+        parts = summary.split("\n\n")
+        sections = {}
+        for part in parts:
+            if part.startswith("Summary:"):
+                sections["summary"] = part.replace("Summary:", "").strip()
+            elif part.startswith("Nutritional Gaps:"):
+                sections["gaps"] = part.replace("Nutritional Gaps:", "").strip()
+            elif part.startswith("Suggestions:"):
+                sections["suggestions"] = part.replace("Suggestions:", "").strip()
 
+        return sections
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
