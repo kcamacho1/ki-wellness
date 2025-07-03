@@ -1,5 +1,5 @@
 fastapi
-uvicorngit 
+uvicorn
 httpx
 jinja2
 python-dotenv
