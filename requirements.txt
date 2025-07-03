@@ -1,5 +1,7 @@
 fastapi
-uvicorn
-python-dotenv
-jinja2
+uvicorngit 
 httpx
+jinja2
+python-dotenv
+openai
+python-multipart
