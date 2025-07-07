@@ -39,3 +39,8 @@ async def about(request: Request):
 async def resources(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("resources.html", {"request": request, "user": user})
+
+@router.get("/human-coach", response_class=HTMLResponse)
+async def human_coach(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("human-coach.html", {"request": request, "user": user})
