@@ -3,16 +3,85 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.supabase_client import supabase, get_user_supabase
 from app.api.auth import get_current_user
-from openai import OpenAI
-import os
-
 import httpx
 from app.core.config import SUPABASE_URL, SUPABASE_ANON_KEY
+import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+""" Free OpenFood API """
+async def query_openfood(food_name):
+    url = f"https://world.openfoodfacts.org/cgi/search.pl"
+    params = {
+        "search_terms": food_name,
+        "search_simple": 1,
+        "action": "process",
+        "json": 1,
+        "fields": "product_name,nutriments"
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, params=params)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data["count"] == 0:
+            return None
+        nutriments = data["products"][0].get("nutriments", {})
+        return {
+            "calories": nutriments.get("energy-kcal_100g", 0),
+            "protein": nutriments.get("proteins_100g", 0),
+            "carbs": nutriments.get("carbohydrates_100g", 0),
+            "fat": nutriments.get("fat_100g", 0),
+            "vitamin_a": nutriments.get("vitamin-a_100g", 0),
+            "vitamin_c": nutriments.get("vitamin-c_100g", 0),
+            "vitamin_d": nutriments.get("vitamin-d_100g", 0),
+            "vitamin_e": nutriments.get("vitamin-e_100g", 0),
+            "vitamin_k": nutriments.get("vitamin-k_100g", 0),
+            "vitamin_b1": nutriments.get("vitamin-b1_100g", 0),
+            "vitamin_b2": nutriments.get("vitamin-b2_100g", 0),
+            "vitamin_b3": nutriments.get("vitamin-pp_100g", 0),
+            "vitamin_b6": nutriments.get("vitamin-b6_100g", 0),
+            "vitamin_b12": nutriments.get("vitamin-b12_100g", 0),
+            "folate": nutriments.get("folate_100g", 0),
+            "calcium": nutriments.get("calcium_100g", 0),
+            "iron": nutriments.get("iron_100g", 0),
+            "magnesium": nutriments.get("magnesium_100g", 0),
+            "potassium": nutriments.get("potassium_100g", 0),
+            "zinc": nutriments.get("zinc_100g", 0),
+            "sodium": nutriments.get("sodium_100g", 0),
+            "copper": nutriments.get("copper_100g", 0),
+            "selenium": nutriments.get("selenium_100g", 0),
+            "manganese": nutriments.get("manganese_100g", 0),
+        }
+
+"""Nutritionix API is more reliable for US foods, so we use it as a fallback"""
+async def query_nutritionix(food_name):
+    url = "https://trackapi.nutritionix.com/v2/natural/nutrients"
+    headers = {
+        "x-app-id": os.getenv("NUTRITIONIX_APP_ID"),
+        "x-app-key": os.getenv("NUTRITIONIX_APP_KEY"),
+        "Content-Type": "application/json"
+    }
+    body = {"query": food_name}
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(url, headers=headers, json=body)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if not data.get("foods"):
+            return None
+        f = data["foods"][0]
+        return {
+            "calories": f["nf_calories"],
+            "protein": f["nf_protein"],
+            "carbs": f["nf_total_carbohydrate"],
+            "fat": f["nf_total_fat"],
+            # Micronutrients may be sparse here
+            "vitamin_a": f.get("full_nutrients", [{}])[0].get("value", 0),
+            "vitamin_c": f.get("full_nutrients", [{}])[0].get("value", 0),
+            # Add other micros as needed
+        }
 
 
 @router.get("/food-journal", response_class=HTMLResponse)
@@ -34,7 +103,7 @@ async def food_journal_page(request: Request):
             },
             params={
                 "select": "*",
-                "order": "date_logged.desc"  # ✅ no parentheses
+                "order": "date_logged.desc"
             }
         )
 
@@ -74,7 +143,6 @@ async def add_entry(
 
     user_id = user.get("id") or user.get("sub")
 
-    # Prepare data
     data = {
         "user_id": user_id,
         "date_logged": date_logged,
@@ -90,7 +158,6 @@ async def add_entry(
         "notes": notes,
     }
 
-    # Use httpx to POST
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{SUPABASE_URL}/rest/v1/food_journal",
@@ -110,6 +177,7 @@ async def add_entry(
         )
 
     return RedirectResponse("/food-journal", status_code=302)
+
 
 @router.delete("/api/food_journal/{entry_id}")
 async def delete_entry(request: Request, entry_id: str = Path(...)):
@@ -131,52 +199,3 @@ async def delete_entry(request: Request, entry_id: str = Path(...)):
     if resp.status_code != 204:
         raise HTTPException(status_code=resp.status_code, detail=resp.text)
     return {"message": "Entry deleted."}
-
-
-""" Endpoint to generate a summary of the food journal """
-@router.post("/api/food_journal/summary")
-async def generate_summary(data: dict = Body(...)):
-    entries = data.get("entries", [])
-
-    # Convert entries to a readable string
-    entry_text = "\n".join([
-        f"- {e.get('date_logged')}: {e.get('food_name')} ({e.get('calories')} kcal, {e.get('protein')}g protein, {e.get('carbs')}g carbs, {e.get('fat')}g fat)"
-        for e in entries
-    ])
-
-    prompt = (
-        "You are a friendly, motivational nutrition assistant. "
-        "Analyze this food journal for the past 4 weeks. Return the response in three clearly separated sections titled "
-        "'Summary', 'Nutritional Gaps', and 'Suggestions'. Each section should be concise, motivational and educational.\n\n"
-        "Food Journal Entries:\n"
-        f"{entry_text}\n\n"
-        "Format:\n"
-        "Summary:\n<summary text>\n\n"
-        "Nutritional Gaps:\n<nutritional gaps text>\n\n"
-        "Suggestions:\n<suggestions text>"
-    )
-
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful nutrition coach."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=300
-        )
-        summary = completion.choices[0].message.content.strip()
-        parts = summary.split("\n\n")
-        sections = {}
-        for part in parts:
-            if part.startswith("Summary:"):
-                sections["summary"] = part.replace("Summary:", "").strip()
-            elif part.startswith("Nutritional Gaps:"):
-                sections["gaps"] = part.replace("Nutritional Gaps:", "").strip()
-            elif part.startswith("Suggestions:"):
-                sections["suggestions"] = part.replace("Suggestions:", "").strip()
-
-        return sections
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
