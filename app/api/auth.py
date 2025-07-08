@@ -1,3 +1,5 @@
+# Logic and API handeling
+
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from app.core.config import SUPABASE_URL, SUPABASE_ANON_KEY
@@ -72,7 +74,7 @@ def logout():
 
 
 @router.post("/forgot-password")
-async def handle_forgot_password(email: str = Form(...)):
+async def handle_forgot_password(request: Request, email: str = Form(...)):
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{SUPABASE_URL}/auth/v1/recover",
@@ -85,5 +87,26 @@ async def handle_forgot_password(email: str = Form(...)):
 
     if resp.status_code != 200:
         print(f"Error from Supabase: {resp.text}")
+        # Optional: show a friendly generic message even on failure
+        url = str(request.url_for("homepage")) + "?message=Something went wrong. Please try again."
+        return RedirectResponse(url=url, status_code=303)
 
-    return RedirectResponse("/login", status_code=302)
+    # ✅ Always show same message for privacy
+    url = str(request.url_for("homepage")) + "?message=If your email is registered, a reset link has been sent."
+    return RedirectResponse(url=url, status_code=303)
+
+@router.post("/reset-password")
+async def handle_reset_password(password: str = Form(...), token: str = Form(...)):
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            json={"password": password}
+        )
+    if resp.status_code == 200:
+        return RedirectResponse("/login", status_code=302)
+    return RedirectResponse("/reset-password?error=1", status_code=302)
