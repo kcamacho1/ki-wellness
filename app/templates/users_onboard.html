@@ -1,0 +1,55 @@
+<form action="/onboard" method="post">
+  <label>Name:</label>
+  <input type="text" name="name" required />
+
+  <label>Date of Birth:</label>
+  <input type="date" name="dob" required />
+
+  <label>Weight (lbs):</label>
+  <input type="number" step="any" name="weight" />
+
+  <label>Height (inches):</label>
+  <input type="number" step="any" name="height" />
+
+  <label>Diet Type:</label>
+  <select name="diet_type" multiple>
+    <option value="Kosher">Kosher</option>
+    <option value="Halal">Halal</option>
+    <option value="Organic">Organic</option>
+    <option value="Vegetarian">Vegetarian</option>
+    <option value="Keto">Keto</option>
+    <option value="Carnivore">Carnivore</option>
+  </select>
+
+  <label>Restrictions:</label>
+  <select name="restrictions" multiple>
+    <option value="Dairy">Dairy</option>
+    <option value="Gluten">Gluten</option>
+  </select>
+
+  <label>Sleep Schedule:</label>
+  <input type="text" name="sleep_schedule" />
+
+  <label>Physical Ailments (comma-separated):</label>
+  <input type="text" name="physical_ailments" />
+
+  <label>Spiritual Belief:</label>
+  <input type="text" name="spiritual_belief" />
+
+  <label>Ways You Connect With Yourself (comma-separated):</label>
+  <input type="text" name="self_connection_methods" />
+
+  <label>Ways You Connect With Environment (comma-separated):</label>
+  <input type="text" name="environment_connection_methods" />
+
+  <label>Groups You Feel Safe In (comma-separated):</label>
+  <input type="text" name="group_safety" />
+
+  <label>How You Cope With Stress (comma-separated):</label>
+  <input type="text" name="stress_coping_methods" />
+
+  <label>Overall Wellness Goals:</label>
+  <textarea name="goals"></textarea>
+
+  <button type="submit">Submit Profile</button>
+</form>
