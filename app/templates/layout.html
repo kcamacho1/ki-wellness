@@ -72,5 +72,16 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+
+<!-- password reset redirect -->
+  <script type="module">
+    const hash = window.location.hash
+
+    if (hash.includes("access_token") && hash.includes("type=recovery")) {
+      // Redirect to /reset-password so Supabase JS can handle session
+      window.location.href = "/reset-password" + hash
+    }
+  </script>
+
 </body>
 </html>
