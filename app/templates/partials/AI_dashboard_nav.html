@@ -1,11 +1,27 @@
 {% if user %}
-<section class="bg-green-100 py-2 shadow-sm">
-  <div class="max-w-4xl mx-auto px-4 flex justify-between flex-wrap gap-2 text-sm text-green-800 font-medium">
-    <a href="/ai-coach" class="hover:underline">🧠 AI Health Coach</a>
-    <a href="/food-journal" class="hover:underline">🥗 Food Journal</a>
-    <a href="/meals" class="hover:underline">🍱 Meals</a>
-    <a href="/exercise" class="hover:underline">🏋️‍♀️ Exercise</a>
-    <a href="/spiritual" class="hover:underline">🧘 Spiritual</a>
+{% set current_path = request.url.path %}
+<section class="bg-emerald-50 border-b border-emerald-200 py-2 shadow-sm">
+  <div class="max-w-4xl mx-auto px-4 flex flex-wrap justify-center sm:justify-between gap-3 text-sm font-medium text-emerald-800">
+
+    {% for link in [
+      ('/ai-coach', '🧠 AI Coach'),
+      ('/food-journal', '🥗 Food'),
+      ('/meals', '🍱 Meals'),
+      ('/exercise', '🏋️ Exercise'),
+      ('/spiritual', '🧘 Spiritual')
+    ] %}
+      <a href="{{ link[0] }}"
+         class="px-3 py-1 rounded-full transition
+                {% if current_path == link[0] %}
+                  bg-emerald-200 shadow-sm
+                {% else %}
+                  hover:bg-emerald-100
+                {% endif %}">
+        {{ link[1] }}
+      </a>
+    {% endfor %}
+
   </div>
 </section>
+<br></br>
 {% endif %}

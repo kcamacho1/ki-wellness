@@ -1,11 +1,62 @@
 {% extends "layout.html" %}
 
 {% block content %}
-{% include "partials/AI_dashboard_nav.html" %}
+<div class="max-w-4xl mx-auto p-6 space-y-8 bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-md">
 
-<section class="max-w-2xl mx-auto mt-8 text-center">
-  <h1 class="text-3xl font-papyrus text-forest mb-4">AI health coach</h1>
-  <p class="text-gray-700">This page is under construction. Check back soon for new features and insights!</p>
+  <!-- Header -->
+  <div class="text-center">
+    <h1 class="text-3xl font-bold text-emerald-700" style="font-family: Papyrus, fantasy;">
+      Welcome, {{ summary.get('name', 'Friend') }}
+    </h1>
+    <p class="text-emerald-600 mt-1">Here's your personalized wellness update</p>
+  </div>
+
+  <!-- Wellness Summary -->
+  <section class="bg-white rounded-xl p-4 shadow-inner border">
+    <h2 class="text-xl font-semibold text-emerald-800 mb-4" style="font-family: Papyrus, fantasy;">Today’s Summary</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 text-center gap-4">
+      <div>
+        <p class="text-gray-500">Calories</p>
+        <p class="text-lg font-medium text-emerald-700">{{ summary.get('calories_today', '—') }} kcal</p>
+      </div>
+      <div>
+        <p class="text-gray-500">Sleep</p>
+        <p class="text-lg font-medium text-emerald-700">{{ summary.get('sleep_hours', '—') }} hrs</p>
+      </div>
+      <div>
+        <p class="text-gray-500">Mood</p>
+        <p class="text-lg font-medium text-emerald-700">{{ summary.get('mood', '—') }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Suggestions -->
+  <section class="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+    <h2 class="text-xl font-semibold text-emerald-800 mb-2" style="font-family: Papyrus, fantasy;">Coach Suggestions</h2>
+    <ul class="list-disc list-inside text-gray-700 space-y-1">
+      {% for tip in tips %}
+        <li>{{ tip }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- Ask AI Coach -->
+  <section class="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+    <h2 class="text-xl font-semibold text-emerald-800 mb-2" style="font-family: Papyrus, fantasy;">Ask Your AI Coach</h2>
+    <form method="post" action="/ask-coach" class="space-y-3">
+      <textarea name="question" rows="3" class="w-full p-3 border border-emerald-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="How can I reduce tension in my shoulders?"></textarea>
+      <button type="submit" class="bg-emerald-600 text-white px-5 py-2 rounded-md hover:bg-emerald-700 transition">Get Guidance</button>
+    </form>
+  </section>
+
+<!-- Wellness Navigation Chakra Buttons -->
+<section class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 text-center">
+  <a href="/food-journal" class="rounded-full bg-red-100 text-red-800 py-3 shadow hover:bg-red-200 transition">Food Journal</a>
+  <a href="/meals" class="rounded-full bg-orange-100 text-orange-800 py-3 shadow hover:bg-orange-200 transition">Meal Planner</a>
+  <a href="/exercise" class="rounded-full bg-yellow-100 text-yellow-800 py-3 shadow hover:bg-yellow-200 transition">Exercise</a>
+  <a href="/spiritual" class="rounded-full bg-purple-100 text-purple-800 py-3 shadow hover:bg-purple-200 transition">Spiritual</a>
 </section>
 
+
+</div>
 {% endblock %}

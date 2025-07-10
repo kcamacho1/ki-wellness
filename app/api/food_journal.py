@@ -2,13 +2,21 @@ from fastapi import APIRouter, Request, Form, HTTPException, Path, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.supabase_client import supabase, get_user_supabase
-from app.api.auth import get_current_user
-import httpx
+from app.core.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY
 from app.core.config import SUPABASE_URL, SUPABASE_ANON_KEY
+from app.api.auth import get_current_user
+from pydantic import BaseModel
+import httpx
 import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+class DeleteRequest(BaseModel):
+    ids: list[str]
+
+class CsvUploadRequest(BaseModel):
+    entries: list[dict]
 
 """ Free OpenFood API """
 async def query_openfood(food_name):
@@ -199,3 +207,65 @@ async def delete_entry(request: Request, entry_id: str = Path(...)):
     if resp.status_code != 204:
         raise HTTPException(status_code=resp.status_code, detail=resp.text)
     return {"message": "Entry deleted."}
+
+@router.post("/delete-food-entries")
+async def delete_food_entries(request: Request, req: DeleteRequest):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            for entry_id in req.ids:
+                await client.delete(
+                    f"{SUPABASE_URL}/rest/v1/food_journal",
+                    headers={
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": f"Bearer {token}",
+                    },
+                    params={"id": f"eq.{entry_id}"}
+                )
+        return {"message": "Entries deleted."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.post("/upload-csv-entries")
+async def upload_csv_entries(request: Request, req: CsvUploadRequest):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Fetch user_id from Supabase auth
+    async with httpx.AsyncClient() as client:
+        user_resp = await client.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": f"Bearer {token}",
+            }
+        )
+
+        if user_resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Unable to verify user.")
+
+        user_data = user_resp.json()
+        user_id = user_data.get("id")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Missing user ID")
+
+        # Insert entries with user_id
+        for entry in req.entries:
+            entry["user_id"] = user_id
+            response = await client.post(
+                f"{SUPABASE_URL}/rest/v1/food_journal",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {token}",
+                    "Prefer": "return=representation"
+                },
+                json=entry
+            )
+            print("Upload response:", response.status_code, response.text)
+
+    return {"message": "CSV entries uploaded"}
