@@ -78,3 +78,11 @@ def forgot_password_page(request: Request):
         "SUPABASE_URL": os.getenv("SUPABASE_URL"),
         "SUPABASE_ANON_KEY": os.getenv("SUPABASE_ANON_KEY"),
     })
+
+@router.get("/reset-password", response_class=HTMLResponse)
+def reset_password_form(request: Request):
+    return templates.TemplateResponse("reset-password.html", {
+        "request": request,
+        "SUPABASE_URL": os.getenv("SUPABASE_URL"),
+        "SUPABASE_ANON_KEY": os.getenv("SUPABASE_ANON_KEY"),
+    })
