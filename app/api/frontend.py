@@ -75,4 +75,4 @@ async def spiritual(request: Request):
 @router.get("/ai-coach", response_class=HTMLResponse)
 async def ai_coach(request: Request):
     user = await get_current_user(request)
-    return templates.TemplateResponse("ai-coach.html", {"request": request, "user": user})
+    return templates.TemplateResponse("ai-coach.html", {"request": request, "summary": user})

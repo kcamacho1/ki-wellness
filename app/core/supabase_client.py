@@ -21,3 +21,19 @@ def get_user_supabase(token: str):
     """
     from app.core.config import SUPABASE_URL
     return create_client(SUPABASE_URL, token)
+
+def get_user_profile(user_id: str) -> dict:
+    try:
+        response = supabase.table("Users").select("*").eq("id", user_id).single().execute()
+        return response.data if response.data else {}
+    except Exception as e:
+        print(f"[Supabase] Failed to fetch user: {e}")
+        # fallback mock data for local dev
+        return {
+            "id": user_id,
+            "name": "Demo User",
+            "calories_today": 1550,
+            "sleep_hours": 7.5,
+            "mood": "Neutral",
+            "goals": "energy and tone"
+        }
