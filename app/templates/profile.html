@@ -1,6 +1,58 @@
 {% extends "layout.html" %}
-
 {% block content %}
-  <h2 class="text-2xl mb-4 font-papyrus text-darkgreen">Wellness Profile</h2>
+<h1 class="text-2xl font-bold text-green-600 mb-6 font-papyrus">My Profile</h1>
+<form method="post" action="/profile" class="space-y-8 bg-white p-6 rounded-xl shadow-md">
 
+  <!-- Section: Basic Info -->
+  <div>
+    <h2 class="text-lg font-semibold text-purple-600 mb-2">👤 Basic Info</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-700">Name</label>
+        <input name="name" value="{{ profile.get('name', '') }}" class="input w-full" required>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Date of Birth</label>
+        <input name="dob" type="date" value="{{ profile.get('dob', '') }}" class="input w-full">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Height</label>
+        <input name="height" value="{{ profile.get('height', '') }}" class="input w-full">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Weight</label>
+        <input name="weight" value="{{ profile.get('weight', '') }}" class="input w-full">
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Wellness Goals -->
+  <div>
+    <h2 class="text-lg font-semibold text-purple-600 mb-2">🌱 Wellness Focus</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-700">Physical/Health Goals</label>
+        <textarea name="goals" rows="3" class="input w-full">{{ profile.get('goals', '') }}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-700">Current Ailments</label>
+        <textarea name="ailments" rows="3" class="input w-full">{{ profile.get('ailments', '') }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section: Reflections -->
+  <div>
+    <h2 class="text-lg font-semibold text-purple-600 mb-2">📝 Personal Notes</h2>
+    <div>
+      <label class="block text-sm text-gray-700">Notes</label>
+      <textarea name="notes" rows="4" class="input w-full">{{ profile.get('notes', '') }}</textarea>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="pt-4 text-right">
+    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 shadow">Save Profile</button>
+  </div>
+</form>
 {% endblock %}
