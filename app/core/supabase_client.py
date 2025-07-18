@@ -2,6 +2,7 @@ from supabase import create_client
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+import httpx
 
 # Load .env regardless of import order
 env_path = Path(__file__).parent.parent.parent / ".env"
@@ -37,3 +38,17 @@ def get_user_profile(user_id: str) -> dict:
             "mood": "Neutral",
             "goals": "energy and tone"
         }
+
+async def get_user_id_from_token(token: str) -> str:
+    try:
+        headers = {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {token}",
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(f"{SUPABASE_URL}/auth/v1/user", headers=headers)
+            if resp.status_code == 200:
+                return resp.json().get("id")
+    except Exception as e:
+        print(f"[Auth] Failed to verify token: {e}")
+    return None

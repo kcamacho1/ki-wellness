@@ -1,13 +1,18 @@
+from datetime import datetime
 from fastapi import APIRouter, Request, Form, HTTPException, Path, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.supabase_client import supabase, get_user_supabase
-from app.core.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY
+from app.core.supabase_client import SUPABASE_URL, SUPABASE_ANON_KEY, get_user_id_from_token
 from app.core.config import SUPABASE_URL, SUPABASE_ANON_KEY
 from app.api.auth import get_current_user
+from app.utils.gpt_client import basic_nutrition_prompt
+
+
 from pydantic import BaseModel
 import httpx
 import os
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -17,6 +22,91 @@ class DeleteRequest(BaseModel):
 
 class CsvUploadRequest(BaseModel):
     entries: list[dict]
+
+@router.post("/add-food-entry")
+async def add_food_entry(request: Request, payload: dict = Body(...)):
+    token = request.cookies.get("access_token")
+    user_id = await get_user_id_from_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid or missing token")
+
+    food_name = payload["food_name"]
+    servings = float(payload["servings"])
+    serving_unit = payload["serving_unit"]
+
+    # Step 1: check food_cache
+    cache_resp = supabase.table("food_cache").select("*").eq("food_name", food_name).single().execute()
+    nutrients = cache_resp.data if cache_resp.data else None
+
+    # Step 2: try OpenFoodFacts
+    if not nutrients:
+        nutrients = await query_openfood(food_name)
+
+    # Step 3: fallback to GPT
+    if not nutrients:
+        nutrients = await query_gpt_estimate(food_name)
+
+    if not nutrients:
+        raise HTTPException(status_code=404, detail="Nutrient data not found.")
+
+    # Optionally store in food_cache
+    if not cache_resp.data:
+        supabase.table("food_cache").insert({**{"food_name": food_name}, **nutrients}).execute()
+
+    # Save to food_journal
+    entry = {
+        "user_id": user_id,
+        "date_logged": datetime.utcnow().date().isoformat(),
+        "food_name": food_name,
+        "meal_type": "unspecified",
+        "servings": servings,
+        "serving_unit": serving_unit,
+        "calories": round(servings * nutrients.get("calories", 0)),
+        "protein": round(servings * nutrients.get("protein", 0), 2),
+        "carbs": round(servings * nutrients.get("carbs", 0), 2),
+        "fat": round(servings * nutrients.get("fat", 0), 2),
+        **{k: round(servings * nutrients.get(k, 0), 2)
+           for k in nutrients if k.startswith("vitamin_") or k in ["iron", "zinc", "magnesium", "potassium"]}
+    }
+
+    supabase.table("food_journal").insert(entry).execute()
+    return {"message": "Food entry added."}
+
+# GPT fallback
+async def query_gpt_estimate(food_name: str):
+    try:
+        prompt = f"Estimate basic nutrition (calories, protein, carbs, fat) for 100g of {food_name} in JSON with those 4 keys only."
+        return await basic_nutrition_prompt(prompt)
+    except Exception as e:
+        print(f"[GPT] fallback error: {e}")
+        return None
+
+# OpenFoodFacts
+async def query_openfood(food_name):
+    url = "https://world.openfoodfacts.org/cgi/search.pl"
+    params = {
+        "search_terms": food_name,
+        "search_simple": 1,
+        "action": "process",
+        "json": 1,
+        "fields": "product_name,nutriments"
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, params=params)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data["count"] == 0:
+            return None
+        nutriments = data["products"][0].get("nutriments", {})
+        return {
+            "calories": nutriments.get("energy-kcal_100g", 0),
+            "protein": nutriments.get("proteins_100g", 0),
+            "carbs": nutriments.get("carbohydrates_100g", 0),
+            "fat": nutriments.get("fat_100g", 0),
+            # Add more micros if needed
+        }
+
 
 """ Free OpenFood API """
 async def query_openfood(food_name):
@@ -63,33 +153,6 @@ async def query_openfood(food_name):
             "manganese": nutriments.get("manganese_100g", 0),
         }
 
-"""Nutritionix API is more reliable for US foods, so we use it as a fallback"""
-async def query_nutritionix(food_name):
-    url = "https://trackapi.nutritionix.com/v2/natural/nutrients"
-    headers = {
-        "x-app-id": os.getenv("NUTRITIONIX_APP_ID"),
-        "x-app-key": os.getenv("NUTRITIONIX_APP_KEY"),
-        "Content-Type": "application/json"
-    }
-    body = {"query": food_name}
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(url, headers=headers, json=body)
-        if resp.status_code != 200:
-            return None
-        data = resp.json()
-        if not data.get("foods"):
-            return None
-        f = data["foods"][0]
-        return {
-            "calories": f["nf_calories"],
-            "protein": f["nf_protein"],
-            "carbs": f["nf_total_carbohydrate"],
-            "fat": f["nf_total_fat"],
-            # Micronutrients may be sparse here
-            "vitamin_a": f.get("full_nutrients", [{}])[0].get("value", 0),
-            "vitamin_c": f.get("full_nutrients", [{}])[0].get("value", 0),
-            # Add other micros as needed
-        }
 
 
 @router.get("/food-journal", response_class=HTMLResponse)
@@ -269,3 +332,12 @@ async def upload_csv_entries(request: Request, req: CsvUploadRequest):
             print("Upload response:", response.status_code, response.text)
 
     return {"message": "CSV entries uploaded"}
+
+async def query_gpt_estimate(food_name: str) -> dict:
+    try:
+        prompt = f"Estimate basic nutrition (calories, protein, carbs, fat) for 100g of {food_name} in JSON format with keys: calories, protein, carbs, fat."
+        result = await basic_nutrition_prompt(prompt)
+        return result if result else {}
+    except Exception as e:
+        print(f"[GPT] Fallback failed: {e}")
+        return {}

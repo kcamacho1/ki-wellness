@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.api import auth, frontend, food_journal, early_access, ai_coach, spiritual, exercise, meals
+from app.api import auth, frontend, food_journal, early_access, ai_coach, profile, spiritual, exercise, meals
+from starlette.middleware.sessions import SessionMiddleware
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,6 +22,7 @@ app.include_router(frontend.router)
 app.include_router(early_access.router)
 
 # AI Health Coach Routers
+app.include_router(profile.router)
 app.include_router(ai_coach.router)
 app.include_router(spiritual.router)
 app.include_router(exercise.router)

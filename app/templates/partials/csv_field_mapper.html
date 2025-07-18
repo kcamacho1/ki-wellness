@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-xl font-bold mb-4">Map Your CSV Fields</h2>
+<form method="post" action="/map-fields" enctype="multipart/form-data">
+    <table class="table-auto w-full border">
+        <thead>
+            <tr>
+                <th class="px-4 py-2 border">App Field</th>
+                <th class="px-4 py-2 border">Your CSV Column</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for field in required_fields %}
+            <tr>
+                <td class="px-4 py-2 border">{{ field }}</td>
+                <td class="px-4 py-2 border">
+                    <select name="mapping[{{ field }}]" class="w-full p-2 border rounded">
+                        <option value="">-- Select Column --</option>
+                        {% for col in csv_columns %}
+                        <option value="{{ col }}">{{ col }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="mt-4">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Confirm Mapping</button>
+    </div>
+</form>
+{% endblock %}
