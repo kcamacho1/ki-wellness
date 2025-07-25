@@ -2,75 +2,58 @@
 
 {% block content %}
 
-<section class="max-w-3xl mx-auto px-4 py-10 bg-white shadow rounded-lg space-y-10">
+<!-- Featured Coaches -->
+<div class="space-y-6">
+  <h2 class="text-xl font-semibold text-forest text-center">🧑‍⚕️ Meet Our Coaches</h2>
+  <div class="grid md:grid-cols-2 gap-6">
 
-  <!-- Intro -->
-  <div class="text-center space-y-3">
-    <h1 class="text-3xl font-papyrus text-forest">🤝 1-on-1 Coaching with Kristina</h1>
-    <p class="text-gray-700 text-sm max-w-prose mx-auto">
-      A more personal and supported wellness journey. Get tailored guidance with live sessions—your goals, your pace.
-    </p>
-  </div>
-
-  <hr class="border-t border-green-200">
-
-  <!-- What’s Included -->
-  <div class="space-y-4">
-    <h2 class="text-xl font-semibold text-forest text-center">🌿 What You’ll Receive</h2>
-    <ul class="list-disc list-inside text-gray-700 text-sm space-y-2 max-w-prose mx-auto">
-      <li>Answers to your specific wellness questions</li>
-      <li>Personalized meal + exercise plans</li>
-      <li>Spiritual practices for inner balance</li>
-      <li>Education around nutrition and fitness tailored to you</li>
-    </ul>
-  </div>
-
-  <hr class="border-t border-green-200">
-
-  <!-- Profile with Certifications -->
-  <div class="flex flex-col md:flex-row items-center gap-6">
-    <img src="/static/images/kristina.jpg" alt="Kristina Camacho"
-         class="rounded-full w-32 h-32 object-cover shadow-md">
-    <div class="text-sm text-gray-700 text-center md:text-left space-y-1">
-      <h3 class="text-lg font-semibold text-forest">Kristina Camacho</h3>
-      <p>Certified Nutrition Coach · Personal Trainer</p>
-      <p>Project Manager · AI Wellness Builder</p>
-      <p class="mt-2"><strong>Rate:</strong> $25/hour</p>
-
-      <!-- Certifications Inline -->
-      <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-3 mt-4">
-        <img src="/static/images/2025nutritionistCert.png" alt="Nutrition Certification"
-             class="rounded shadow w-full sm:w-40">
-        <img src="/static/images/2025PTcert.png" alt="Personal Trainer Certification"
-             class="rounded shadow w-full sm:w-40">
+    <!-- Coach Card -->
+    <div onclick="openCoachModal('Kristina Camacho')" class="cursor-pointer bg-gray-50 border hover:shadow-lg transition rounded-lg p-4 flex gap-4 items-center">
+      <img src="/static/images/kristina.jpg" alt="Kristina Camacho" class="w-24 h-24 rounded-full object-cover shadow">
+      <div>
+        <h3 class="text-lg font-semibold text-forest">Kristina Camacho</h3>
+        <p class="text-sm text-gray-600">Nutritionist · Personal Trainer · AI Wellness Coach</p>
+        <p class="text-xs mt-1 text-green-700">$25/hour · Book now</p>
       </div>
     </div>
+
+    <!-- Future coach card -->
+    <div class="bg-white border rounded-lg p-4 flex items-center justify-center text-gray-400 italic">
+      Coach profile coming soon
+    </div>
+
   </div>
+</div>
 
-  <hr class="border-t border-green-200">
-
-  <!-- Booking -->
-  <div class="text-center space-y-2">
-    <h2 class="text-lg font-semibold text-forest">📅 Schedule Your Session</h2>
-    <p class="text-sm text-gray-600">Pick a time that fits your flow and let’s meet.</p>
-    <div class="calendly-inline-widget"
-         data-url="https://calendly.com/ki-wellness/human-health-coach"
-         style="min-width:320px;height:630px;"></div>
-    <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
-  </div>
-
-  <hr class="border-t border-green-200">
-
-  <!-- Footer note -->
-  <div class="text-center text-xs text-gray-500 space-y-2">
-    <p>This page will soon feature a full directory of certified wellness coaches.</p>
-    <p>
-      👩‍⚕️ Want to be listed as a wellness advisor?
-      <a href="mailto:hello@kiwellness.org" class="text-green-700 underline hover:text-green-900">
-        Email hello@kiwellness.org to be vetted.
+<!-- Coach Modal -->
+<div id="coachModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+    <button onclick="closeCoachModal()" class="absolute top-2 right-2 text-gray-500 hover:text-red-600">✖</button>
+    <h3 class="text-xl font-semibold text-forest mb-2">Kristina Camacho</h3>
+    <p class="text-sm text-gray-700 mb-2">Certified in Nutrition Coaching and Personal Training with a holistic, tech-savvy approach to healing and health optimization.</p>
+    <img src="/static/images/2025nutritionistCert.png" alt="Cert 1" class="w-32 inline-block mr-2 rounded shadow">
+    <img src="/static/images/2025PTcert.png" alt="Cert 2" class="w-32 inline-block rounded shadow">
+    <div class="mt-4">
+      <a href="https://calendly.com/ki-wellness/human-health-coach" target="_blank"
+         class="inline-block bg-green-600 text-white text-sm px-4 py-2 rounded hover:bg-green-700">
+        📅 Book with Kristina
       </a>
-    </p>
+    </div>
   </div>
-</section>
+</div>
+
+<script>
+  function openCoachModal(name) {
+    document.getElementById("coachModal").classList.remove("hidden");
+    // Extend: You could dynamically load content based on `name`
+  }
+
+  function closeCoachModal() {
+    document.getElementById("coachModal").classList.add("hidden");
+  }
+</script>
+
+
+
 
 {% endblock %}
