@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from app.core.supabase_client import supabase, get_user_id_from_token
+from datetime import date
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -27,8 +28,6 @@ async def view_or_create_profile(request: Request):
     })
 
 
-
-
 @router.post("/profile")
 async def update_profile(
     request: Request,
@@ -45,7 +44,15 @@ async def update_profile(
     if not user_id:
         raise HTTPException(status_code=401)
 
+    # Clean/convert dob field
+    dob = dob.strip()
+    try:
+        dob = date.fromisoformat(dob) if dob else None
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+
     update_data = {
+        "user_id": user_id,  # Required for RLS and upsert
         "name": name,
         "dob": dob,
         "weight": weight,
@@ -55,12 +62,11 @@ async def update_profile(
         "notes": notes
     }
 
-    # Ensure the record exists, else insert first
-    existing = supabase.table("profiles").select("id").eq("user_id", user_id).execute()
-    if existing.data:
-        supabase.table("profiles").update(update_data).eq("user_id", user_id).execute()
-    else:
-        update_data["user_id"] = user_id
-        supabase.table("profiles").insert(update_data).execute()
+    try:
+        # Use upsert for simplicity and RLS safety
+        supabase.table("profiles").upsert(update_data, on_conflict="user_id").execute()
+    except Exception as e:
+        print(f"[Profile] Error updating profile: {e}")
+        raise HTTPException(status_code=500, detail="Could not update profile")
 
     return RedirectResponse("/profile", status_code=302)
