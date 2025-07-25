@@ -1,48 +1,59 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-2">
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-4">
   <h1 class="text-3xl font-papyrus text-forest text-center mb-4">
     🌿 About Ki Wellness
   </h1>
   
   <p class="text-lg text-gray-700 leading-relaxed text-center">
-    Ki Wellness exists to make holistic health accessible, affordable, and empowering for everyone. 
-    Whether you prefer working with a compassionate human health coach or our friendly AI assistant, 
-    you'll find tools and support to nurture mind, body, and spirit.
+    Ki Wellness exists to make holistic health personalized, accessible and empowering for <i>everyone.</i>
+  </p>
+  <p class="text-center pt-4">
+    ✨ ✨ ✨
+  </p>
+  <p class="text-md text-gray-700 leading-relaxed text-center pt-6">
+    Ki <i>(aka Chi, Qi or Key)</i> is known as the life force energy that flows through all living things and we believe that <i>everyone</i> has the right to access tools that help them take hold of their key to simplified health and wellness.
+  </p>
+  <p class="text-center pt-4">
+    ✨ ✨ ✨
+  </p>
+  <p class="text-md text-gray-700 leading-relaxed text-center pt-6">
+    Whether you prefer working with a human health coach or our friendly AI assistant, 
+    you'll find simple tools tailored to your unique needs to help you stay engaged and on track.
   </p>
 </section>
 
-<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-  <div class="bg-white p-6 rounded-lg shadow space-y-4">
-    <h2 class="text-2xl font-papyrus text-forest">
-      💡 Why We Exist
-    </h2>
+<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-1 gap-6 mb-4">
+  <div class="bg-white p-6 grid md:grid-cols-2 gap-6 rounded-lg shadow">
+    
+    <!-- Left Column: Text -->
+    <div>
+      <h2 class="text-2xl font-papyrus text-forest text-center mb-4">
+        ✨ App Features ✨
+      </h2>
+      <ul class="text-left list-none space-y-2 text-gray-700 pl-2">
+        <li>📊 Track meals and nutrition with your Food Journal</li>
+        <li>🧠 Get AI prompts, suggestions, or analysis tailored to you!</li>
+        <li>📈 Visualize progress with helpful graphs</li>
+        <li>🥗 Meal suggestions that fit your life and goals</li>
+        <li>📅 Reminders to keep you on track</li>
+        <li>🙋‍♀️ Connect with human coaches anytime</li>
+      </ul>
+    </div>
 
-    <p class="text-gray-700">
-      We believe everyone deserves the tools to feel well, no matter their income or background. 
-      Our platform combines AI-powered suggestions with the option to work with real coaches when you need personal guidance.
-    </p>
-    <p class="text-gray-700">
-      Subscriptions help fund free access for those in need, research into better health practices, and the vision of creating a retreat center for rest, learning, and community care.
-    </p>
-  </div>
+    <!-- Right Column: Image -->
+    <div class="flex justify-end items-center">
+      <img src="/static/images/AI-analysis-food.png" 
+            alt="Ki Wellness App Screenshot"
+           class="w-[300px] h-auto rounded-lg shadow cursor-pointer border-2 border-forest"
+           onclick="openPopup(this.src)">
+    </div>
 
-  <div class="bg-white p-6 rounded-lg shadow space-y-4">
-    <h2 class="text-2xl font-papyrus text-forest">
-      ✨ App Features ✨
-    </h2>
-    <ul class="list-disc list-none space-y-2 text-gray-700">
-      <li>📊 Track meals and nutrition with your Food Journal</li>
-      <li>📈 Visualize progress with helpful graphs</li>
-      <li>🥗 Plan meals that fit your lifestyle</li>
-      <li>🧠 Get AI prompts, suggestions, or analysis each month</li>
-      <li>🙋‍♀️ Connect with human coaches anytime</li>
-    </ul>
   </div>
 </section>
 
-<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6">
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-2">
   <h2 class="text-2xl font-papyrus text-forest text-center mb-4">🌱 Plans for Everyone</h2>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -95,36 +106,67 @@
   </div>
 </section>
 
-<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6 text-center">
-  <h2 class="text-2xl font-papyrus text-forest mb-4">💖 Where Your Subscription Goes</h2>
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-4 text-center">
+  <h2 class="text-2xl font-papyrus text-forest mb-4 pb-2 pt-2">💸 💖 ~ Know where your money goes ~ 💖 💸 </h2>
   <p class="text-lg text-gray-700 leading-relaxed">
-    Every subscription helps keep Ki Wellness free or low-cost for those in need.
+    Your purchase create a positive financial impact allowing Ki Wellness to remain free and low-cost for everyone in need of personal health support or advice.
+  </p>
+  <p>
     Funds go toward:
   </p>
-  <ul class="list-disc list-inside text-left mt-4 text-gray-700 space-y-1">
-    <li>🌍 Providing free plans for low-income users</li>
+  <ul class="list-disc list-none text-center mt-4 text-gray-700 space-y-1 pt-4">
+    <li>🌍 Spreading Awareness in personal Health & Wellness Education</li>
     <li>🤝 Sponsoring volunteer health coaching sessions</li>
-    <li>📊 Supporting research into better wellness practices</li>
-    <li>🏡 Building our vision of a retreat and education center</li>
+    <li>* * *</li>
+    <li>💻 Mobile app development and Accessiblity updates</li>
+    <li>⚡️ Optimizing your personal AI health coach</li>
+    <li>* * *</li>
+    <li>📊 Supporting our end goal: </li>
+    <li>🔬 Researching patterns in health and wellness to help all communities combat chronic concerns</li>
+    <li>with fair exchange of pay to the consumer for anonymized personal data used in research</li>
+
   </ul>
 </section>
 
 <section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow text-center space-y-4">
   <h2 class="text-2xl font-papyrus text-forest mb-2">🌿 Learn & Connect</h2>
-  <p class="text-lg text-gray-700">
-    Explore more resources, read our blog, and connect with us:
+  <p class="text-lg text-gray-700 mb-4">
+    Dive deeper into wellness, stay inspired, and connect with our team:
   </p>
-  <div class="flex flex-col md:flex-row justify-center gap-4 mt-4">
+  <div class="flex flex-col md:flex-row flex-wrap gap-4 justify-start md:justify-center">
+
     <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer"
-       class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
-      📖 Visit Our Medium Blog
+       class="flex items-center gap-2 bg-green-600 text-white font-medium px-4 py-2 rounded shadow hover:bg-green-700 transition">
+      <span>📖</span> <span>Blog: Nutrition & Mind-Body Tips</span>
     </a>
-    <a href="#" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
-      📱 Follow Us on Social Media
+
+    <a href="https://www.instagram.com/ki.wellness.ai/" target="_blank" rel="noopener noreferrer"
+       class="flex items-center gap-2 bg-green-600 text-white font-medium px-4 py-2 rounded shadow hover:bg-green-700 transition">
+      <span>📱</span> <span>Follow us on Instagram</span>
     </a>
-    <a href="mailto:hello@kiwellness.org" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
-      📩 Email to say hello or Sponsor
+
+    <a href="mailto:hello@kiwellness.org" class="flex items-center gap-2 bg-green-600 text-white font-medium px-4 py-2 rounded shadow hover:bg-green-700 transition">
+      <span>📩</span> <span>Say Hello or Become a Sponsor</span>
     </a>
+
   </div>
 </section>
+
+<!-- Image Popup -->
+<div id="imagePopup" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50" onclick="closePopup()">
+  <img id="popupImage" src="" class="max-w-[90%] max-h-[90%] rounded-lg shadow-lg border-4 border-white">
+</div>
+
+<script>
+  function openPopup(src) {
+    const popup = document.getElementById("imagePopup");
+    const img = document.getElementById("popupImage");
+    img.src = src;
+    popup.classList.remove("hidden");
+  }
+
+  function closePopup() {
+    document.getElementById("imagePopup").classList.add("hidden");
+  }
+</script>
 {% endblock %}
