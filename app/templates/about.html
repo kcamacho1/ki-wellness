@@ -1,8 +1,11 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6">
-  <h1 class="text-3xl font-papyrus text-forest text-center mb-4">🌿 About Ki Wellness</h1>
+<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-2">
+  <h1 class="text-3xl font-papyrus text-forest text-center mb-4">
+    🌿 About Ki Wellness
+  </h1>
+  
   <p class="text-lg text-gray-700 leading-relaxed text-center">
     Ki Wellness exists to make holistic health accessible, affordable, and empowering for everyone. 
     Whether you prefer working with a compassionate human health coach or our friendly AI assistant, 
@@ -10,9 +13,12 @@
   </p>
 </section>
 
-<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
   <div class="bg-white p-6 rounded-lg shadow space-y-4">
-    <h2 class="text-2xl font-papyrus text-forest">💡 Why We Exist</h2>
+    <h2 class="text-2xl font-papyrus text-forest">
+      💡 Why We Exist
+    </h2>
+
     <p class="text-gray-700">
       We believe everyone deserves the tools to feel well, no matter their income or background. 
       Our platform combines AI-powered suggestions with the option to work with real coaches when you need personal guidance.
@@ -21,48 +27,70 @@
       Subscriptions help fund free access for those in need, research into better health practices, and the vision of creating a retreat center for rest, learning, and community care.
     </p>
   </div>
+
   <div class="bg-white p-6 rounded-lg shadow space-y-4">
-    <h2 class="text-2xl font-papyrus text-forest">✨ What You Can Do</h2>
-    <ul class="list-disc list-inside space-y-2 text-gray-700">
-      <li>Track meals and nutrition with your Food Journal</li>
-      <li>Visualize progress with helpful graphs</li>
-      <li>Plan meals that fit your lifestyle</li>
-      <li>Get AI prompts, suggestions, or analysis each month</li>
-      <li>Connect with human coaches anytime</li>
+    <h2 class="text-2xl font-papyrus text-forest">
+      ✨ App Features ✨
+    </h2>
+    <ul class="list-disc list-none space-y-2 text-gray-700">
+      <li>📊 Track meals and nutrition with your Food Journal</li>
+      <li>📈 Visualize progress with helpful graphs</li>
+      <li>🥗 Plan meals that fit your lifestyle</li>
+      <li>🧠 Get AI prompts, suggestions, or analysis each month</li>
+      <li>🙋‍♀️ Connect with human coaches anytime</li>
     </ul>
   </div>
 </section>
 
 <section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow mb-6">
-  <h2 class="text-2xl font-papyrus text-forest text-center mb-4">🌱 Plans for Every Journey</h2>
+  <h2 class="text-2xl font-papyrus text-forest text-center mb-4">🌱 Plans for Everyone</h2>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
     <!-- Free Plan -->
-    <div class="border rounded-lg p-4 text-center">
-      <h3 class="text-xl font-semibold text-forest mb-2">Free Plan</h3>
-      <ul class="space-y-1 text-gray-700">
-        <li>✅ Manual journaling</li>
-        <li>✅ 10 AI credits/month</li>
-        <li>✅ Save up to 7 meals</li>
-        <li>✅ Upgrade anytime</li>
+    <div class="border rounded-lg p-4">
+      <h3 class="text-xl font-semibold text-forest mb-5 text-center">
+        Explore
+      </h3>
+      <h4 class="text-xl font-semibold text-center text-forest font-papyrus">
+        free forever
+      </h4>
+      <ul class="space-y-1 text-gray-700 text-center list-none pt-10">
+        <li>10 AI Credits</li>
+        <li>* * *</li>
+        <li>Same access to All features</li>
       </ul>
     </div>
-    <!-- Starter Plan -->
+
+    <!-- Subscription Plan -->
     <div class="border rounded-lg p-4 text-center">
-      <h3 class="text-xl font-semibold text-forest mb-2">$2 Starter</h3>
-      <ul class="space-y-1 text-gray-700">
-        <li>✅ 100 AI credits/month</li>
-        <li>✅ Unlimited meal entries</li>
-        <li>✅ Recipe suggestions</li>
+      <h3 class="text-xl font-semibold text-forest mb-5 text-center">
+        Optimize
+      </h3>
+      <h4 class="text-xl font-semibold text-center text-forest font-papyrus">
+        $2 month
+      </h4>
+      <ul class="space-y-1 text-gray-700 text-center list-none pt-10">
+        <li>100 AI Credits</li>
+        <li>* * *</li>
+        <li>Worry free AI access monthly</li>
       </ul>
     </div>
-    <!-- Pro Plan -->
+
+    <!-- Pay as you Go Plan -->
     <div class="border rounded-lg p-4 text-center">
-      <h3 class="text-xl font-semibold text-forest mb-2">$5 Pro</h3>
-      <ul class="space-y-1 text-gray-700">
-        <li>✅ 300 AI credits/month</li>
-        <li>✅ Priority AI responses (GPT-4)</li>
-        <li>✅ Early access to new features</li>
+      <h3 class="text-xl font-semibold text-forest mb-5 text-center">
+        Analyze
+      </h3>
+      <h4 class="text-xl font-semibold text-center text-forest font-papyrus">
+        $1 one-time
+      </h4>
+      <ul class="space-y-1 text-gray-700 text-center list-none p-2">
+        <li class="pt-6">Add 50 AI Credits on Demand</li>
+        <li>* * *</li>
+        <li>AI analysis when you need it</li>
       </ul>
+    </div>
+
     </div>
   </div>
 </section>
@@ -94,7 +122,7 @@
     <a href="#" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
       📱 Follow Us on Social Media
     </a>
-    <a href="#" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
+    <a href="mailto:hello@kiwellness.org" class="bg-green-600 text-white font-semibold px-4 py-2 rounded hover:bg-green-700 transition">
       📩 Email to say hello or Sponsor
     </a>
   </div>
