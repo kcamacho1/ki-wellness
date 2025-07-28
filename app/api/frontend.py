@@ -13,14 +13,12 @@ async def read_root(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
 
-
 @router.get("/profile", response_class=HTMLResponse)
 async def profile(request: Request):
     user = await get_current_user(request)
     if not user:
         return RedirectResponse("/login")
     return templates.TemplateResponse("profile.html", {"request": request, "user": user, "profile": user})
-
 
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request):
@@ -29,12 +27,10 @@ async def settings(request: Request):
         return RedirectResponse("/login")
     return templates.TemplateResponse("settings.html", {"request": request, "user": user})
 
-
 @router.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("about.html", {"request": request, "user": user})
-
 
 @router.get("/resources", response_class=HTMLResponse)
 async def resources(request: Request):
@@ -54,9 +50,18 @@ async def forgot_password(request: Request):
 async def reset_password_form(request: Request):
     return templates.TemplateResponse("reset-password.html", {"request": request})
 
+@router.get("/privacy-policy", name="homepage", response_class=HTMLResponse)
+async def privacy_policy(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("privacy-policy.html", {"request": request, "user": user})
+
+@router.get("/tos", name="homepage", response_class=HTMLResponse)
+async def tos(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("tos.html", {"request": request, "user": user})
 
 
-# AI Coaching Dashboard Routes
+# AI Coaching Dashboard PROTECTED Routes
 @router.get("/meals", response_class=HTMLResponse)
 async def meals(request: Request):
     user = await get_current_user(request)
