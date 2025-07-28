@@ -1,58 +1,126 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-<section class="max-w-3xl mx-auto text-center bg-white p-6 rounded-lg shadow mb-6">
-  <h1 class="text-3xl font-bold text-green-800 font-papyrus mb-2">🌿 Free Resources</h1>
-  <p class="text-lg text-gray-700">
-    Download guides and explore practical health & fitness tools created to empower you.
+<section class="max-w-6xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-bold text-green-800 font-papyrus text-center mb-4">🌿 Wellness Resources</h1>
+  <p class="text-center text-gray-700 text-lg mb-10">
+    Organized tools and trusted support to nourish your <strong>mind</strong>, <strong>body</strong>, and <strong>spirit</strong>.
   </p>
-</section>
 
-<section class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-  {% set resources = [
+  {% set sections = [
     {
-      "title": "7-Day Meal Tracker",
-      "href": "/static/documents/7daymealtracker.pdf",
-      "img": "/static/documents/7daymealtracker.png",
-      "desc": "A printable meal and mood tracker to support healthy routines."
+      "title": "🧠 Mind",
+      "resources": [
+        {
+          "title": "Meditation for Beginners",
+          "href": "/static/documents/meditationguide.pdf",
+          "img": "/static/documents/meditationguide.png",
+          "desc": "Learn to calm your mind and build presence through meditation.",
+          "type": "pdf"
+        },
+        {
+          "title": "7 Cups – Peer Support",
+          "href": "https://www.7cups.com",
+          "img": "/static/public/resources/7cups-logo-text-tile.png",
+          "desc": "Free chat with trained listeners when you need someone to talk to.",
+          "type": "link"
+        },
+        {
+          "title": "988 Crisis Lifeline",
+          "href": "https://988lifeline.org",
+          "img": "/static/public/resources/988-logo-stacked-navy.png",
+          "desc": "24/7 support for anyone in emotional distress or suicidal crisis.",
+          "type": "link"
+        }
+      ]
     },
     {
-      "title": "Home Workout Plan",
-      "href": "/static/documents/homeworkoutplan.pdf",
-      "img": "/static/documents/homeworkoutplan.png",
-      "desc": "A no-equipment plan to keep you active at home or on the go."
+      "title": "💪 Body",
+      "resources": [
+        {
+          "title": "7-Day Meal Tracker",
+          "href": "/static/documents/7daymealtracker.pdf",
+          "img": "/static/documents/7daymealtracker.png",
+          "desc": "Track meals, moods, water, and energy across 7 days.",
+          "type": "pdf"
+        },
+        {
+          "title": "Home Workout Plan",
+          "href": "/static/documents/homeworkoutplan.pdf",
+          "img": "/static/documents/homeworkoutplan.png",
+          "desc": "No-equipment workouts you can do anywhere.",
+          "type": "pdf"
+        },
+        {
+          "title": "Posture Guide",
+          "href": "/static/documents/posture-guide.png",
+          "img": "/static/documents/posture-guide.png",
+          "desc": "No-equipment workouts you can do anywhere.",
+          "type": "pdf"
+        }
+      ]
     },
     {
-      "title": "Meditation for Beginners",
-      "href": "/static/documents/meditationguide.pdf",
-      "img": "/static/documents/meditationguide.png",
-      "desc": "Foundational tips and guidance for starting meditation practice."
+      "title": "🕊️ Spirit",
+      "resources": [
+        {
+          "title": "Cultivate Inner Calm and Clarity",
+          "href": "https://medium.com/@ki_wellness",
+          "img": "/static/public/resources/inner-calm.png",
+          "desc": "Spiritual health — the sense of purpose, inner peace, and connection to something greater—starts with small practices.",
+          "type": "https://medium.com/@ki_wellness/3-daily-practices-to-cultivate-inner-calm-and-clarity-d07b91b7a6b8"
+        },
+        {
+          "title": "Mindfulness Is Not Meditation",
+          "href": "https://medium.com/@ki_wellness",
+          "img": "/static/public/resources/calm-rocks.jpg",
+          "desc": "You don’t need a yoga mat or silence to start being mindful.",
+          "type": "https://medium.com/@ki_wellness/mindfulness-is-not-meditation-heres-what-it-really-means-071b6c6ad0ef"
+        },
+        {
+          "title": "Headspace App",
+          "href": "https://www.headspace.com",
+          "img": "/static/public/resources/headspace-logo.svg",
+          "desc": "Guided meditations, sleep tools, and spiritual reflections.",
+          "type": "link"
+        }
+      ]
     }
   ] %}
 
-  {% for item in resources %}
-  <div class="bg-white border border-green-200 rounded-lg shadow p-4 flex flex-col items-center text-center space-y-4 hover:shadow-md transition">
-    <img src="{{ item.img }}" alt="{{ item.title }}" class="rounded w-full h-auto" />
-    <h3 class="text-xl font-bold text-green-800 font-papyrus">{{ item.title }}</h3>
-    <p class="text-sm text-gray-700">{{ item.desc }}</p>
-    <a href="{{ item.href }}" target="_blank" rel="noopener noreferrer"
-       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
-      Download PDF
-    </a>
-  </div>
+  {% for section in sections %}
+  <section class="mb-12">
+    <h2 class="text-2xl font-semibold text-forest mb-6">{{ section.title }}</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for res in section.resources %}
+      <div class="bg-white border border-green-200 rounded-lg shadow hover:shadow-md transition p-4 flex flex-col h-full">
+        {% if res.img %}
+          <img src="{{ res.img }}" alt="{{ res.title }}" class="rounded mb-3 w-full h-40 object-cover">
+        {% endif %}
+        <h3 class="text-lg font-bold text-green-800 font-papyrus">{{ res.title }}</h3>
+        <p class="text-sm text-gray-700 mt-1 flex-grow">{{ res.desc }}</p>
+        <a href="{{ res.href }}" target="_blank" rel="noopener noreferrer"
+           class="mt-4 inline-block text-sm text-white bg-green-600 px-4 py-2 rounded hover:bg-green-700 text-center">
+          {% if res.type == "pdf" %}📥 Download PDF{% else %}🔗 Visit Resource{% endif %}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
   {% endfor %}
-</section>
 
-<section class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow text-center">
-  <h2 class="text-2xl font-bold text-green-800 font-papyrus mb-2">📝 More Articles & FAQs</h2>
-  <p class="text-lg text-gray-700 mb-4">
-    For deeper dives, practical tips, and frequently asked questions, visit our Medium page.
-  </p>
-  <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer"
-     class="inline-block bg-green-600 text-white font-semibold px-6 py-3 rounded hover:bg-green-700 transition">
-    Visit Blog on Medium
-  </a>
+  <!-- Blog -->
+  <section class="text-center">
+    <h2 class="text-xl font-semibold text-forest mb-2">📝 Blog & Deeper Learning</h2>
+    <p class="text-gray-700 text-sm mb-3">
+      Articles, inspiration, and wellness insights await on our Medium page.
+    </p>
+    <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer"
+       class="inline-block text-sm text-white bg-green-600 px-6 py-2 rounded hover:bg-green-700 transition">
+      📖 Visit Blog
+    </a>
+  </section>
 </section>
-
 {% endblock %}
+
+

@@ -21,7 +21,7 @@ app.include_router(auth.router)
 app.include_router(frontend.router)
 app.include_router(early_access.router)
 
-# AI Health Coach Routers
+# AI Health Coach PROTECTED Routers
 app.include_router(profile.router)
 app.include_router(ai_coach.router)
 app.include_router(spiritual.router)

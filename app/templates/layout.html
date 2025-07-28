@@ -72,6 +72,35 @@
     {% block content %}{% endblock %}
   </main>
 </div>
+<footer class="bg-white mt-10 border-t border-green-100 text-center text-xs text-gray-500 py-6 space-y-2">
+
+  <div class="flex justify-center gap-6 text-gray-600 text-base pt-2">
+    <p>Socials</p>
+      <a href="https://www.instagram.com/ki.wellness.ai/" target="_blank" rel="noopener noreferrer" class="w-5 h-5 inline" title="Instagram">
+        <img src="/static/public/inst-icon.svg" /></a>
+      <a href="https://medium.com/@ki_wellness" target="_blank" rel="noopener noreferrer" class="w-5 h-5 inline" title="Medium"><img src="/static/public/medium-icon.svg" /></a>
+      <a href="mailto:hello@kiwellness.org" class="w-5 h-5 inline" title="Email">
+        <img src="/static/public/email-icon.png" /></a>
+  </div>
+
+  <div class="flex justify-center gap-4 text-sm">
+    <a href="/privacy" class="text-green-700 underline hover:text-green-900">Privacy Policy</a>
+    <span>&middot;</span>
+    <a href="/terms" class="text-green-700 underline hover:text-green-900">Terms of Service</a>
+  </div>
+
+  <p class="text-gray-400 text-xs pt-1">
+    &copy; {{ current_year }} Ki Wellness. All rights reserved.
+  </p>
+</footer>
+
+
+<script>
+  // Set current year in footer
+  document.addEventListener("DOMContentLoaded", function() {
+    const currentYear = new Date().getFullYear();
+    document.querySelectorAll('.current-year').forEach(el => el.textContent = currentYear);
+  });
 
 <!-- password reset redirect -->
   <script type="module">
