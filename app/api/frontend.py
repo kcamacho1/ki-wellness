@@ -50,15 +50,20 @@ async def forgot_password(request: Request):
 async def reset_password_form(request: Request):
     return templates.TemplateResponse("reset-password.html", {"request": request})
 
-@router.get("/privacy-policy", name="homepage", response_class=HTMLResponse)
+@router.get("/privacy-policy", name="pravcy-policy", response_class=HTMLResponse)
 async def privacy_policy(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("privacy-policy.html", {"request": request, "user": user})
 
-@router.get("/tos", name="homepage", response_class=HTMLResponse)
+@router.get("/tos", name="tos", response_class=HTMLResponse)
 async def tos(request: Request):
     user = await get_current_user(request)
     return templates.TemplateResponse("tos.html", {"request": request, "user": user})
+
+@router.get("/disclaimer", name="disclaimer", response_class=HTMLResponse)
+async def disclaimer(request: Request):
+    user = await get_current_user(request)
+    return templates.TemplateResponse("disclaimer.html", {"request": request, "user": user})
 
 
 # AI Coaching Dashboard PROTECTED Routes

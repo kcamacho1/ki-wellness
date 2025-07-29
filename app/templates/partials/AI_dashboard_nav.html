@@ -1,27 +1,23 @@
 {% if user %}
 {% set current_path = request.url.path %}
-<section class="bg-emerald-50 border-b border-emerald-200 py-2 shadow-sm">
-  <div class="max-w-4xl mx-auto px-4 flex flex-wrap justify-center sm:justify-between gap-3 text-sm font-medium text-emerald-800">
+<section class="bg-emerald-50 border-b border-emerald-200 py-4 shadow-sm">
 
-    {% for link in [
-      ('/ai-coach', '🧠 AI Coach'),
-      ('/food-journal', '🥗 Food'),
-      ('/meals', '🍱 Meals'),
-      ('/exercise', '🏋️ Exercise'),
-      ('/spiritual', '🧘 Spiritual')
-    ] %}
-      <a href="{{ link[0] }}"
-         class="px-3 py-1 rounded-full transition
-                {% if current_path == link[0] %}
-                  bg-emerald-200 shadow-sm
-                {% else %}
-                  hover:bg-emerald-100
-                {% endif %}">
-        {{ link[1] }}
-      </a>
-    {% endfor %}
-
+  <!-- AI Health Coach Logo Link -->
+  <div class="flex justify-center items-center mb-4">
+    <a href="/ai-coach" class="flex items-center space-x-3 hover:scale-105 transition">
+      <img src="/static/public/branding/ai-health-coach-logo.png" alt="AI Coach Icon" class="w-10 h-10 rounded-full shadow" />
+      <h1 class="text-2xl font-papyrus text-forest tracking-wide">AI Health Coach</h1>
+    </a>
   </div>
+
+  <!-- Chakra Navigation Buttons -->
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 px-4 text-center">
+    <a href="/food-journal" class="rounded-full bg-red-100 text-red-800 py-3 shadow hover:bg-red-200 transition">Food Journal</a>
+    <a href="/meals" class="rounded-full bg-orange-100 text-orange-800 py-3 shadow hover:bg-orange-200 transition">Meal Planner</a>
+    <a href="/exercise" class="rounded-full bg-yellow-100 text-yellow-800 py-3 shadow hover:bg-yellow-200 transition">Exercise</a>
+    <a href="/spiritual" class="rounded-full bg-purple-100 text-purple-800 py-3 shadow hover:bg-purple-200 transition">Spiritual</a>
+  </section>
+
 </section>
-<br></br>
+<br>
 {% endif %}

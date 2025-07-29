@@ -9,19 +9,19 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm text-gray-700">Name</label>
-        <input name="name" value="{{ profile.get('name', '') }}" class="input w-full" required>
+        <input name="name" value="{{ profile.get('name', '') }}" class="input w-full border-2" required>
       </div>
       <div>
         <label class="block text-sm text-gray-700">Date of Birth</label>
-        <input name="dob" type="date" value="{{ profile.get('dob', '') }}" class="input w-full">
+        <input name="dob" type="date" value="{{ profile.get('dob', '') }}" class="input w-full border-2">
       </div>
       <div>
         <label class="block text-sm text-gray-700">Height</label>
-        <input name="height" value="{{ profile.get('height', '') }}" class="input w-full">
+        <input name="height" value="{{ profile.get('height', '') }}" class="input w-full border-2">
       </div>
       <div>
         <label class="block text-sm text-gray-700">Weight</label>
-        <input name="weight" value="{{ profile.get('weight', '') }}" class="input w-full">
+        <input name="weight" value="{{ profile.get('weight', '') }}" class="input w-full border-2">
       </div>
     </div>
   </div>
@@ -32,11 +32,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm text-gray-700">Physical/Health Goals</label>
-        <textarea name="goals" rows="3" class="input w-full">{{ profile.get('goals', '') }}</textarea>
+        <textarea name="goals" rows="3" class="input w-full border-2">{{ profile.get('goals', '') }}</textarea>
       </div>
       <div>
         <label class="block text-sm text-gray-700">Current Ailments</label>
-        <textarea name="ailments" rows="3" class="input w-full">{{ profile.get('ailments', '') }}</textarea>
+        <textarea name="ailments" rows="3" class="input w-full border-2">{{ profile.get('ailments', '') }}</textarea>
       </div>
     </div>
   </div>
@@ -46,7 +46,7 @@
     <h2 class="text-lg font-semibold text-purple-600 mb-2">📝 Personal Notes</h2>
     <div>
       <label class="block text-sm text-gray-700">Notes</label>
-      <textarea name="notes" rows="4" class="input w-full">{{ profile.get('notes', '') }}</textarea>
+      <textarea name="notes" rows="4" class="input w-full border-2">{{ profile.get('notes', '') }}</textarea>
     </div>
   </div>
 
