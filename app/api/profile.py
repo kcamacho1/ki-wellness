@@ -16,7 +16,7 @@ async def view_or_create_profile(request: Request):
         raise HTTPException(status_code=401)
 
     try:
-        resp = supabase.table("profiles").select("*").eq("user_id", user_id).single().execute()
+        resp = supabase.table("profile").select("*").eq("user_id", user_id).single().execute()
         profile = resp.data or {}
     except Exception as e:
         print(f"[Profile] Error fetching profile: {e}")
@@ -44,17 +44,15 @@ async def update_profile(
     if not user_id:
         raise HTTPException(status_code=401)
 
-    # Clean/convert dob field
-    dob = dob.strip()
     try:
-        dob = date.fromisoformat(dob) if dob else None
+        dob_date = date.fromisoformat(dob.strip()) if dob else None
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
 
     update_data = {
-        "user_id": user_id,  # Required for RLS and upsert
+        "user_id": user_id,
         "name": name,
-        "dob": dob,
+        "dob": dob_date.isoformat() if dob_date else None,
         "weight": weight,
         "height": height,
         "goals": goals,
@@ -63,8 +61,7 @@ async def update_profile(
     }
 
     try:
-        # Use upsert for simplicity and RLS safety
-        supabase.table("profiles").upsert(update_data, on_conflict="user_id").execute()
+        supabase.table("profile").upsert(update_data, on_conflict="user_id").execute()
     except Exception as e:
         print(f"[Profile] Error updating profile: {e}")
         raise HTTPException(status_code=500, detail="Could not update profile")
