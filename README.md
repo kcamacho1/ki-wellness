@@ -86,11 +86,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## 📌 Roadmap
- [x] Mobile-first responsive design improvements
- [x] AI-driven meal and exercise suggestions
- [ ] Food scanning with image recognition
- [ ] Social wellness challenges
- [ ] Integrations with Fitbit, Apple Health, Google Fit
+- [x] Mobile-first responsive design improvements
+- [x] AI-driven meal and exercise suggestions
+- [ ] Food scanning with image recognition
+- [ ] Social wellness challenges
+- [ ] Integrations with Fitbit, Apple Health, Google Fit
 
 ## 🤝 Contributing
 - We welcome contributions!
