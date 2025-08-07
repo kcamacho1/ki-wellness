@@ -23,7 +23,7 @@ app.include_router(early_access.router)
 
 # AI Health Coach PROTECTED Routers
 app.include_router(profile.router)
-app.include_router(ai_coach.router)
+app.include_router(ai_coach.router, prefix="/api")
 app.include_router(spiritual.router)
 app.include_router(exercise.router)
 app.include_router(meals.router)
