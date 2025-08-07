@@ -1,3 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer components {
+  .ai-message h2 {
+    @apply text-lg font-semibold text-emerald-700 mt-2;
+  }
+  .ai-message ul {
+    @apply list-disc ml-6;
+  }
+  .ai-message p {
+    @apply my-1;
+  }
+}
