@@ -26,8 +26,8 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Cloudflare Turnstile Configuration
-app.config['TURNSTILE_SITE_KEY'] = os.environ.get('SITE_KEY', '0x4AAAAAABp1A4lXLocq8haS')
-app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('SECRET_KEY', '0x4AAAAAABp1A7RllCnlk0_HNUKtyAF7o4k')
+app.config['TURNSTILE_SITE_KEY'] = os.environ.get('SITE_KEY')
+app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['TURNSTILE_ENABLED'] = os.environ.get('TURNSTILE_ENABLED', 'true').lower() == 'true'
 
 db = SQLAlchemy(app)
@@ -303,7 +303,7 @@ def search_usda_api(food_name):
     """Search USDA API for nutritional information"""
     try:
         # Using USDA FoodData Central API
-        url = f"https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query={food_name}&pageSize=1"
+        url = f"https://api.nal.usda.gov/fdc/v1/foods/search?api_key={os.environ.get('USDA_API_KEY')}&query={food_name}&pageSize=1"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()

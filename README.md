@@ -100,10 +100,10 @@ pip install -r requirements.txt
 ### 4. Configure Environment
 Create a `.env` file in the project root:
 ```env
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://postgres:password@localhost/ki_wellness
+SECRET_KEY=[YOUR_SECRET_KEY]
+DATABASE_URL=postgresql://postgres:[PASSWORD]@localhost/ki_wellness
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
+POSTGRES_PASSWORD=[YOUR_PASSWORD]
 POSTGRES_DB=ki_wellness
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
