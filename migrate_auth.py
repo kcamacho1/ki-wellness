@@ -33,14 +33,20 @@ def migrate_auth():
             default_user = User.query.filter_by(username='default_user').first()
             if not default_user:
                 print("Creating default user...")
+                default_password = os.environ.get('DEFAULT_USER_PASSWORD')
+                if not default_password:
+                    print("Warning: DEFAULT_USER_PASSWORD not set in environment variables")
+                    return
+                password_hash=generate_password_hash(default_password)
                 default_user = User(
                     username='default_user',
                     email='default@kiwellness.org',
-                    password_hash=generate_password_hash('changeme123')
+                    password_hash=password_hash
                 )
                 db.session.add(default_user)
                 db.session.commit()
-                print("Default user created with username: default_user, password: changeme123")
+                print("Default user created with username: default_user")
+                print("Password: [Set via DEFAULT_USER_PASSWORD environment variable]")
             
             # Check if user_profiles table has user_id column
             inspector = db.inspect(db.engine)
@@ -107,8 +113,7 @@ def migrate_auth():
             print("Authentication migration completed successfully!")
             print("\nDefault login credentials:")
             print("Username: default_user")
-            print("Password: changeme123")
-            print("\nPlease change these credentials after first login!")
+            print("Password: [Set via DEFAULT_USER_PASSWORD environment variable]")
             
         except Exception as e:
             print(f"Error during migration: {e}")

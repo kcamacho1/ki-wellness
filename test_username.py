@@ -25,7 +25,7 @@ def test_username_functionality():
             test_user = User(
                 username='testuser',
                 email='test@example.com',
-                password_hash='dummy_hash'
+                password_hash='[REDACTED]'
             )
             db.session.add(test_user)
             db.session.commit()
@@ -47,7 +47,7 @@ def test_username_functionality():
                 duplicate_user = User(
                     username='TESTUSER',  # Same username, different case
                     email='test2@example.com',
-                    password_hash='dummy_hash'
+                    password_hash='[REDACTED]'
                 )
                 db.session.add(duplicate_user)
                 db.session.commit()
@@ -63,7 +63,7 @@ def test_username_functionality():
                 duplicate_email = User(
                     username='testuser2',
                     email='TEST@EXAMPLE.COM',  # Same email, different case
-                    password_hash='dummy_hash'
+                    password_hash='[REDACTED]'
                 )
                 db.session.add(duplicate_email)
                 db.session.commit()

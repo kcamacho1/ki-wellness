@@ -100,7 +100,7 @@ def test_username_validation():
                     test_user = User(
                         username=username,
                         email=f"{username}@test.com",
-                        password_hash="dummy_hash"
+                        password_hash="[REDACTED]"
                     )
                     db.session.add(test_user)
                     db.session.commit()
