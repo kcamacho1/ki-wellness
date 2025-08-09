@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import pytz
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 from config import DevelopmentConfig, ProductionConfig
 from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -42,6 +42,51 @@ if not app.config.get('SQLALCHEMY_DATABASE_URI'):
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
+
+# Create database tables if they don't exist
+def init_database():
+    """Initialize database tables"""
+    with app.app_context():
+        try:
+            # Check if we can connect to the database
+            db.engine.connect()
+            
+            # Check if tables exist by trying to query one
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables:
+                print("🔄 Creating database tables...")
+                db.create_all()
+                print("✅ Database tables created successfully!")
+            else:
+                print(f"✅ Database tables already exist: {existing_tables}")
+                
+        except Exception as e:
+            print(f"⚠️ Warning: Could not initialize database tables: {e}")
+            print("This is normal if the database is not available or tables already exist.")
+            print("Tables will be created when the first request is made.")
+
+# Initialize database on app startup
+init_database()
+
+# Function to ensure database tables exist (called on first request if needed)
+def ensure_tables_exist():
+    """Ensure database tables exist, create them if they don't"""
+    try:
+        with app.app_context():
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables:
+                print("🔄 Creating database tables on first request...")
+                db.create_all()
+                print("✅ Database tables created successfully!")
+                return True
+            return True
+    except Exception as e:
+        print(f"❌ Error creating database tables: {e}")
+        return False
 
 # User Model for Authentication
 class User(db.Model):
@@ -424,6 +469,9 @@ def login():
             flash('Security verification failed. Please try again.', 'error')
             return render_template('login.html')
         
+        # Ensure database tables exist before querying
+        ensure_tables_exist()
+        
         user = User.query.filter(User.username.ilike(username)).first()
         
         if user and user.check_password(password):
@@ -482,6 +530,9 @@ def register():
         if password != confirm_password:
             flash('Passwords do not match', 'error')
             return render_template('register.html')
+        
+        # Ensure database tables exist before querying
+        ensure_tables_exist()
         
         if User.query.filter(User.username.ilike(username)).first():
             flash('Username already exists', 'error')
@@ -1871,13 +1922,6 @@ def verify_turnstile(response):
         return False
 
 if __name__ == '__main__':
-    with app.app_context():
-        try:
-            db.create_all()
-            print("✅ Database tables initialized successfully!")
-        except Exception as e:
-            print(f"⚠️ Warning: Could not initialize database tables: {e}")
-            print("This is normal if the database is not available or tables already exist.")
     app.run(debug=True)
 
 
