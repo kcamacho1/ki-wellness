@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Journal - Ki Wellness</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='public/icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='public/android-chrome-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='public/android-chrome-512x512.png') }}">
+    <meta name="msapplication-TileColor" content="#1e3a8a">
+    <meta name="theme-color" content="#1e3a8a">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                    colors: {
+                        'forest-green': '#1b4332',
+                        'sage-green': '#6b7280',
+                        'mint-green': '#10b981',
+                        'soft-green': '#d1fae5',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#92400e'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-nature-gray min-h-screen">
+    {% include 'includes/navigation.html' %}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-forest-green mb-2">Nutritional Journal</h2>
+            <p class="text-sage-green">Track your nutrition, mood, and wellness journey with mindful awareness</p>
+        </div>
+
+        <!-- Call to Action Button -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 text-center border border-soft-green">
+            <h3 class="text-xl font-semibold text-forest-green mb-4">Ready to track your nutrition?</h3>
+            <p class="text-sage-green mb-6">Log your food, water intake, and notes to keep track of your wellness journey.</p>
+            <button id="showAddFormBtn" 
+                    class="px-8 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium text-lg">
+                🌱 Add Food & Notes
+            </button>
+        </div>
+
+        <!-- Food Entry Form (Hidden by default) -->
+        <div id="foodEntryFormContainer" class="bg-white rounded-lg shadow-md p-6 mb-8 hidden border border-soft-green">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-forest-green">Add Information</h3>
+                <button id="hideAddFormBtn" 
+                        class="text-sage-green hover:text-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="foodEntryForm" class="space-y-6">
+                <!-- Main Form Sections in 3 Columns -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Food Information Section -->
+                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
+                        <h4 class="text-lg font-medium text-forest-green mb-4 flex items-center">
+                            <span class="mr-2">🍽️</span>
+                            Food Information
+                        </h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="foodName" class="block text-sm font-medium text-gray-700 mb-2">Food Name *</label>
+                                <input type="text" id="foodName" name="foodName" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
+                                       placeholder="e.g., Apple, Chicken Breast">
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <div class="flex-1">
+                                    <label for="servingSize" class="block text-sm font-medium text-gray-700 mb-2">Serving Size *</label>
+                                    <input type="number" id="servingSize" name="servingSize" step="0.1" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
+                                           placeholder="1.0">
+                                </div>
+                                
+                                <div class="w-20">
+                                    <label for="servingUnit" class="block text-sm font-medium text-gray-700 mb-2">Units *</label>
+                                    <select id="servingUnit" name="servingUnit" required
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent">
+                                        <option value="">Unit</option>
+                                        <option value="g">g</option>
+                                        <option value="oz">oz</option>
+                                        <option value="cup">cup</option>
+                                        <option value="tbsp">tbsp</option>
+                                        <option value="tsp">tsp</option>
+                                        <option value="piece">piece</option>
+                                        <option value="slice">slice</option>
+                                        <option value="ml">ml</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meal Context Section -->
+                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
+                        <h4 class="text-lg font-medium text-forest-green mb-4 flex items-center">
+                            <span class="mr-2">⏰</span>
+                            Meal Context
+                        </h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="timeOfDay" class="block text-sm font-medium text-gray-700 mb-2">Meal Time</label>
+                                <select id="timeOfDay" name="timeOfDay"
+                                        class="w-auto min-w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
+                                    <option value="">Time</option>
+                                    <option value="breakfast">🌅 Breakfast</option>
+                                    <option value="lunch">☀️ Lunch</option>
+                                    <option value="dinner">🌙 Dinner</option>
+                                    <option value="snacks">🍎 Snacks</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="mood" class="block text-sm font-medium text-gray-700 mb-2">How are you feeling?</label>
+                                <select id="mood" name="mood"
+                                        class="w-auto min-w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
+                                    <option value="">Mood</option>
+                                    <option value="😋 Satisfied">😋 Satisfied</option>
+                                    <option value="😊 Happy">😊 Happy</option>
+                                    <option value="😌 Relaxed">😌 Relaxed</option>
+                                    <option value="😐 Neutral">😐 Neutral</option>
+                                    <option value="😔 Tired">😔 Tired</option>
+                                    <option value="😤 Stressed">😤 Stressed</option>
+                                    <option value="😫 Hungry">😫 Hungry</option>
+                                    <option value="🤢 Unwell">🤢 Unwell</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hydration Section -->
+                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
+                        <h4 class="text-lg font-medium text-forest-green mb-4 flex items-center">
+                            <span class="mr-2">💧</span>
+                            Hydration
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="waterAmount" class="block text-sm font-medium text-gray-700 mb-2">Water Consumed</label>
+                                    <input type="number" id="waterAmount" name="waterAmount" step="0.1" min="0"
+                                           class="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
+                                           placeholder="0.0">
+                                </div>
+                                <div>
+                                    <label for="waterUnit" class="block text-sm font-medium text-gray-700 mb-2">Units</label>
+                                    <select id="waterUnit" name="waterUnit"
+                                            class="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
+                                        <option value="">Unit</option>
+                                        <option value="oz">oz</option>
+                                        <option value="liters">L</option>
+                                        <option value="gallons">gal</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes Section at Bottom -->
+                <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
+                    <h4 class="text-lg font-medium text-forest-green mb-4 flex items-center">
+                        <span class="mr-2">📝</span>
+                        Additional Notes
+                    </h4>
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <textarea id="notes" name="notes" rows="3" 
+                                  placeholder="Any observations about this meal, how it made you feel, or other notes..."
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent resize-none"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="flex justify-center pt-4">
+                    <button type="button" id="addFoodBtn" 
+                            class="px-8 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium text-lg">
+                        🌱 Add to Journal
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Nutritional Information Display -->
+            <div id="nutritionInfo" class="mt-6 hidden">
+                <h4 class="text-lg font-medium text-gray-900 mb-3">Nutritional Information</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Calories</div>
+                        <div id="calories" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Protein (g)</div>
+                        <div id="protein" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Carbs (g)</div>
+                        <div id="carbs" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Fat (g)</div>
+                        <div id="fat" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Fiber (g)</div>
+                        <div id="fiber" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Sugar (g)</div>
+                        <div id="sugar" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-md">
+                        <div class="text-sm text-gray-600">Sodium (mg)</div>
+                        <div id="sodium" class="text-lg font-semibold text-gray-900">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Food Journal Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden border border-soft-green">
+            <div class="px-6 py-4 border-b border-soft-green">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <h3 class="text-xl font-semibold text-forest-green">Nutritional Journal</h3>
+                        <div class="flex items-center space-x-2">
+                            <button id="prevWeekBtn" 
+                                    class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:ring-offset-2 transition-colors duration-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="text-sm text-gray-600">
+                                <span id="dateRangeDisplay">Loading...</span>
+                            </div>
+                            <button id="nextWeekBtn" 
+                                    class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:ring-offset-2 transition-colors duration-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="#" id="exportLink"
+                           class="px-3 py-1.5 text-xs bg-calm-blue text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200">
+                            Export CSV
+                        </a>
+                        <label for="importFile" 
+                               class="px-3 py-1.5 text-xs bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 cursor-pointer transition-colors duration-200">
+                            Import CSV
+                            <input type="file" id="importFile" accept=".csv" class="hidden">
+                        </label>
+                        <button id="deleteSelectedBtn" 
+                                class="px-3 py-1.5 text-xs bg-earth-brown text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-earth-brown focus:ring-offset-2 hidden transition-colors duration-200">
+                            Delete Selected
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full divide-y divide-gray-200">
+                    <thead class="bg-soft-green">
+                        <tr>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-8">
+                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-mint-green focus:ring-mint-green">
+                            </th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-24">Date</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-20">Meal</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-32">Food</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Serving</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Water</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Cal</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Protein</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Carbs</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Fat</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-20">Mood</th>
+                            <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-8">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodJournalTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        // Global variables
+        let currentNutritionData = null;
+        let selectedEntries = new Set();
+        let currentDateRange = {
+            start: new Date(),
+            end: new Date()
+        };
+
+        // DOM elements
+        const foodEntryForm = document.getElementById('foodEntryForm');
+        const addFoodBtn = document.getElementById('addFoodBtn');
+        const nutritionInfo = document.getElementById('nutritionInfo');
+        const selectAll = document.getElementById('selectAll');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const importFile = document.getElementById('importFile');
+        const exportLink = document.getElementById('exportLink');
+        const prevWeekBtn = document.getElementById('prevWeekBtn');
+        const nextWeekBtn = document.getElementById('nextWeekBtn');
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        const showAddFormBtn = document.getElementById('showAddFormBtn');
+        const hideAddFormBtn = document.getElementById('hideAddFormBtn');
+        const foodEntryFormContainer = document.getElementById('foodEntryFormContainer');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateRange();
+            loadFoodJournal();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Add food button
+            addFoodBtn.addEventListener('click', handleAddFood);
+            
+            // Show/hide form buttons
+            showAddFormBtn.addEventListener('click', showAddForm);
+            hideAddFormBtn.addEventListener('click', hideAddForm);
+            
+            // Select all checkbox
+            selectAll.addEventListener('change', handleSelectAll);
+            
+            // Delete selected button
+            deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
+            
+            // Import file
+            importFile.addEventListener('change', handleImportFile);
+            
+            // Date navigation buttons
+            prevWeekBtn.addEventListener('click', handlePrevWeek);
+            nextWeekBtn.addEventListener('click', handleNextWeek);
+        }
+
+        async function handleSearchFood() {
+            const foodName = document.getElementById('foodName').value.trim();
+            const servingSize = parseFloat(document.getElementById('servingSize').value);
+            const servingUnit = document.getElementById('servingUnit').value;
+            
+            if (!foodName) {
+                alert('Please enter a food name');
+                return;
+            }
+            
+            if (!servingSize || servingSize <= 0) {
+                alert('Please enter a valid serving size');
+                return;
+            }
+            
+            searchFoodBtn.disabled = true;
+            searchFoodBtn.textContent = 'Searching...';
+            
+            try {
+                const response = await fetch('/food-journal/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        food_name: foodName,
+                        serving_size: servingSize,
+                        serving_unit: servingUnit
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentNutritionData = data.data;
+                    displayNutritionInfo(data.data);
+                    nutritionInfo.classList.remove('hidden');
+                } else {
+                    alert('Food not found. Please try a different search term or add manually.');
+                }
+            } catch (error) {
+                console.error('Error searching food:', error);
+                alert('Error searching for food. Please try again.');
+            } finally {
+                searchFoodBtn.disabled = false;
+                searchFoodBtn.textContent = 'Search Nutritional Info';
+            }
+        }
+
+        function displayNutritionInfo(nutritionData) {
+            document.getElementById('calories').textContent = nutritionData.calories ? Math.round(nutritionData.calories) : '-';
+            document.getElementById('protein').textContent = nutritionData.protein ? nutritionData.protein.toFixed(1) : '-';
+            document.getElementById('carbs').textContent = nutritionData.carbs ? nutritionData.carbs.toFixed(1) : '-';
+            document.getElementById('fat').textContent = nutritionData.fat ? nutritionData.fat.toFixed(1) : '-';
+            document.getElementById('fiber').textContent = nutritionData.fiber ? nutritionData.fiber.toFixed(1) : '-';
+            document.getElementById('sugar').textContent = nutritionData.sugar ? nutritionData.sugar.toFixed(1) : '-';
+            document.getElementById('sodium').textContent = nutritionData.sodium ? Math.round(nutritionData.sodium) : '-';
+        }
+
+        async function handleAddFood() {
+            const foodNameInput = document.getElementById('foodName');
+            const servingSizeInput = document.getElementById('servingSize');
+            const servingUnitInput = document.getElementById('servingUnit');
+            const timeOfDayInput = document.getElementById('timeOfDay');
+            const waterAmountInput = document.getElementById('waterAmount');
+            const waterUnitInput = document.getElementById('waterUnit');
+            const moodInput = document.getElementById('mood');
+            const notesInput = document.getElementById('notes');
+            
+            const foodName = foodNameInput.value.trim();
+            const servingSize = parseFloat(servingSizeInput.value);
+            const servingUnit = servingUnitInput.value;
+            const timeOfDay = timeOfDayInput.value;
+            const waterAmount = parseFloat(waterAmountInput.value) || 0;
+            const waterUnit = waterUnitInput.value;
+            const mood = moodInput.value;
+            const notes = notesInput.value;
+            
+            if (!foodName || !servingSize) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Disable the Add to Journal button while processing
+            addFoodBtn.disabled = true;
+            addFoodBtn.textContent = 'Adding...';
+            
+            try {
+                // Automatically search for nutritional data
+                const searchResponse = await fetch('/food-journal/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        food_name: foodName,
+                        serving_size: servingSize,
+                        serving_unit: servingUnit
+                    })
+                });
+                
+                const searchData = await searchResponse.json();
+                
+                if (searchData.success) {
+                    currentNutritionData = searchData.data;
+                    displayNutritionInfo(searchData.data);
+                    nutritionInfo.classList.remove('hidden');
+                } else {
+                    // If no nutritional data found, still allow adding with basic info
+                    currentNutritionData = null;
+                    nutritionInfo.classList.add('hidden');
+                }
+                
+                // Prepare entry data
+                // Get current timezone
+                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const currentDateTime = new Date().toISOString();
+                
+                const entryData = {
+                    food_name: foodName,
+                    brand: currentNutritionData?.brand || '',
+                    serving_size: servingSize,
+                    serving_unit: servingUnit,
+                    calories: currentNutritionData?.calories || null,
+                    protein: currentNutritionData?.protein || null,
+                    carbs: currentNutritionData?.carbs || null,
+                    fat: currentNutritionData?.fat || null,
+                    fiber: currentNutritionData?.fiber || null,
+                    sugar: currentNutritionData?.sugar || null,
+                    sodium: currentNutritionData?.sodium || null,
+                    time_of_day: timeOfDay,
+                    water_amount: waterAmount,
+                    water_unit: waterUnit,
+                    mood: mood,
+                    notes: notes,
+                    consumed_at: currentDateTime,
+                    browser_timezone: browserTimezone
+                };
+                
+                // Add the food entry
+                const addResponse = await fetch('/food-journal/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(entryData)
+                });
+                
+                const addData = await addResponse.json();
+                
+                if (addData.success) {
+                    // Reset form
+                    foodNameInput.value = '';
+                    servingSizeInput.value = '';
+                    servingUnitInput.value = '';
+                    timeOfDayInput.value = '';
+                    waterAmountInput.value = '';
+                    waterUnitInput.value = '';
+                    moodInput.value = '';
+                    notesInput.value = '';
+                    nutritionInfo.classList.add('hidden');
+                    
+                    // Reload food journal
+                    await loadFoodJournal();
+                    
+                    // Hide the form and show the call-to-action
+                    hideAddForm();
+                    
+                    alert('Food entry added successfully!');
+                } else {
+                    alert('Error adding food entry: ' + addData.message);
+                }
+                
+            } catch (error) {
+                console.error('Error adding food:', error);
+                alert('Error adding food entry. Please try again.');
+            } finally {
+                // Re-enable the Add to Journal button
+                addFoodBtn.disabled = false;
+                addFoodBtn.textContent = 'Add to Journal';
+            }
+        }
+
+
+
+
+
+        function initializeDateRange() {
+            // Set current date range to last 7 days in user's timezone
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 6); // 7 days including today
+            
+            currentDateRange = {
+                start: sevenDaysAgo,
+                end: today
+            };
+            
+            updateDateRangeDisplay();
+        }
+
+        function updateDateRangeDisplay() {
+            const startDate = currentDateRange.start.toLocaleDateString();
+            const endDate = currentDateRange.end.toLocaleDateString();
+            dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
+            
+            // Update export link
+            updateExportLink();
+        }
+
+        function updateExportLink() {
+            const startDate = currentDateRange.start.toISOString().split('T')[0];
+            const endDate = currentDateRange.end.toISOString().split('T')[0];
+            exportLink.href = `/food-journal/export?start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        function handlePrevWeek() {
+            const newStart = new Date(currentDateRange.start);
+            newStart.setDate(newStart.getDate() - 7);
+            const newEnd = new Date(currentDateRange.end);
+            newEnd.setDate(newEnd.getDate() - 7);
+            
+            currentDateRange = {
+                start: newStart,
+                end: newEnd
+            };
+            
+            updateDateRangeDisplay();
+            loadFoodJournal();
+        }
+
+        function handleNextWeek() {
+            const newStart = new Date(currentDateRange.start);
+            newStart.setDate(newStart.getDate() + 7);
+            const newEnd = new Date(currentDateRange.end);
+            newEnd.setDate(newEnd.getDate() + 7);
+            
+            // Don't allow going into the future
+            const today = new Date();
+            if (newStart > today) {
+                return;
+            }
+            
+            currentDateRange = {
+                start: newStart,
+                end: newEnd
+            };
+            
+            updateDateRangeDisplay();
+            loadFoodJournal();
+        }
+
+        // Format date in user's timezone
+        function formatDateInUserTimezone(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString();
+            } catch (error) {
+                return dateString;
+            }
+        }
+
+        async function loadFoodJournal() {
+            try {
+                const startDate = currentDateRange.start.toISOString().split('T')[0];
+                const endDate = currentDateRange.end.toISOString().split('T')[0];
+                
+                const response = await fetch(`/food-journal/entries?start_date=${startDate}&end_date=${endDate}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayFoodJournal(data.entries);
+                } else {
+                    console.error('Error loading food journal:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading food journal:', error);
+            }
+        }
+
+        function displayFoodJournal(entries) {
+            const tableBody = document.getElementById('foodJournalTable');
+            tableBody.innerHTML = '';
+            
+            if (entries.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">
+                        No food entries found for the last 7 days
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            entries.forEach(entry => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-2 py-4 whitespace-nowrap">
+                        <input type="checkbox" class="entry-checkbox rounded border-gray-300 text-light-blue focus:ring-light-blue" 
+                               data-entry-id="${entry.id}">
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${formatDateTime(entry.consumed_at)}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${getMealTimeDisplay(entry.time_of_day)}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${entry.food_name}</div>
+                        ${entry.brand ? `<div class="text-sm text-gray-500">${entry.brand}</div>` : ''}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.serving_size} ${entry.serving_unit}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${getWaterDisplay(entry.water_amount, entry.water_unit)}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.calories ? Math.round(entry.calories) : '-'}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.protein ? entry.protein.toFixed(1) : '-'}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.carbs ? entry.carbs.toFixed(1) : '-'}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.fat ? entry.fat.toFixed(1) : '-'}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.mood || '-'}
+                    </td>
+                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        ${entry.notes ? `<span class="cursor-pointer text-mint-green hover:text-forest-green" title="${entry.notes}">📝</span>` : '-'}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Add event listeners to checkboxes
+            document.querySelectorAll('.entry-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleEntrySelection);
+            });
+        }
+
+        function formatDateTime(dateTimeStr) {
+            return formatDateInUserTimezone(dateTimeStr);
+        }
+
+        function getMealTimeDisplay(timeOfDay) {
+            if (!timeOfDay) return '-';
+            const mealTimeMap = {
+                'breakfast': '🌅 Breakfast',
+                'lunch': '☀️ Lunch',
+                'dinner': '🌙 Dinner',
+                'snacks': '🍎 Snacks'
+            };
+            return mealTimeMap[timeOfDay] || timeOfDay;
+        }
+
+        function getWaterDisplay(amount, unit) {
+            if (!amount || !unit) return '-';
+            return `${amount} ${unit}`;
+        }
+
+        function showAddForm() {
+            foodEntryFormContainer.classList.remove('hidden');
+            showAddFormBtn.parentElement.classList.add('hidden');
+            // Focus on the first input field
+            document.getElementById('foodName').focus();
+        }
+
+        function hideAddForm() {
+            foodEntryFormContainer.classList.add('hidden');
+            showAddFormBtn.parentElement.classList.remove('hidden');
+            // Reset form
+            foodEntryForm.reset();
+            // Clear nutrition info
+            if (nutritionInfo) {
+                nutritionInfo.innerHTML = '';
+            }
+        }
+
+        function handleEntrySelection() {
+            const checkboxes = document.querySelectorAll('.entry-checkbox');
+            selectedEntries.clear();
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedEntries.add(parseInt(checkbox.dataset.entryId));
+                }
+            });
+            
+            updateDeleteButton();
+        }
+
+        function handleSelectAll() {
+            const checkboxes = document.querySelectorAll('.entry-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            
+            if (selectAll.checked) {
+                checkboxes.forEach(checkbox => {
+                    selectedEntries.add(parseInt(checkbox.dataset.entryId));
+                });
+            } else {
+                selectedEntries.clear();
+            }
+            
+            updateDeleteButton();
+        }
+
+        function updateDeleteButton() {
+            if (selectedEntries.size > 0) {
+                deleteSelectedBtn.classList.remove('hidden');
+                deleteSelectedBtn.textContent = `Delete Selected (${selectedEntries.size})`;
+            } else {
+                deleteSelectedBtn.classList.add('hidden');
+            }
+        }
+
+        async function handleDeleteSelected() {
+            if (selectedEntries.size === 0) {
+                alert('Please select entries to delete');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${selectedEntries.size} entries?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/food-journal/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        entry_ids: Array.from(selectedEntries)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    selectedEntries.clear();
+                    selectAll.checked = false;
+                    updateDeleteButton();
+                    loadFoodJournal();
+                    alert(data.message);
+                } else {
+                    alert('Error deleting entries: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error deleting entries:', error);
+                alert('Error deleting entries. Please try again.');
+            }
+        }
+
+        async function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/food-journal/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`${data.message}\nImported: ${data.imported_count} entries`);
+                    if (data.errors.length > 0) {
+                        console.log('Import errors:', data.errors);
+                    }
+                    loadFoodJournal();
+                } else {
+                    alert('Error importing file: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error importing file:', error);
+                alert('Error importing file. Please try again.');
+            }
+            
+            // Reset file input
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>

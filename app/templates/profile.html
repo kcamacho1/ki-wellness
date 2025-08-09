@@ -1,58 +1,1504 @@
-{% extends "layout.html" %}
-{% block content %}
-<h1 class="text-2xl font-bold text-green-600 mb-6 font-papyrus">My Profile</h1>
-<form method="post" action="/profile" class="space-y-8 bg-white p-6 rounded-xl shadow-md">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ki Wellness - Profile</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='public/icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='public/android-chrome-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='public/android-chrome-512x512.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#1e3a8a">
+    <meta name="theme-color" content="#1e3a8a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SECURITY: Session timeout warning -->
+    <script>
+        // Session timeout management (1 hour = 3600000 milliseconds)
+        const SESSION_TIMEOUT = 3600000; // 1 hour in milliseconds
+        const WARNING_TIME = 300000; // 5 minutes before timeout
+        
+        let sessionTimer;
+        let warningTimer;
+        
+        function resetSessionTimer() {
+            // Clear existing timers
+            if (sessionTimer) clearTimeout(sessionTimer);
+            if (warningTimer) clearTimeout(warningTimer);
+            
+            // Set warning timer (5 minutes before timeout)
+            warningTimer = setTimeout(() => {
+                showSessionWarning();
+            }, SESSION_TIMEOUT - WARNING_TIME);
+            
+            // Set session timeout timer
+            sessionTimer = setTimeout(() => {
+                logoutUser();
+            }, SESSION_TIMEOUT);
+        }
+        
+        function showSessionWarning() {
+            // Create warning modal
+            const warningModal = document.createElement('div');
+            warningModal.id = 'session-warning-modal';
+            warningModal.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-lg font-medium text-gray-900">Session Expiring Soon</h3>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600">
+                                Your session will expire in 5 minutes for security reasons. 
+                                Click "Stay Logged In" to extend your session.
+                            </p>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="logoutUser()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                Logout Now
+                            </button>
+                            <button onclick="extendSession()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                                Stay Logged In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(warningModal);
+        }
+        
+        function extendSession() {
+            // Remove warning modal
+            const modal = document.getElementById('session-warning-modal');
+            if (modal) modal.remove();
+            
+            // Make a request to extend session
+            fetch('/extend-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    // Reset timers
+                    resetSessionTimer();
+                    console.log('Session extended successfully');
+                } else {
+                    logoutUser();
+                }
+            }).catch(() => {
+                logoutUser();
+            });
+        }
+        
+        function logoutUser() {
+            // Redirect to logout
+            window.location.href = '/logout';
+        }
+        
+        // Initialize session timer on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            resetSessionTimer();
+            
+            // Reset timer on user activity
+            ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+                document.addEventListener(event, resetSessionTimer, { passive: true });
+            });
+        });
+    </script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                    colors: {
+                        'forest-green': '#1b4332',
+                        'sage-green': '#6b7280',
+                        'mint-green': '#10b981',
+                        'soft-green': '#d1fae5',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#92400e'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-nature-gray min-h-screen">
+    {% include 'includes/navigation.html' %}
 
-  <!-- Section: Basic Info -->
-  <div>
-    <h2 class="text-lg font-semibold text-purple-600 mb-2">👤 Basic Info</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm text-gray-700">Name</label>
-        <input name="name" value="{{ profile.get('name', '') }}" class="input w-full border-2" required>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700">Date of Birth</label>
-        <input name="dob" type="date" value="{{ profile.get('dob', '') }}" class="input w-full border-2">
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700">Height</label>
-        <input name="height" value="{{ profile.get('height', '') }}" class="input w-full border-2">
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700">Weight</label>
-        <input name="weight" value="{{ profile.get('weight', '') }}" class="input w-full border-2">
-      </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-center space-x-6">
+                <!-- Avatar Display -->
+                <div class="text-center">
+                    <div class="relative inline-block cursor-pointer group" id="avatarClickArea">
+                        <img 
+                            id="currentAvatar" 
+                            src="/avatars/default-avatar.png" 
+                            alt="Current Avatar" 
+                            class="w-20 h-20 rounded-full border-4 border-mint-green shadow-lg transition-all duration-200 group-hover:scale-105 group-hover:border-forest-green"
+                        >
+                        <div class="absolute -bottom-2 -right-2 bg-mint-green text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                            ✓
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-full transition-all duration-200 flex items-center justify-center">
+                            <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm">Change</span>
+                        </div>
+                    </div>
+                    <p class="text-sage-green mt-1 text-xs">Click to change</p>
+                </div>
+                
+                <div>
+                    <h2 class="text-3xl font-bold text-forest-green mb-2">{{ profile.name + "'s " if profile and profile.name else "" }}Wellness Profile</h2>
+                    <p class="text-sage-green" id="profileUsername">Manage your wellness journey with mindful awareness</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Status -->
+        <div id="saveStatus" class="hidden mb-4 p-4 rounded-lg">
+            <div id="saveMessage" class="text-center font-medium"></div>
+        </div>
+
+
+
+        <!-- Avatar Selection Modal -->
+        <div id="avatarModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" style="display: none;">
+            <div class="bg-white border border-soft-green rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-forest-green">Select Your Avatar</h3>
+                    <button 
+                        type="button" 
+                        id="closeAvatarModal"
+                        class="text-sage-green hover:text-forest-green text-2xl font-bold focus:outline-none"
+                        aria-label="Close avatar selection"
+                    >
+                        ×
+                    </button>
+                </div>
+                
+                <!-- Avatar Selection Grid -->
+                <div class="grid grid-cols-5 gap-4 mb-6">
+                    <!-- Default Avatar -->
+                    <div class="avatar-option cursor-pointer group" data-avatar="default-avatar.png">
+                        <img 
+                            src="/avatars/default-avatar.png" 
+                            alt="Default Avatar" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    
+                    <!-- Male Avatars -->
+                    <div class="avatar-option cursor-pointer group" data-avatar="man1.png">
+                        <img 
+                            src="/avatars/man1.png" 
+                            alt="Male Avatar 1" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="man2.png">
+                        <img 
+                            src="/avatars/man2.png" 
+                            alt="Male Avatar 2" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="man3.png">
+                        <img 
+                            src="/avatars/man3.png" 
+                            alt="Male Avatar 3" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="man4.png">
+                        <img 
+                            src="/avatars/man4.png" 
+                            alt="Male Avatar 4" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="man5.png">
+                        <img 
+                            src="/avatars/man5.png" 
+                            alt="Male Avatar 5" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    
+                    <!-- Female Avatars -->
+                    <div class="avatar-option cursor-pointer group" data-avatar="girl1.png">
+                        <img 
+                            src="/avatars/girl1.png" 
+                            alt="Female Avatar 1" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="girl2.png">
+                        <img 
+                            src="/avatars/girl2.png" 
+                            alt="Female Avatar 2" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="girl3.png">
+                        <img 
+                            src="/avatars/girl3.png" 
+                            alt="Female Avatar 3" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="girl4.png">
+                        <img 
+                            src="/avatars/girl4.png" 
+                            alt="Female Avatar 4" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                    <div class="avatar-option cursor-pointer group" data-avatar="girl5.png">
+                        <img 
+                            src="/avatars/girl5.png" 
+                            alt="Female Avatar 5" 
+                            class="w-16 h-16 rounded-full border-2 border-transparent group-hover:border-mint-green transition-all duration-200"
+                        >
+                    </div>
+                </div>
+                
+                <!-- Modal Actions -->
+                <div class="flex justify-end space-x-4">
+                    <button 
+                        type="button" 
+                        id="cancelAvatarSelection"
+                        class="px-6 py-3 bg-sage-green hover:bg-forest-green text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sage-green focus:ring-offset-2 focus:ring-offset-white"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        id="confirmAvatarSelection"
+                        class="px-6 py-3 bg-mint-green hover:bg-forest-green text-white font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 focus:ring-offset-white"
+                    >
+                        🌸 Confirm Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password Change Modal -->
+        <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white border border-soft-green rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-forest-green">Update Password</h3>
+                    <button 
+                        type="button" 
+                        id="closePasswordModal"
+                        class="text-sage-green hover:text-forest-green text-2xl font-bold focus:outline-none"
+                        aria-label="Close password modal"
+                    >
+                        ×
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label for="modal_current_password" class="block text-sm font-medium text-gray-700">Current Password:</label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="modal_current_password" 
+                                class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all pr-10"
+                                placeholder="Enter your current password"
+                                aria-label="Enter your current password"
+                            >
+                            <button 
+                                type="button" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                onclick="togglePasswordVisibility('modal_current_password')"
+                                aria-label="Toggle password visibility"
+                            >
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="modal_current_password_icon">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="modal_new_password" class="block text-sm font-medium text-gray-700">New Password:</label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="modal_new_password" 
+                                class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all pr-10"
+                                placeholder="Enter your new password"
+                                aria-label="Enter your new password"
+                            >
+                            <button 
+                                type="button" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                onclick="togglePasswordVisibility('modal_new_password')"
+                                aria-label="Toggle password visibility"
+                            >
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="modal_new_password_icon">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="modal_confirm_password" class="block text-sm font-medium text-gray-700">Confirm New Password:</label>
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="modal_confirm_password" 
+                                class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all pr-10"
+                                placeholder="Confirm your new password"
+                                aria-label="Confirm your new password"
+                            >
+                            <button 
+                                type="button" 
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                onclick="togglePasswordVisibility('modal_confirm_password')"
+                                aria-label="Toggle password visibility"
+                            >
+                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="modal_confirm_password_icon">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Password Requirements -->
+                    <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="text-sm font-medium text-blue-800 mb-2">Password Requirements:</h4>
+                        <ul class="text-xs text-blue-700 space-y-1">
+                            <li>• At least 8 characters long</li>
+                            <li>• Include uppercase and lowercase letters</li>
+                            <li>• Include at least one number</li>
+                            <li>• Include at least one special character (!@#$%^&*)</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Password Change Status -->
+                    <div id="modalPasswordChangeStatus" class="hidden mt-4 p-4 rounded-lg">
+                        <div id="modalPasswordChangeMessage" class="text-center font-medium"></div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button 
+                        type="button" 
+                        id="cancelPasswordChange"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        id="confirmPasswordChange"
+                        class="px-4 py-2 text-sm font-medium text-white bg-mint-green rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-all"
+                        onclick="changePasswordFromModal()"
+                    >
+                        Update Password
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Form -->
+        <form id="profileForm" class="space-y-8">
+            <!-- Details Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                <h2 class="text-2xl font-bold text-forest-green mb-6 flex items-center">
+                    <span class="w-2 h-8 bg-mint-green rounded-full mr-3"></span>
+                    📋 Details
+                </h2>
+                
+                <!-- Hidden input for avatar selection -->
+                <input type="hidden" id="avatar" name="avatar" value="default-avatar.png">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name:</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            placeholder="Enter your full name"
+                            aria-label="Enter your full name"
+                        >
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username:</label>
+                        <div class="flex items-center space-x-3">
+                            <input 
+                                type="text" 
+                                id="username" 
+                                name="username" 
+                                class="flex-1 px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none transition-all cursor-not-allowed"
+                                placeholder="Username (read-only)"
+                                aria-label="Username (cannot be changed)"
+                                readonly
+                            >
+                            <button 
+                                type="button" 
+                                id="updatePasswordBtn"
+                                class="px-4 py-3 bg-mint-green text-white font-semibold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-all transform hover:scale-105 active:scale-95 text-sm"
+                                onclick="openPasswordModal()"
+                            >
+                                🔐 Update Password
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500">Username cannot be changed</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Date of Birth:</label>
+                        <input 
+                            type="date" 
+                            id="date_of_birth" 
+                            name="date_of_birth" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            aria-label="Enter your date of birth"
+                        >
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email:</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none transition-all cursor-not-allowed"
+                            placeholder="Email (read-only)"
+                            aria-label="Email (cannot be changed)"
+                            readonly
+                        >
+                        <p class="text-xs text-gray-500">Email cannot be changed</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="age" class="block text-sm font-medium text-gray-700">Age:</label>
+                        <input 
+                            type="number" 
+                            id="age" 
+                            name="age" 
+                            min="0" 
+                            max="150"
+                            class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none transition-all cursor-not-allowed"
+                            placeholder="Calculated automatically"
+                            aria-label="Age calculated from date of birth"
+                            readonly
+                        >
+                        <p class="text-xs text-gray-500">Auto-calculated from date of birth</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="weight" class="block text-sm font-medium text-gray-700">Weight:</label>
+                        <div class="flex space-x-2">
+                            <input 
+                                type="number" 
+                                id="weight" 
+                                name="weight" 
+                                step="0.1" 
+                                min="0"
+                                class="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                                placeholder="Enter weight"
+                                aria-label="Enter your weight"
+                            >
+                            <select 
+                                id="weight_unit" 
+                                name="weight_unit"
+                                class="w-20 px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                                aria-label="Select weight unit"
+                            >
+                                <option value="kg">kg</option>
+                                <option value="lbs">lbs</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="height" class="block text-sm font-medium text-gray-700">Height (cm):</label>
+                        <input 
+                            type="number" 
+                            id="height" 
+                            name="height" 
+                            step="0.1" 
+                            min="0"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            placeholder="Enter height in cm"
+                            aria-label="Enter your height in centimeters"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mind Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-forest-green flex items-center hover:text-mint-green transition-colors duration-200">
+                        <span class="w-2 h-8 bg-mint-green rounded-full mr-3"></span>
+                        🧠 Mind
+                    </h2>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" id="saveMindBtn" 
+                                class="px-4 py-2 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 text-sm hidden">
+                            💾 Save Mind
+                        </button>
+                        <button type="button" id="toggleMindBtn" 
+                                class="text-sage-green hover:text-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                            <svg class="w-6 h-6 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="mindContent" class="space-y-6 hidden">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="goals" class="block text-sm font-medium text-gray-700">Wellness Goals:</label>
+                        <textarea 
+                            id="goals" 
+                            name="goals" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="What are your wellness goals?"
+                            aria-label="Enter your wellness goals"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="ailments" class="block text-sm font-medium text-gray-700">Health Conditions:</label>
+                        <textarea 
+                            id="ailments" 
+                            name="ailments" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Any health conditions or ailments?"
+                            aria-label="Enter any health conditions or ailments"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="sleep_schedule" class="block text-sm font-medium text-gray-700">Sleep Schedule:</label>
+                        <input 
+                            type="text" 
+                            id="sleep_schedule" 
+                            name="sleep_schedule" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            placeholder="e.g., 10:00 PM - 6:00 AM"
+                            aria-label="Enter your sleep schedule"
+                        >
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="dietary_preferences" class="block text-sm font-medium text-gray-700">Dietary Preferences:</label>
+                        <textarea 
+                            id="dietary_preferences" 
+                            name="dietary_preferences" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Describe your dietary preferences, restrictions, or requirements"
+                            aria-label="Enter your dietary preferences, restrictions, or requirements"
+                        ></textarea>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Body Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-forest-green flex items-center hover:text-mint-green transition-colors duration-200">
+                        <span class="w-2 h-8 bg-mint-green rounded-full mr-3"></span>
+                        💪 Body
+                    </h2>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" id="saveBodyBtn" 
+                                class="px-4 py-2 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 text-sm hidden">
+                            💾 Save Body
+                        </button>
+                        <button type="button" id="toggleBodyBtn" 
+                                class="text-sage-green hover:text-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                            <svg class="w-6 h-6 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="bodyContent" class="space-y-6 hidden">
+
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="daily_activities" class="block text-sm font-medium text-gray-700">Daily Activities (work):</label>
+                        <textarea 
+                            id="daily_activities" 
+                            name="daily_activities" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Describe your daily work activities"
+                            aria-label="Describe your daily work activities"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="exercise_routine" class="block text-sm font-medium text-gray-700">Exercise Routine:</label>
+                        <textarea 
+                            id="exercise_routine" 
+                            name="exercise_routine" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Describe your exercise and movement routine"
+                            aria-label="Describe your exercise and movement routine"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="day_notes" class="block text-sm font-medium text-gray-700">Body Notes/Goals:</label>
+                        <textarea 
+                            id="day_notes" 
+                            name="day_notes" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Additional notes or goals for physical wellness"
+                            aria-label="Enter additional notes or goals for physical wellness"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="night_notes" class="block text-sm font-medium text-gray-700">Recovery Notes:</label>
+                        <textarea 
+                            id="night_notes" 
+                            name="night_notes" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Notes about rest, recovery, and physical restoration"
+                            aria-label="Enter notes about rest, recovery, and physical restoration"
+                        ></textarea>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Spirit Section -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-forest-green flex items-center hover:text-mint-green transition-colors duration-200">
+                        <span class="w-2 h-8 bg-mint-green rounded-full mr-3"></span>
+                        ✨ Spirit
+                    </h2>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" id="saveSpiritBtn" 
+                                class="px-4 py-2 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 text-sm hidden">
+                            💾 Save Spirit
+                        </button>
+                        <button type="button" id="toggleSpiritBtn" 
+                                class="text-sage-green hover:text-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                            <svg class="w-6 h-6 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="spiritContent" class="space-y-6 hidden">
+
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="spiritual_religion" class="block text-sm font-medium text-gray-700">Spiritual/Religion:</label>
+                        <textarea 
+                            id="spiritual_religion" 
+                            name="spiritual_religion" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Your spiritual beliefs, practices, or religious background"
+                            aria-label="Enter your spiritual beliefs, practices, or religious background"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="self_connection" class="block text-sm font-medium text-gray-700">How I enjoy connecting with myself:</label>
+                        <textarea 
+                            id="self_connection" 
+                            name="self_connection" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Activities, practices, or moments that help you connect with yourself"
+                            aria-label="Describe how you enjoy connecting with yourself"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="surroundings_connection" class="block text-sm font-medium text-gray-700">How I connect with my surroundings:</label>
+                        <textarea 
+                            id="surroundings_connection" 
+                            name="surroundings_connection" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Ways you connect with nature, environment, or your surroundings"
+                            aria-label="Describe how you connect with your surroundings"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="providing_others" class="block text-sm font-medium text-gray-700">What I enjoy providing to others:</label>
+                        <textarea 
+                            id="providing_others" 
+                            name="providing_others" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Gifts, support, or contributions you enjoy making to others"
+                            aria-label="Describe what you enjoy providing to others"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="safe_groups" class="block text-sm font-medium text-gray-700">Groups I feel safe in:</label>
+                        <textarea 
+                            id="safe_groups" 
+                            name="safe_groups" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Communities, groups, or spaces where you feel safe and supported"
+                            aria-label="Describe groups where you feel safe"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="awe_things" class="block text-sm font-medium text-gray-700">Things that make me feel awe:</label>
+                        <textarea 
+                            id="awe_things" 
+                            name="awe_things" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Experiences, moments, or things that inspire awe and wonder"
+                            aria-label="Describe things that make you feel awe"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="creative_expression" class="block text-sm font-medium text-gray-700">Creative ways I express myself:</label>
+                        <textarea 
+                            id="creative_expression" 
+                            name="creative_expression" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Artistic, creative, or expressive activities you enjoy"
+                            aria-label="Describe creative ways you express yourself"
+                        ></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="upsetting_situations" class="block text-sm font-medium text-gray-700">How I handle upsetting situations:</label>
+                        <textarea 
+                            id="upsetting_situations" 
+                            name="upsetting_situations" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Your coping mechanisms and approaches to difficult situations"
+                            aria-label="Describe how you handle upsetting situations"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <div class="space-y-2">
+                        <label for="spirit_notes" class="block text-sm font-medium text-gray-700">Spirit Notes/Goals:</label>
+                        <textarea 
+                            id="spirit_notes" 
+                            name="spirit_notes" 
+                            rows="4"
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+                            placeholder="Additional notes or goals for spiritual and emotional wellness"
+                            aria-label="Enter additional notes or goals for spiritual and emotional wellness"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-center">
+                <button 
+                    type="submit" 
+                    id="saveButton"
+                    class="px-8 py-4 bg-mint-green hover:bg-forest-green text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 focus:ring-offset-white"
+                    aria-label="Save profile information"
+                >
+                    <span id="saveButtonText">🌱 Save Profile</span>
+                    <span id="saveButtonLoading" class="hidden">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                    </span>
+                </button>
+            </div>
+        </form>
     </div>
-  </div>
 
-  <!-- Section: Wellness Goals -->
-  <div>
-    <h2 class="text-lg font-semibold text-purple-600 mb-2">🌱 Wellness Focus</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm text-gray-700">Physical/Health Goals</label>
-        <textarea name="goals" rows="3" class="input w-full border-2">{{ profile.get('goals', '') }}</textarea>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700">Current Ailments</label>
-        <textarea name="ailments" rows="3" class="input w-full border-2">{{ profile.get('ailments', '') }}</textarea>
-      </div>
-    </div>
-  </div>
+    <script>
+        // Auto-save functionality
+        let autoSaveTimeout;
+        const form = document.getElementById('profileForm');
+        const saveButton = document.getElementById('saveButton');
+        const saveButtonText = document.getElementById('saveButtonText');
+        const saveButtonLoading = document.getElementById('saveButtonLoading');
+        const saveStatus = document.getElementById('saveStatus');
+        const saveMessage = document.getElementById('saveMessage');
 
-  <!-- Section: Reflections -->
-  <div>
-    <h2 class="text-lg font-semibold text-purple-600 mb-2">📝 Personal Notes</h2>
-    <div>
-      <label class="block text-sm text-gray-700">Notes</label>
-      <textarea name="notes" rows="4" class="input w-full border-2">{{ profile.get('notes', '') }}</textarea>
-    </div>
-  </div>
+        // Load existing data
+        const loadProfileData = async () => {
+            try {
+                const response = await fetch('/profile/data');
+                const data = await response.json();
+                
+                if (Object.keys(data).length > 0) {
+                    Object.keys(data).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.value = data[key] || '';
+                        }
+                    });
+                    
+                    // Handle avatar loading
+                    if (data.avatar) {
+                        const currentAvatar = document.getElementById('currentAvatar');
+                        const avatarInput = document.getElementById('avatar');
+                        if (currentAvatar && avatarInput) {
+                            currentAvatar.src = `/avatars/${data.avatar}`;
+                            avatarInput.value = data.avatar;
+                        }
+                    }
+                    
+                    // Handle weight unit loading
+                    if (data.weight_unit) {
+                        const weightUnitSelect = document.getElementById('weight_unit');
+                        if (weightUnitSelect) {
+                            weightUnitSelect.value = data.weight_unit;
+                        }
+                    }
+                    
+                    // Calculate and set age from date of birth
+                    if (data.date_of_birth) {
+                        const dateOfBirthInput = document.getElementById('date_of_birth');
+                        const ageInput = document.getElementById('age');
+                        if (dateOfBirthInput && ageInput) {
+                            dateOfBirthInput.value = data.date_of_birth;
+                            const calculatedAge = calculateAge(data.date_of_birth);
+                            ageInput.value = calculatedAge;
+                        }
+                    }
+                    
+                    // Update username display in header
+                    if (data.username) {
+                        const profileUsername = document.getElementById('profileUsername');
+                        if (profileUsername) {
+                            profileUsername.textContent = `@${data.username} • Manage your wellness journey with mindful awareness`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile data:', error);
+            }
+        };
 
-  <!-- Save Button -->
-  <div class="pt-4 text-right">
-    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 shadow">Save Profile</button>
-  </div>
-</form>
-{% endblock %}
+        // Save profile data
+        const saveProfile = async (showLoading = true, section = null) => {
+            if (showLoading) {
+                saveButtonText.classList.add('hidden');
+                saveButtonLoading.classList.remove('hidden');
+                saveButton.disabled = true;
+            }
+
+            try {
+                const formData = new FormData(form);
+                const data = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+
+                const response = await fetch('/profile/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    const sectionMessage = section ? `${section.charAt(0).toUpperCase() + section.slice(1)} section saved successfully!` : 'Profile saved successfully!';
+                    showSaveStatus(sectionMessage, 'success');
+                } else {
+                    showSaveStatus(result.message || 'Error saving profile', 'error');
+                }
+            } catch (error) {
+                showSaveStatus('Error saving profile', 'error');
+                console.error('Error saving profile:', error);
+            } finally {
+                if (showLoading) {
+                    saveButtonText.classList.remove('hidden');
+                    saveButtonLoading.classList.add('hidden');
+                    saveButton.disabled = false;
+                }
+            }
+        };
+
+        // Show save status
+        const showSaveStatus = (message, type) => {
+            saveMessage.textContent = message;
+            saveStatus.className = `mb-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-500/20 border border-green-500/30 text-green-300' : 'bg-red-500/20 border border-red-500/30 text-red-300'}`;
+            saveStatus.classList.remove('hidden');
+            
+            setTimeout(() => {
+                saveStatus.classList.add('hidden');
+            }, 3000);
+        };
+
+        // Auto-save on input change
+        const handleInputChange = () => {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                saveProfile(false);
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        };
+
+        // Form submission
+        const handleFormSubmit = (e) => {
+            e.preventDefault();
+            saveProfile(true);
+        };
+
+        // Password visibility toggle function
+        window.togglePasswordVisibility = function(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId + '_icon');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                `;
+            } else {
+                field.type = 'password';
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                `;
+            }
+        };
+
+        // Password validation function
+        function validatePassword(password) {
+            const minLength = 8;
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            
+            return {
+                isValid: password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
+                errors: {
+                    length: password.length < minLength,
+                    uppercase: !hasUpperCase,
+                    lowercase: !hasLowerCase,
+                    numbers: !hasNumbers,
+                    special: !hasSpecialChar
+                }
+            };
+        }
+
+        // Password change function
+        window.changePassword = function() {
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const statusDiv = document.getElementById('passwordChangeStatus');
+            const messageDiv = document.getElementById('passwordChangeMessage');
+            const changeBtn = document.getElementById('changePasswordBtn');
+            
+            // Clear previous status
+            statusDiv.classList.add('hidden');
+            
+            // Basic validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showPasswordStatus('Please fill in all password fields.', 'error');
+                return;
+            }
+            
+            // Validate new password
+            const passwordValidation = validatePassword(newPassword);
+            if (!passwordValidation.isValid) {
+                const errors = [];
+                if (passwordValidation.errors.length) errors.push('At least 8 characters');
+                if (passwordValidation.errors.uppercase) errors.push('Uppercase letter');
+                if (passwordValidation.errors.lowercase) errors.push('Lowercase letter');
+                if (passwordValidation.errors.numbers) errors.push('Number');
+                if (passwordValidation.errors.special) errors.push('Special character');
+                
+                showPasswordStatus(`Password requirements not met: ${errors.join(', ')}`, 'error');
+                return;
+            }
+            
+            // Check if passwords match
+            if (newPassword !== confirmPassword) {
+                showPasswordStatus('New passwords do not match.', 'error');
+                return;
+            }
+            
+            // Disable button during request
+            changeBtn.disabled = true;
+            changeBtn.textContent = 'Changing Password...';
+            
+            // Send password change request
+            fetch('/profile/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showPasswordStatus('Password changed successfully!', 'success');
+                    // Clear password fields
+                    document.getElementById('current_password').value = '';
+                    document.getElementById('new_password').value = '';
+                    document.getElementById('confirm_password').value = '';
+                } else {
+                    showPasswordStatus(data.error || 'Failed to change password.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showPasswordStatus('An error occurred while changing password.', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                changeBtn.disabled = false;
+                changeBtn.textContent = '🔐 Change Password';
+            });
+        };
+
+        // Show password change status
+        function showPasswordStatus(message, type) {
+            const statusDiv = document.getElementById('passwordChangeStatus');
+            const messageDiv = document.getElementById('passwordChangeMessage');
+            
+            statusDiv.classList.remove('hidden');
+            messageDiv.textContent = message;
+            
+            // Set appropriate styling
+            statusDiv.className = `mt-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`;
+            messageDiv.className = `text-center font-medium ${type === 'success' ? 'text-green-800' : 'text-red-800'}`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // Event listeners
+        form.addEventListener('submit', handleFormSubmit);
+        
+        // Add input change listeners to all form elements
+        const formElements = form.querySelectorAll('input, textarea, select');
+        formElements.forEach(element => {
+            element.addEventListener('input', handleInputChange);
+            element.addEventListener('change', handleInputChange);
+        });
+
+        // Add date of birth change listener for age calculation
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateOfBirthInput = document.getElementById('date_of_birth');
+            if (dateOfBirthInput) {
+                dateOfBirthInput.addEventListener('change', updateAge);
+            }
+        });
+
+        // Age calculation functionality
+        const calculateAge = (birthDate) => {
+            if (!birthDate) return '';
+            
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            
+            return age > 0 ? age : '';
+        };
+
+        const updateAge = () => {
+            const dateOfBirthInput = document.getElementById('date_of_birth');
+            const ageInput = document.getElementById('age');
+            const birthDate = dateOfBirthInput.value;
+            const calculatedAge = calculateAge(birthDate);
+            ageInput.value = calculatedAge;
+        };
+
+        // Global variables for avatar modal
+        let selectedAvatarInModal = 'default-avatar.png';
+
+        // Avatar modal functions - define in correct order
+        window.updateAvatarSelectionInModal = function() {
+            const options = document.querySelectorAll('.avatar-option');
+            options.forEach(option => {
+                const img = option.querySelector('img');
+                if (option.dataset.avatar === selectedAvatarInModal) {
+                    img.classList.add('border-light-blue');
+                    img.classList.remove('border-transparent');
+                } else {
+                    img.classList.remove('border-light-blue');
+                    img.classList.add('border-transparent');
+                }
+            });
+        };
+
+        window.openAvatarModal = function() {
+            console.log('Opening avatar modal');
+            const modal = document.getElementById('avatarModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                selectedAvatarInModal = document.getElementById('avatar').value;
+                window.updateAvatarSelectionInModal();
+            } else {
+                console.error('Avatar modal not found');
+            }
+        };
+
+        window.closeAvatarModal = function() {
+            console.log('Closing avatar modal');
+            const modal = document.getElementById('avatarModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        };
+
+        window.handleAvatarSelectionInModal = function(selectedAvatar) {
+            selectedAvatarInModal = selectedAvatar;
+            window.updateAvatarSelectionInModal();
+        };
+
+        window.confirmAvatarSelection = function() {
+            const currentAvatar = document.getElementById('currentAvatar');
+            const avatarInput = document.getElementById('avatar');
+            
+            if (currentAvatar && avatarInput) {
+                // Update current avatar display
+                currentAvatar.src = `/avatars/${selectedAvatarInModal}`;
+                
+                // Update hidden input
+                avatarInput.value = selectedAvatarInModal;
+                
+                // Auto-save avatar selection
+                saveProfile(false);
+            }
+            
+            window.closeAvatarModal();
+        };
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfileData();
+            
+            // Initialize modal event listeners after DOM is loaded
+            const avatarClickArea = document.getElementById('avatarClickArea');
+            const closeAvatarModalBtn = document.getElementById('closeAvatarModal');
+            const cancelAvatarSelectionBtn = document.getElementById('cancelAvatarSelection');
+            const confirmAvatarSelectionBtn = document.getElementById('confirmAvatarSelection');
+            const avatarModal = document.getElementById('avatarModal');
+            const avatarOptions = document.querySelectorAll('.avatar-option');
+            
+            console.log('Modal elements found:', {
+                avatarModal: !!avatarModal,
+                avatarClickArea: !!avatarClickArea,
+                closeAvatarModalBtn: !!closeAvatarModalBtn,
+                cancelAvatarSelectionBtn: !!cancelAvatarSelectionBtn,
+                confirmAvatarSelectionBtn: !!confirmAvatarSelectionBtn
+            });
+            
+            // Avatar click area
+            if (avatarClickArea) {
+                console.log('Avatar click area found');
+                avatarClickArea.addEventListener('click', (e) => {
+                    console.log('Avatar clicked');
+                    e.preventDefault();
+                    window.openAvatarModal();
+                });
+            } else {
+                console.error('Avatar click area not found');
+            }
+            
+            // Close modal button
+            if (closeAvatarModalBtn) {
+                closeAvatarModalBtn.addEventListener('click', window.closeAvatarModal);
+            }
+            
+            // Cancel button
+            if (cancelAvatarSelectionBtn) {
+                cancelAvatarSelectionBtn.addEventListener('click', window.closeAvatarModal);
+            }
+            
+            // Confirm button
+            if (confirmAvatarSelectionBtn) {
+                confirmAvatarSelectionBtn.addEventListener('click', window.confirmAvatarSelection);
+            }
+
+            // Close modal when clicking outside
+            if (avatarModal) {
+                avatarModal.addEventListener('click', (e) => {
+                    if (e.target === avatarModal) {
+                        window.closeAvatarModal();
+                    }
+                });
+            }
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && avatarModal && !avatarModal.classList.contains('hidden')) {
+                    window.closeAvatarModal();
+                }
+            });
+            
+            // Add click event listeners to avatar options in modal
+            avatarOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const selectedAvatar = option.dataset.avatar;
+                    window.handleAvatarSelectionInModal(selectedAvatar);
+                });
+                
+                // Add keyboard support
+                option.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const selectedAvatar = option.dataset.avatar;
+                        window.handleAvatarSelectionInModal(selectedAvatar);
+                    }
+                });
+                
+                // Make avatars focusable
+                option.setAttribute('tabindex', '0');
+                option.setAttribute('role', 'button');
+                option.setAttribute('aria-label', `Select ${option.dataset.avatar.replace('.png', '')} avatar`);
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                saveProfile(true);
+            }
+        });
+
+        // Expandable sections functionality
+        const toggleMindBtn = document.getElementById('toggleMindBtn');
+        const toggleBodyBtn = document.getElementById('toggleBodyBtn');
+        const toggleSpiritBtn = document.getElementById('toggleSpiritBtn');
+        const mindContent = document.getElementById('mindContent');
+        const bodyContent = document.getElementById('bodyContent');
+        const spiritContent = document.getElementById('spiritContent');
+        const saveMindBtn = document.getElementById('saveMindBtn');
+        const saveBodyBtn = document.getElementById('saveBodyBtn');
+        const saveSpiritBtn = document.getElementById('saveSpiritBtn');
+
+        // Function to toggle section
+        const toggleSection = (content, saveBtn, toggleBtn) => {
+            const isHidden = content.classList.contains('hidden');
+            if (isHidden) {
+                content.classList.remove('hidden');
+                saveBtn.classList.remove('hidden');
+                toggleBtn.querySelector('svg').classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                saveBtn.classList.add('hidden');
+                toggleBtn.querySelector('svg').classList.remove('rotate-180');
+            }
+        };
+
+        // Toggle Mind section - make header clickable
+        if (toggleMindBtn && mindContent && saveMindBtn) {
+            // Find the mind section header
+            const mindHeader = toggleMindBtn.closest('.flex.justify-between.items-center.mb-6');
+            
+            // Add click event to the entire header
+            if (mindHeader) {
+                mindHeader.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on save button
+                    if (e.target.closest('#saveMindBtn')) {
+                        return;
+                    }
+                    toggleSection(mindContent, saveMindBtn, toggleMindBtn);
+                });
+                mindHeader.style.cursor = 'pointer';
+            }
+            
+            // Keep original button click for accessibility
+            toggleMindBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent double-triggering
+                toggleSection(mindContent, saveMindBtn, toggleMindBtn);
+            });
+        }
+
+        // Toggle Body section - make header clickable
+        if (toggleBodyBtn && bodyContent && saveBodyBtn) {
+            // Find the body section header
+            const bodyHeader = toggleBodyBtn.closest('.flex.justify-between.items-center.mb-6');
+            
+            // Add click event to the entire header
+            if (bodyHeader) {
+                bodyHeader.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on save button
+                    if (e.target.closest('#saveBodyBtn')) {
+                        return;
+                    }
+                    toggleSection(bodyContent, saveBodyBtn, toggleBodyBtn);
+                });
+                bodyHeader.style.cursor = 'pointer';
+            }
+            
+            // Keep original button click for accessibility
+            toggleBodyBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent double-triggering
+                toggleSection(bodyContent, saveBodyBtn, toggleBodyBtn);
+            });
+        }
+
+        // Toggle Spirit section - make header clickable
+        if (toggleSpiritBtn && spiritContent && saveSpiritBtn) {
+            // Find the spirit section header
+            const spiritHeader = toggleSpiritBtn.closest('.flex.justify-between.items-center.mb-6');
+            
+            // Add click event to the entire header
+            if (spiritHeader) {
+                spiritHeader.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on save button
+                    if (e.target.closest('#saveSpiritBtn')) {
+                        return;
+                    }
+                    toggleSection(spiritContent, saveSpiritBtn, toggleSpiritBtn);
+                });
+                spiritHeader.style.cursor = 'pointer';
+            }
+            
+            // Keep original button click for accessibility
+            toggleSpiritBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent double-triggering
+                toggleSection(spiritContent, saveSpiritBtn, toggleSpiritBtn);
+            });
+        }
+
+        // Save section functionality
+        if (saveMindBtn) {
+            saveMindBtn.addEventListener('click', () => {
+                saveProfile(false, 'mind');
+            });
+        }
+
+        if (saveBodyBtn) {
+            saveBodyBtn.addEventListener('click', () => {
+                saveProfile(false, 'body');
+            });
+        }
+
+        if (saveSpiritBtn) {
+            saveSpiritBtn.addEventListener('click', () => {
+                saveProfile(false, 'spirit');
+            });
+        }
+
+        // Password modal event listeners
+        const closePasswordModalBtn = document.getElementById('closePasswordModal');
+        const cancelPasswordChangeBtn = document.getElementById('cancelPasswordChange');
+        const passwordModal = document.getElementById('passwordModal');
+        
+        if (closePasswordModalBtn) {
+            closePasswordModalBtn.addEventListener('click', window.closePasswordModal);
+        }
+        
+        if (cancelPasswordChangeBtn) {
+            cancelPasswordChangeBtn.addEventListener('click', window.closePasswordModal);
+        }
+        
+        // Close password modal when clicking outside
+        if (passwordModal) {
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    window.closePasswordModal();
+                }
+            });
+        }
+        
+        // Close password modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && passwordModal && !passwordModal.classList.contains('hidden')) {
+                window.closePasswordModal();
+            }
+        });
+    </script>
+</body>
+</html>

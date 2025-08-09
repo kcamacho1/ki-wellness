@@ -1,0 +1,229 @@
+<!-- Navigation Bar -->
+<nav class="bg-white shadow-lg border-b border-soft-green">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <!-- Logo and Brand -->
+            <div class="flex items-center">
+                <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
+                <h1 class="text-xl font-semibold text-forest-green" style="font-family: 'Quicksand', sans-serif;">Ki Wellness</h1>
+            </div>
+
+            <!-- Main Navigation Items -->
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
+                <a href="/food-journal" class="nav-link {{ 'nav-active' if request.endpoint == 'food_journal' else '' }}" data-endpoint="food_journal">Nutritional Journal</a>
+            </div>
+
+            <!-- Hamburger Menu Button (Mobile) -->
+            <div class="md:hidden flex items-center">
+                <button id="hamburger-menu" class="text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700" aria-label="Open menu">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Desktop Menu Button -->
+            <div class="hidden md:flex items-center">
+                <div class="relative">
+                    <button id="desktop-menu-button" class="flex items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <svg class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <span class="text-sm font-medium">Menu</span>
+                    </button>
+                    
+                    <!-- Desktop Dropdown Menu -->
+                    <div id="desktop-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 hidden">
+                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ 'bg-gray-100 text-gray-900' if request.endpoint == 'profile' else '' }}">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Profile
+                            </div>
+                        </a>
+                        {% if session.get('user_id') %}
+                            {% set user = get_current_user() %}
+                            {% if user and user.is_admin %}
+                            <a href="/admin" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ 'bg-gray-100 text-gray-900' if request.endpoint == 'admin_dashboard' else '' }}">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    Admin
+                                </div>
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                        <div class="border-t border-gray-200 my-1"></div>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                <a href="/dashboard" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'dashboard' else 'text-gray-700 hover:bg-gray-100' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+                        </svg>
+                        Dashboard
+                    </div>
+                </a>
+                <a href="/food-journal" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'food_journal' else 'text-gray-700 hover:bg-gray-100' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Nutritional Journal
+                    </div>
+                </a>
+                <a href="/profile" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'profile' else 'text-gray-700 hover:bg-gray-100' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Profile
+                    </div>
+                </a>
+                {% if session.get('user_id') %}
+                    {% set user = get_current_user() %}
+                    {% if user and user.is_admin %}
+                    <a href="/admin" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'admin_dashboard' else 'text-gray-700 hover:bg-gray-100' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            Admin
+                        </div>
+                    </a>
+                    {% endif %}
+                {% endif %}
+                <div class="border-t border-gray-200 my-2"></div>
+                <a href="/logout" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .nav-link {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.2s;
+        font-family: 'Quicksand', sans-serif;
+    }
+    
+    .nav-link:not(.nav-active):not(.nav-logout) {
+        color: #9ca3af;
+    }
+    
+    .nav-link:not(.nav-active):not(.nav-logout):hover {
+        color: #6b7280;
+        background-color: #f9fafb;
+    }
+    
+    .nav-active {
+        color: #10b981 !important;
+        background-color: #d1fae5 !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #10b981;
+        font-weight: 600;
+    }
+    
+    .nav-active:hover {
+        background-color: #a7f3d0 !important;
+        border-color: #059669;
+    }
+    
+    .nav-logout {
+        color: #9ca3af;
+        font-weight: 600;
+        font-family: 'Quicksand', sans-serif;
+    }
+    
+    .nav-logout:hover {
+        color: #ef4444;
+        background-color: #fef2f2;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile hamburger menu
+    const hamburgerButton = document.getElementById('hamburger-menu');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    if (hamburgerButton && mobileMenu) {
+        hamburgerButton.addEventListener('click', function() {
+            const isHidden = mobileMenu.classList.contains('hidden');
+            if (isHidden) {
+                mobileMenu.classList.remove('hidden');
+                hamburgerButton.innerHTML = `
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                `;
+            } else {
+                mobileMenu.classList.add('hidden');
+                hamburgerButton.innerHTML = `
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                `;
+            }
+        });
+    }
+    
+    // Desktop dropdown menu
+    const desktopMenuButton = document.getElementById('desktop-menu-button');
+    const desktopDropdown = document.getElementById('desktop-dropdown');
+    
+    if (desktopMenuButton && desktopDropdown) {
+        desktopMenuButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isHidden = desktopDropdown.classList.contains('hidden');
+            if (isHidden) {
+                desktopDropdown.classList.remove('hidden');
+            } else {
+                desktopDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!desktopMenuButton.contains(e.target) && !desktopDropdown.contains(e.target)) {
+                desktopDropdown.classList.add('hidden');
+            }
+        });
+        
+        // Close dropdown when pressing Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                desktopDropdown.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
