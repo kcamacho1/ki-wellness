@@ -3,6 +3,16 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Sensitive security and admin files
+ADMIN_ACCOUNT_SETUP.md
+SECURITY_REVIEW.md
+env.example
+.env
+.env.local
+.env.production
+.env.development
+docs/private/
+
 # C extensions
 *.so
 

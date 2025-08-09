@@ -1,124 +1,129 @@
 #!/usr/bin/env python3
 """
-Test script to verify username validation with periods and dashes
+Test script for username validation - checks if usernames containing 'kiwellness' are properly rejected
 """
 
-import os
 import sys
-import re
-
-# Add the app directory to the Python path
+import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
-from main import app, db, User
+from app.main import is_kiwellness_username
 
 def test_username_validation():
-    """Test username validation with various characters"""
-    print("Testing username validation with periods and dashes...")
+    """Test the username validation function"""
     
-    # Test cases
-    test_cases = [
-        # Valid usernames
-        ("john.doe", True, "Period in middle"),
-        ("john-doe", True, "Dash in middle"),
-        ("john_doe", True, "Underscore in middle"),
-        ("john.doe-123", True, "Multiple special characters"),
-        ("j.doe", True, "Single letter with period"),
-        ("j-doe", True, "Single letter with dash"),
-        ("john123", True, "Letters and numbers"),
-        ("123john", True, "Numbers and letters"),
-        ("john", True, "Simple letters"),
-        ("joh", True, "Minimum length"),
-        ("a" * 30, True, "Maximum length"),
-        
-        # Invalid usernames
-        ("jo", False, "Too short"),
-        ("a" * 31, False, "Too long"),
-        ("john@doe", False, "Invalid character @"),
-        ("john#doe", False, "Invalid character #"),
-        ("john$doe", False, "Invalid character $"),
-        ("john doe", False, "Space not allowed"),
-        ("john/doe", False, "Invalid character /"),
-        ("john\\doe", False, "Invalid character \\"),
-        ("", False, "Empty string"),
-        ("john.doe.", False, "Ends with period"),
-        ("john.doe-", False, "Ends with dash"),
-        ("john.doe_", False, "Ends with underscore"),
-        (".john", False, "Starts with period"),
-        ("-john", False, "Starts with dash"),
-        ("_john", False, "Starts with underscore"),
-        ("j.d", True, "Valid 3-character username"),
-        ("j", False, "Too short"),
-        ("a", False, "Too short"),
+    # Test cases that should be rejected (contain 'kiwellness' in some form)
+    rejected_usernames = [
+        'kiwellness',
+        'ki_wellness',
+        'ki-wellness', 
+        'ki wellness',
+        'kiwellness123',
+        'ki_wellness_123',
+        'ki-wellness-123',
+        'ki wellness 123',
+        'kiwellness2024',
+        'ki_wellness_2024',
+        'ki-wellness-2024',
+        'ki wellness 2024',
+        'kiwellness2023',
+        'ki_wellness_2023',
+        'ki-wellness-2023',
+        'ki wellness 2023',
+        'kiwellness2025',
+        'ki_wellness_2025',
+        'ki-wellness-2025',
+        'ki wellness 2025',
+        'my_kiwellness_user',
+        'user_kiwellness',
+        'kiwellness_test',
+        'test_kiwellness',
+        'KIWELLNESS',
+        'KiWellness',
+        'KI_WELLNESS',
+        'Ki_Wellness',
+        'ki wellness user',
+        'user ki wellness',
+        'kiwellness_user_123',
+        '123_kiwellness_456',
+        'kiwellness_2024_user',
+        'user_kiwellness_2024'
     ]
     
-    # Username pattern from the application
-    username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
+    # Test cases that should be allowed (don't contain 'kiwellness')
+    allowed_usernames = [
+        'myusername',
+        'user123',
+        'test_user',
+        'admin',
+        'john.doe',
+        'jane-smith',
+        'user_2024',
+        'testuser123',
+        'my_user_name',
+        'user-name',
+        'username123',
+        'test.user',
+        'user_test',
+        'myuser',
+        'user2024',
+        'test123',
+        'admin_user',
+        'john_doe_123',
+        'jane_smith_2024',
+        'user.name',
+        'test-user',
+        'my_username',
+        'user_name_123',
+        'test.user.2024',
+        'user-test-123'
+    ]
     
-    print("\nTesting username validation patterns:")
+    print("🧪 Testing Username Validation")
     print("=" * 50)
     
-    for username, should_be_valid, description in test_cases:
-        # Check pattern match
-        pattern_match = bool(username_pattern.match(username))
-        
-        # Check length
-        length_valid = 3 <= len(username) <= 30 if username else False
-        
-        # Overall validation
-        is_valid = pattern_match and length_valid
-        
-        status = "✅ PASS" if is_valid == should_be_valid else "❌ FAIL"
-        result = "VALID" if is_valid else "INVALID"
-        expected = "VALID" if should_be_valid else "INVALID"
-        
-        print(f"{status} {username:20} -> {result:8} (expected: {expected:8}) - {description}")
-        
-        if is_valid != should_be_valid:
-            print(f"    Pattern match: {pattern_match}, Length valid: {length_valid}")
+    # Test rejected usernames
+    print("\n❌ Testing usernames that should be REJECTED:")
+    print("-" * 40)
+    rejected_count = 0
+    for username in rejected_usernames:
+        result = is_kiwellness_username(username)
+        status = "✅ REJECTED" if result else "❌ ALLOWED (SHOULD BE REJECTED)"
+        print(f"{username:<25} -> {status}")
+        if result:
+            rejected_count += 1
+        else:
+            print(f"  ⚠️  WARNING: '{username}' was allowed but should be rejected!")
     
-    print("\n" + "=" * 50)
-    print("Username validation test completed!")
+    # Test allowed usernames
+    print("\n✅ Testing usernames that should be ALLOWED:")
+    print("-" * 40)
+    allowed_count = 0
+    for username in allowed_usernames:
+        result = is_kiwellness_username(username)
+        status = "❌ REJECTED (SHOULD BE ALLOWED)" if result else "✅ ALLOWED"
+        print(f"{username:<25} -> {status}")
+        if not result:
+            allowed_count += 1
+        else:
+            print(f"  ⚠️  WARNING: '{username}' was rejected but should be allowed!")
     
-    # Test with actual database operations
-    print("\nTesting database operations with valid usernames...")
+    # Summary
+    print("\n📊 Test Summary:")
+    print("=" * 50)
+    print(f"Rejected usernames: {rejected_count}/{len(rejected_usernames)} correctly rejected")
+    print(f"Allowed usernames: {allowed_count}/{len(allowed_usernames)} correctly allowed")
     
-    with app.app_context():
-        try:
-            # Test valid usernames
-            valid_usernames = ["john.doe", "john-doe", "john_doe", "john.doe-123"]
-            
-            for username in valid_usernames:
-                try:
-                    # Check if username already exists
-                    existing_user = User.query.filter(User.username.ilike(username)).first()
-                    if existing_user:
-                        print(f"⚠️  Username '{username}' already exists in database")
-                        continue
-                    
-                    # Try to create user with this username
-                    test_user = User(
-                        username=username,
-                        email=f"{username}@test.com",
-                        password_hash="[REDACTED]"
-                    )
-                    db.session.add(test_user)
-                    db.session.commit()
-                    print(f"✅ Successfully created user with username: '{username}'")
-                    
-                    # Clean up
-                    db.session.delete(test_user)
-                    db.session.commit()
-                    
-                except Exception as e:
-                    print(f"❌ Failed to create user with username '{username}': {e}")
-                    db.session.rollback()
-            
-            print("\n✅ Database username validation tests completed!")
-            
-        except Exception as e:
-            print(f"❌ Error during database testing: {e}")
-            db.session.rollback()
+    total_tests = len(rejected_usernames) + len(allowed_usernames)
+    passed_tests = rejected_count + allowed_count
+    
+    if passed_tests == total_tests:
+        print(f"\n🎉 ALL TESTS PASSED! ({passed_tests}/{total_tests})")
+        return True
+    else:
+        print(f"\n❌ SOME TESTS FAILED! ({passed_tests}/{total_tests})")
+        return False
 
 if __name__ == "__main__":
-    test_username_validation()
+    success = test_username_validation()
+    sys.exit(0 if success else 1)

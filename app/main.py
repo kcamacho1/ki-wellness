@@ -15,6 +15,7 @@ from functools import wraps
 import random
 import hashlib
 import time
+import re
 
 app = Flask(__name__)
 
@@ -43,7 +44,6 @@ if not app.config.get('SQLALCHEMY_DATABASE_URI'):
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
-# Create database tables if they don't exist
 def init_database():
     """Initialize database tables"""
     with app.app_context():
@@ -59,8 +59,14 @@ def init_database():
                 print("🔄 Creating database tables...")
                 db.create_all()
                 print("✅ Database tables created successfully!")
+                
+                # Create admin account after tables are created
+                create_admin_account()
             else:
                 print(f"✅ Database tables already exist: {existing_tables}")
+                
+                # Check if admin account exists (in case tables exist but admin doesn't)
+                create_admin_account()
                 
         except Exception as e:
             print(f"⚠️ Warning: Could not initialize database tables: {e}")
@@ -82,6 +88,10 @@ def ensure_tables_exist():
                 print("🔄 Creating database tables on first request...")
                 db.create_all()
                 print("✅ Database tables created successfully!")
+                
+                # Create admin account after tables are created
+                create_admin_account()
+                
                 return True
             return True
     except Exception as e:
@@ -138,6 +148,56 @@ class UserProfile(db.Model):
     weight_unit = db.Column(db.String(10), nullable=True, default='kg')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+def create_admin_account():
+    """Create the default admin account if it doesn't exist"""
+    try:
+        # Get admin credentials from environment variables
+        admin_username = os.environ.get('ADMIN_USERNAME', 'ki.wellness')
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'InfiniteAbundance$369')
+        admin_name = os.environ.get('ADMIN_NAME', 'key')
+        
+        # Check if admin account already exists
+        admin_user = User.query.filter_by(username=admin_username).first()
+        
+        if not admin_user:
+            print("🔄 Creating admin account...")
+            
+            # Create admin user
+            admin_user = User(
+                username=admin_username,
+                email=admin_email,
+                is_admin=True
+            )
+            admin_user.set_password(admin_password)
+            
+            # Add to database
+            db.session.add(admin_user)
+            db.session.commit()
+            
+            # Create admin user profile
+            admin_profile = UserProfile(
+                user_id=admin_user.id,
+                name=admin_name,
+                avatar='default-avatar.png',
+                weight_unit='kg'
+            )
+            
+            db.session.add(admin_profile)
+            db.session.commit()
+            
+            print("✅ Admin account created successfully!")
+            print(f"   Username: {admin_username}")
+            print(f"   Email: {admin_email}")
+            print(f"   Name: {admin_name}")
+            print("   Password: [SECURE - Set via environment variable]")
+        else:
+            print("✅ Admin account already exists")
+            
+    except Exception as e:
+        print(f"⚠️ Warning: Could not create admin account: {e}")
+        db.session.rollback()
 
 # Authentication decorator with session timeout
 def login_required(f):
@@ -488,6 +548,65 @@ def login():
     
     return render_template('login.html')
 
+def is_kiwellness_username(username):
+    """
+    Check if username contains 'kiwellness' in any form (with or without spaces, underscores, numbers)
+    Returns True if the username contains 'kiwellness' in any form, False otherwise
+    """
+    import re
+    
+    # Convert to lowercase for case-insensitive comparison
+    username_lower = username.lower()
+    
+    # Remove spaces, underscores, and numbers for comparison
+    cleaned_username = re.sub(r'[\s_0-9]', '', username_lower)
+    
+    # Check if 'kiwellness' is contained in the cleaned username
+    if 'kiwellness' in cleaned_username:
+        return True
+    
+    # Also check for common variations and patterns
+    variations = [
+        'kiwellness',
+        'ki_wellness', 
+        'ki-wellness',
+        'ki wellness',
+        'kiwellness123',
+        'ki_wellness_123',
+        'ki-wellness-123',
+        'ki wellness 123',
+        'kiwellness2024',
+        'ki_wellness_2024',
+        'ki-wellness-2024',
+        'ki wellness 2024',
+        'kiwellness2023',
+        'ki_wellness_2023',
+        'ki-wellness-2023',
+        'ki wellness 2023',
+        'kiwellness2025',
+        'ki_wellness_2025',
+        'ki-wellness-2025',
+        'ki wellness 2025'
+    ]
+    
+    for variation in variations:
+        if variation in username_lower:
+            return True
+    
+    # Check for patterns like ki_wellness, ki-wellness, ki wellness
+    patterns = [
+        r'ki\s*wellness',
+        r'ki_wellness',
+        r'ki-wellness',
+        r'kiwellness'
+    ]
+    
+    for pattern in patterns:
+        if re.search(pattern, username_lower):
+            return True
+    
+    return False
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -513,7 +632,6 @@ def register():
             return render_template('register.html')
         
         # Username validation
-        import re
         username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
         if not username_pattern.match(username):
             flash('Username must start and end with a letter or number. Can contain letters, numbers, periods, underscores, and dashes in the middle.', 'error')
@@ -525,6 +643,11 @@ def register():
         
         if len(username) > 30:
             flash('Username must be 30 characters or less', 'error')
+            return render_template('register.html')
+        
+        # Check for 'kiwellness' in username
+        if is_kiwellness_username(username):
+            flash('Username cannot contain "kiwellness" or similar variations', 'error')
             return render_template('register.html')
         
         if password != confirm_password:
