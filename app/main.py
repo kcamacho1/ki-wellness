@@ -35,6 +35,11 @@ app.config['TURNSTILE_SITE_KEY'] = os.environ.get('SITE_KEY')
 app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['TURNSTILE_ENABLED'] = os.environ.get('TURNSTILE_ENABLED', 'true').lower() == 'true'
 
+# Ensure database URL is properly set
+if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+    # Fallback to SQLite if no database URL is set
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
+
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
 

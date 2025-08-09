@@ -36,13 +36,6 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     FLASK_ENV = 'production'
-    # For production, ensure we have a proper database URL
-    @property
-    def SQLALCHEMY_DATABASE_URI(self):
-        database_url = get_database_url()
-        if database_url == 'sqlite:///ki_wellness.db':
-            raise RuntimeError("DATABASE_URL environment variable must be set in production")
-        return database_url
 
 # Configuration dictionary
 config = {
