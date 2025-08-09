@@ -11,9 +11,11 @@ def get_database_url():
         # Default to SQLite for development
         return 'sqlite:///ki_wellness.db'
     
-    # Handle Render's PostgreSQL URL format
+    # Handle Render's PostgreSQL URL format and update to use psycopg3
     if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
+    elif database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     
     return database_url
 
