@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI Wellness - Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='public/icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='public/android-chrome-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='public/android-chrome-512x512.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
+    <!-- SECURITY: Session timeout warning -->
+    <script>
+        // Session timeout management (1 hour = 3600000 milliseconds)
+        const SESSION_TIMEOUT = 3600000; // 1 hour in milliseconds
+        const WARNING_TIME = 300000; // 5 minutes before timeout
+        
+        let sessionTimer;
+        let warningTimer;
+        
+        function resetSessionTimer() {
+            // Clear existing timers
+            if (sessionTimer) clearTimeout(sessionTimer);
+            if (warningTimer) clearTimeout(warningTimer);
+            
+            // Set warning timer (5 minutes before timeout)
+            warningTimer = setTimeout(() => {
+                showSessionWarning();
+            }, SESSION_TIMEOUT - WARNING_TIME);
+            
+            // Set session timeout timer
+            sessionTimer = setTimeout(() => {
+                logoutUser();
+            }, SESSION_TIMEOUT);
+        }
+        
+        function showSessionWarning() {
+            // Create warning modal
+            const warningModal = document.createElement('div');
+            warningModal.id = 'session-warning-modal';
+            warningModal.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-lg font-medium text-gray-900">Session Expiring Soon</h3>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600">
+                                Your session will expire in 5 minutes for security reasons. 
+                                Click "Stay Logged In" to extend your session.
+                            </p>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="logoutUser()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                                Logout Now
+                            </button>
+                            <button onclick="extendSession()" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+                                Stay Logged In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(warningModal);
+        }
+        
+        function extendSession() {
+            // Remove warning modal
+            const modal = document.getElementById('session-warning-modal');
+            if (modal) modal.remove();
+            
+            // Make a request to extend session
+            fetch('/extend-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    // Reset timers
+                    resetSessionTimer();
+                    console.log('Session extended successfully');
+                } else {
+                    logoutUser();
+                }
+            }).catch(() => {
+                logoutUser();
+            });
+        }
+        
+        function logoutUser() {
+            // Redirect to logout
+            window.location.href = '/logout';
+        }
+        
+        // Initialize session timer on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            resetSessionTimer();
+            
+            // Reset timer on user activity
+            ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+                document.addEventListener(event, resetSessionTimer, { passive: true });
+            });
+        });
+    </script>
+    
+    <style>
+        .analysis-content, .suggestions-content {
+            line-height: 1.6;
+        }
+        
+        .analysis-content p, .suggestions-content p {
+            margin-bottom: 1rem;
+        }
+        
+        .suggestions-content ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .suggestions-content li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .suggestions-content li:before {
+            content: "•";
+            color: #10b981;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .highlight {
+            color: #2d5016;
+            font-weight: 600;
+        }
+        
+        .analysis-content .highlight {
+            background-color: #f0f9ff;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        /* Patterns Analysis Styling */
+        .patterns-analysis {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .mind-section, .body-section, .spirit-section {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border-left: 4px solid;
+        }
+        
+        .mind-section {
+            border-left-color: #3b82f6;
+        }
+        
+        .body-section {
+            border-left-color: #10b981;
+        }
+        
+        .spirit-section {
+            border-left-color: #8b5cf6;
+        }
+        
+        .mind-section h3, .body-section h3, .spirit-section h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .section-icon {
+            margin-right: 0.5rem;
+        }
+        
+        .section-content {
+            color: #374151;
+            line-height: 1.6;
+        }
+        
+        .section-content p {
+            margin-bottom: 0.75rem;
+        }
+        
+        .section-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Suggestion Links Styling */
+        .suggestion-link {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #f0fdf4;
+            border-radius: 0.375rem;
+            border: 1px solid #bbf7d0;
+            transition: all 0.2s ease;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .suggestion-link:hover {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            transform: translateY(-1px);
+        }
+        
+        .suggestions-content {
+            max-height: none;
+            overflow: visible;
+            padding: 1rem;
+        }
+        
+        .suggestions-content ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        
+        .suggestions-content li {
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background-color: #f8fafc;
+            border-radius: 0.75rem;
+            border-left: 4px solid #10b981;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .suggestions-content li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .suggestions-content .highlight {
+            color: #059669;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .suggestions-content p {
+            margin: 0.5rem 0 0 0;
+            color: #374151;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                    colors: {
+                        'forest-green': '#2d5016',
+                        'sage-green': '#9ca3af',
+                        'mint-green': '#10b981',
+                        'soft-green': '#f0f9ff',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#8b4513'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-nature-gray min-h-screen">
+    {% include 'includes/navigation.html' %}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-forest-green mb-2" id="dashboardTitle">Your Daily Stats</h1>
+            <p class="text-sage-green">Track your wellness journey today</p>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Water Intake -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green relative group">
+                <button class="share-btn absolute top-3 right-3 p-3 text-gray-500 hover:text-mint-green transition-all duration-200 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10 bg-white bg-opacity-80 rounded-full shadow-sm hover:shadow-md active:scale-95" data-tile="water" title="Share Water Intake">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 md:hidden">Share</span>
+                </button>
+                <div class="flex items-center justify-center mb-4">
+                    <h2 class="text-2xl font-semibold text-forest-green text-center">Water Intake</h2>
+                </div>
+                <div class="text-center">
+                    <button id="addWaterBtn" class="relative inline-block mb-4 group cursor-pointer transition-transform duration-200 hover:scale-105">
+                        <svg class="w-32 h-32" viewBox="0 0 100 100">
+                            <!-- Water glass -->
+                            <rect x="35" y="20" width="30" height="60" fill="none" stroke="#3b82f6" stroke-width="2"/>
+                            <rect x="35" y="20" width="30" height="60" fill="url(#waterGradient)" opacity="0.7"/>
+                            <!-- Glass base -->
+                            <rect x="30" y="80" width="40" height="5" fill="#3b82f6"/>
+                            <!-- Water level indicator -->
+                            <rect x="37" y="25" width="16" height="50" fill="#3b82f6" opacity="0.3"/>
+                            <defs>
+                                <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3"/>
+                                    <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:0.7"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <!-- Click indicator -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div class="bg-white bg-opacity-90 rounded-full p-2 shadow-lg">
+                                <span class="text-calm-blue font-bold text-sm">+8 oz</span>
+                            </div>
+                        </div>
+                    </button>
+                    <div class="text-3xl font-bold text-calm-blue" id="waterAmount">0</div>
+                    <div class="text-sm text-gray-600" id="waterUnit">oz</div>
+                    <div class="mt-2 text-xs text-gray-500">Click the glass to add 8 oz</div>
+                </div>
+
+            </div>
+
+            <!-- Macronutrients Pie Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green relative group">
+                <button class="share-btn absolute top-3 right-3 p-3 text-gray-500 hover:text-mint-green transition-all duration-200 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10 bg-white bg-opacity-80 rounded-full shadow-sm hover:shadow-md active:scale-95" data-tile="macros" title="Share Macronutrients">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 md:hidden">Share</span>
+                </button>
+                <div class="flex items-center justify-center mb-4">
+                    <h2 class="text-2xl font-semibold text-forest-green text-center">Macronutrients</h2>
+                </div>
+                <div class="relative">
+                    <canvas id="macrosChart" width="200" height="200"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-forest-green" id="totalCalories">0</div>
+                            <div class="text-sm text-gray-600">calories</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            Protein
+                        </span>
+                        <span id="proteinAmount">0g</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                            Carbs
+                        </span>
+                        <span id="carbsAmount">0g</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            Fat
+                        </span>
+                        <span id="fatAmount">0g</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mood Display -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green flex flex-col relative group">
+                <button class="share-btn absolute top-3 right-3 p-3 text-gray-500 hover:text-mint-green transition-all duration-200 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 z-10 bg-white bg-opacity-80 rounded-full shadow-sm hover:shadow-md active:scale-95" data-tile="mood" title="Share Today's Mood">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 md:hidden">Share</span>
+                </button>
+                <div class="flex items-center justify-center mb-4">
+                    <h2 class="text-2xl font-semibold text-forest-green text-center">Today's Mood</h2>
+                </div>
+                <button id="addMoodBtn" class="text-center flex flex-col items-center justify-center flex-1 hover:bg-gray-50 rounded-lg transition-colors duration-200 p-4 group">
+                    <div class="text-6xl mb-4 group-hover:scale-110 transition-transform duration-200" id="moodEmoji">😐</div>
+                    <div class="text-lg font-medium text-gray-700" id="moodText">Neutral</div>
+                    <div class="text-sm text-gray-500 mt-2">Click to add mood</div>
+                    <div class="text-xs text-mint-green mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">+ Add Mood</div>
+                </button>
+
+            </div>
+        </div>
+
+        <!-- AI Analysis Section -->
+        <div class="mt-8 border-2 border-soft-green rounded-lg p-6 bg-soft-green shadow-md">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold text-forest-green">AI Analysis</h2>
+                <button id="refreshAnalysisBtn" class="text-forest-green hover:text-mint-green transition-colors duration-200 flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="text-sm">Refresh</span>
+                </button>
+            </div>
+            <div class="flex items-center justify-center mb-6">
+                <button id="prevAnalysisBtn" class="text-forest-green hover:text-mint-green transition-colors duration-200 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <p class="text-center text-gray-600" id="analysisPeriod">Past 7 Days</p>
+                <button id="nextAnalysisBtn" class="text-forest-green hover:text-mint-green transition-colors duration-200 ml-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Patterns Analysis -->
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold text-forest-green mb-4">Patterns</h3>
+                <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                    <div id="patternsContent" class="space-y-4">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                            <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div>
+                <h3 class="text-xl font-semibold text-forest-green mb-4">Suggestions</h3>
+                <div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+                    <div id="suggestionsContent" class="min-h-48">
+                        <div class="animate-pulse">
+                            <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                            <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-mint-green mx-auto"></div>
+            <p class="text-gray-600 mt-4">Loading your daily stats...</p>
+        </div>
+    </div>
+
+    <!-- Mood Selection Modal -->
+    <div id="moodModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-forest-green">How are you feeling?</h3>
+                <button id="closeMoodModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😊 Great">
+                        <div class="text-3xl mb-2">😊</div>
+                        <div class="text-sm font-medium">Great</div>
+                    </button>
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😌 Good">
+                        <div class="text-3xl mb-2">😌</div>
+                        <div class="text-sm font-medium">Good</div>
+                    </button>
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😐 Neutral">
+                        <div class="text-3xl mb-2">😐</div>
+                        <div class="text-sm font-medium">Neutral</div>
+                    </button>
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😔 Down">
+                        <div class="text-3xl mb-2">😔</div>
+                        <div class="text-sm font-medium">Down</div>
+                    </button>
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😤 Stressed">
+                        <div class="text-3xl mb-2">😤</div>
+                        <div class="text-sm font-medium">Stressed</div>
+                    </button>
+                    <button class="mood-option p-4 rounded-lg border-2 border-transparent hover:border-mint-green transition-colors duration-200" data-mood="😴 Tired">
+                        <div class="text-3xl mb-2">😴</div>
+                        <div class="text-sm font-medium">Tired</div>
+                    </button>
+                </div>
+                <div class="mb-4">
+                    <label for="moodNotes" class="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+                    <textarea id="moodNotes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent" placeholder="How are you feeling today?"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancelMoodBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200">Cancel</button>
+                    <button id="confirmMoodBtn" class="px-4 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green transition-colors duration-200">Add Mood</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard functionality
+        let macrosChart = null;
+        let currentPatternView = '7day'; // Only 7-day analysis now
+        let currentSuggestionView = '7day'; // Only 7-day analysis now
+        let patternsData = null;
+
+        // Load profile name and username
+        const loadProfileName = async () => {
+            try {
+                const response = await fetch('/profile/data');
+                const data = await response.json();
+                const profileName = data.name || 'your';
+                const username = data.username || '';
+                const titleElement = document.getElementById('dashboardTitle');
+                
+                if (username) {
+                    titleElement.textContent = `${profileName}'s Daily Stats`;
+                    // Add username to the subtitle - target only the subtitle paragraph, not navigation links
+                    const subtitle = document.querySelector('p.text-sage-green');
+                    if (subtitle) {
+                        subtitle.textContent = `@${username} • Track your wellness journey today`;
+                    }
+                } else {
+                    titleElement.textContent = `${profileName}'s Daily Stats`;
+                }
+            } catch (error) {
+                console.error('Error loading profile name:', error);
+            }
+        };
+
+        // Load today's food journal data and mood entries
+        const loadTodayStats = async () => {
+            try {
+                // Get today's date in user's timezone
+                const today = new Date();
+                const todayString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                
+                // Fetch food journal entries
+                const foodResponse = await fetch(`/food-journal/entries?start_date=${todayString}&end_date=${todayString}`);
+                const foodData = await foodResponse.json();
+                
+                // Fetch mood entries
+                const moodResponse = await fetch(`/dashboard/mood/entries?start_date=${todayString}&end_date=${todayString}`);
+                const moodData = await moodResponse.json();
+                
+                if (foodData.success) {
+                    // Combine food journal moods with mood entries
+                    const allMoods = [];
+                    
+                    // Add moods from food journal entries
+                    if (foodData.entries) {
+                        foodData.entries.forEach(entry => {
+                            if (entry.mood) {
+                                allMoods.push(entry.mood);
+                            }
+                        });
+                    }
+                    
+                    // Add moods from mood entries
+                    if (moodData.success && moodData.entries) {
+                        moodData.entries.forEach(entry => {
+                            if (entry.mood) {
+                                allMoods.push(entry.mood);
+                            }
+                        });
+                    }
+                    
+                    // Pass combined moods to calculateStats
+                    calculateStats(foodData.entries, allMoods);
+                }
+            } catch (error) {
+                console.error('Error loading today\'s stats:', error);
+            } finally {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+        };
+
+        // Calculate statistics from food entries and mood entries
+        const calculateStats = (entries, allMoods = []) => {
+            let totalWater = 0;
+            let totalProtein = 0;
+            let totalCarbs = 0;
+            let totalFat = 0;
+            let totalCalories = 0;
+
+            entries.forEach(entry => {
+                // Calculate water intake
+                if (entry.water_amount && entry.water_unit) {
+                    let waterInOz = 0;
+                    if (entry.water_unit === 'oz') {
+                        waterInOz = entry.water_amount;
+                    } else if (entry.water_unit === 'liters') {
+                        waterInOz = entry.water_amount * 33.814;
+                    } else if (entry.water_unit === 'gallons') {
+                        waterInOz = entry.water_amount * 128;
+                    }
+                    totalWater += waterInOz;
+                }
+
+                // Calculate macronutrients
+                if (entry.protein) totalProtein += entry.protein;
+                if (entry.carbs) totalCarbs += entry.carbs;
+                if (entry.fat) totalFat += entry.fat;
+                if (entry.calories) totalCalories += entry.calories;
+            });
+
+            // Update water display
+            document.getElementById('waterAmount').textContent = Math.round(totalWater);
+            document.getElementById('waterUnit').textContent = 'oz';
+
+            // Update macronutrients
+            document.getElementById('proteinAmount').textContent = `${totalProtein.toFixed(1)}g`;
+            document.getElementById('carbsAmount').textContent = `${totalCarbs.toFixed(1)}g`;
+            document.getElementById('fatAmount').textContent = `${totalFat.toFixed(1)}g`;
+            document.getElementById('totalCalories').textContent = Math.round(totalCalories);
+
+            // Update pie chart
+            updateMacrosChart(totalProtein, totalCarbs, totalFat);
+
+            // Calculate average mood from combined moods
+            calculateAverageMood(allMoods);
+        };
+
+        // Update macronutrients pie chart
+        const updateMacrosChart = (protein, carbs, fat) => {
+            const ctx = document.getElementById('macrosChart').getContext('2d');
+            
+            if (macrosChart) {
+                macrosChart.destroy();
+            }
+
+            const total = protein + carbs + fat;
+            if (total === 0) {
+                // Show empty chart
+                macrosChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+                return;
+            }
+
+            macrosChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [protein, carbs, fat],
+                        backgroundColor: ['#ef4444', '#eab308', '#22c55e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        };
+
+        // Calculate average mood
+        const calculateAverageMood = (moods) => {
+            if (moods.length === 0) {
+                document.getElementById('moodEmoji').textContent = '😐';
+                document.getElementById('moodText').textContent = 'No mood data';
+                return;
+            }
+
+            // Simple mood mapping (you can expand this)
+            const moodScores = {
+                'happy': 5, 'great': 5, 'excellent': 5, 'amazing': 5,
+                'good': 4, 'fine': 4, 'okay': 4, 'alright': 4,
+                'neutral': 3, 'meh': 3, 'average': 3,
+                'sad': 2, 'bad': 2, 'terrible': 2, 'awful': 2,
+                'angry': 1, 'frustrated': 1, 'stressed': 1
+            };
+
+            let totalScore = 0;
+            let validMoods = 0;
+
+            moods.forEach(mood => {
+                const lowerMood = mood.toLowerCase();
+                for (const [key, score] of Object.entries(moodScores)) {
+                    if (lowerMood.includes(key)) {
+                        totalScore += score;
+                        validMoods++;
+                        break;
+                    }
+                }
+            });
+
+            if (validMoods === 0) {
+                document.getElementById('moodEmoji').textContent = '😐';
+                document.getElementById('moodText').textContent = 'Neutral';
+                return;
+            }
+
+            const averageScore = totalScore / validMoods;
+            let emoji, text;
+
+            if (averageScore >= 4.5) {
+                emoji = '😄';
+                text = 'Excellent';
+            } else if (averageScore >= 3.5) {
+                emoji = '🙂';
+                text = 'Good';
+            } else if (averageScore >= 2.5) {
+                emoji = '😐';
+                text = 'Neutral';
+            } else if (averageScore >= 1.5) {
+                emoji = '😔';
+                text = 'Not Great';
+            } else {
+                emoji = '😢';
+                text = 'Poor';
+            }
+
+            document.getElementById('moodEmoji').textContent = emoji;
+            document.getElementById('moodText').textContent = text;
+        };
+
+        // Load patterns analysis
+        const loadPatternsAnalysis = async () => {
+            try {
+                // Show loading state
+                const patternsContent = document.getElementById('patternsContent');
+                const suggestionsContent = document.getElementById('suggestionsContent');
+                
+                patternsContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-green mx-auto"></div>
+                        <p class="text-sm text-gray-600 mt-2">Checking analysis status...</p>
+                    </div>
+                `;
+                suggestionsContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-green mx-auto"></div>
+                        <p class="text-sm text-gray-600 mt-2">Loading suggestions...</p>
+                    </div>
+                `;
+                
+                // Get browser timezone
+                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const url = `/dashboard/patterns?browser_timezone=${encodeURIComponent(browserTimezone)}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    patternsData = data;
+                    displayPatternsAnalysis(data);
+                    
+                    // Show appropriate message based on cache status
+                    if (data.cache_info && data.cache_info.seven_day_updated) {
+                        console.log('Using cached analysis from last Monday');
+                    } else {
+                        console.log('Generated new analysis');
+                    }
+                } else {
+                    console.error('Error loading patterns:', data.error);
+                    displayPatternsError();
+                }
+            } catch (error) {
+                console.error('Error loading patterns analysis:', error);
+                displayPatternsError();
+            }
+        };
+
+        // Display patterns analysis
+        const displayPatternsAnalysis = (data) => {
+            const patternsContent = document.getElementById('patternsContent');
+            const suggestionsContent = document.getElementById('suggestionsContent');
+            const prevAnalysisBtn = document.getElementById('prevAnalysisBtn');
+            const nextAnalysisBtn = document.getElementById('nextAnalysisBtn');
+            const analysisPeriod = document.getElementById('analysisPeriod');
+            
+            // Check if this is a new user with no data or needs more data
+            if (data.is_new_user || data.needs_more_data) {
+                // Hide navigation buttons for new users
+                prevAnalysisBtn.classList.add('hidden');
+                nextAnalysisBtn.classList.add('hidden');
+                analysisPeriod.classList.add('hidden');
+                
+                // Display call-to-action for new users
+                displayNewUserCallToAction(data);
+                return;
+            }
+            
+            // Show navigation buttons
+            prevAnalysisBtn.classList.remove('hidden');
+            nextAnalysisBtn.classList.remove('hidden');
+            analysisPeriod.classList.remove('hidden');
+            
+            // Display current view
+            updatePatternsView();
+            updateSuggestionsView();
+            updateAnalysisPeriod();
+        };
+        
+        // Display call-to-action for new users
+        const displayNewUserCallToAction = (data) => {
+            const patternsContent = document.getElementById('patternsContent');
+            const suggestionsContent = document.getElementById('suggestionsContent');
+            
+            // Determine the icon and color based on user state
+            const isNewUser = data.is_new_user;
+            const iconColor = isNewUser ? 'bg-mint-green' : 'bg-calm-blue';
+            const iconSvg = isNewUser ? 
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>' :
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>';
+            
+            patternsContent.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 ${iconColor} rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${iconSvg}
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-forest-green mb-2">${data.call_to_action.title}</h3>
+                        <p class="text-gray-600 mb-6">${data.call_to_action.description}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                        ${data.call_to_action.actions.map(action => `
+                            <a href="${action.url}" class="block p-6 bg-white border-2 border-mint-green rounded-lg hover:bg-mint-green hover:text-white transition-all duration-200 group">
+                                <div class="text-center">
+                                    <div class="text-3xl mb-3">${action.icon}</div>
+                                    <h4 class="font-semibold text-lg mb-2 group-hover:text-white">${action.text}</h4>
+                                    <p class="text-sm text-gray-600 group-hover:text-gray-100">${action.description}</p>
+                                </div>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            suggestionsContent.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="mb-6">
+                        <div class="w-16 h-16 bg-calm-blue rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-forest-green mb-2">AI-Powered Insights Await</h3>
+                        <p class="text-gray-600">Once you start tracking your wellness data, our AI will provide personalized analysis and suggestions to help you achieve your health goals.</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-mint-green to-calm-blue p-6 rounded-lg text-white">
+                        <h4 class="font-semibold mb-2">What you'll get:</h4>
+                        <ul class="text-sm space-y-1 text-left max-w-md mx-auto">
+                            <li>• Personalized nutrition insights</li>
+                            <li>• Mood and wellness patterns</li>
+                            <li>• Smart recommendations</li>
+                            <li>• Progress tracking</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Update patterns view based on current state
+        const updatePatternsView = () => {
+            const patternsContent = document.getElementById('patternsContent');
+            
+            if (!patternsData) return;
+            
+            const data = patternsData.seven_day;
+            
+            if (data && data.success) {
+                // Format analysis date
+                let cacheInfo = '';
+                if (data.summary && data.summary.analysis_time_browser) {
+                    // Use the browser timezone time stored in summary
+                    const formattedDate = formatDateInUserTimezone(data.summary.analysis_time_browser);
+                    cacheInfo = `<span class="text-xs text-gray-400 ml-2">(analyzed ${formattedDate})</span>`;
+                } else if (data.last_updated) {
+                    const formattedDate = formatDateInUserTimezone(data.last_updated);
+                    cacheInfo = `<span class="text-xs text-gray-400 ml-2">(analyzed ${formattedDate})</span>`;
+                } else if (data.created_at) {
+                    const formattedDate = formatDateInUserTimezone(data.created_at);
+                    cacheInfo = `<span class="text-xs text-gray-400 ml-2">(analyzed ${formattedDate})</span>`;
+                } else if (patternsData.cache_info?.seven_day_updated) {
+                    cacheInfo = '<span class="text-xs text-gray-400 ml-2">(cached from last Monday)</span>';
+                }
+                
+                patternsContent.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                            <strong>📊 Summary:</strong> ${data.summary.total_entries} entries • 
+                            ${Math.round(data.summary.total_calories)} cal • 
+                            ${Math.round(data.summary.avg_water)} oz avg water
+                            ${cacheInfo}
+                        </div>
+                        <div class="text-sm text-gray-700 leading-relaxed">
+                            ${data.analysis}
+                        </div>
+                    </div>
+                `;
+            } else {
+                patternsContent.innerHTML = `
+                    <div class="text-sm text-gray-500 italic">
+                        ${data?.error || 'No data available'}
+                    </div>
+                `;
+            }
+        };
+
+        // Update suggestions view based on current state
+        const updateSuggestionsView = () => {
+            const suggestionsContent = document.getElementById('suggestionsContent');
+            
+            if (!patternsData) return;
+            
+            const data = patternsData.seven_day;
+            
+            if (data && data.success) {
+                suggestionsContent.innerHTML = `
+                    <div class="suggestions-content">
+                        ${data.suggestions}
+                    </div>
+                `;
+            } else {
+                suggestionsContent.innerHTML = `
+                    <div class="text-sm text-gray-500 italic">
+                        No suggestions available
+                    </div>
+                `;
+            }
+        };
+
+        // Format date in user's timezone
+        const formatDateInUserTimezone = (dateString) => {
+            try {
+                // Parse the date string (handles both timezone-aware and naive dates)
+                const date = new Date(dateString);
+                
+                // Check if the date is valid
+                if (isNaN(date.getTime())) {
+                    return dateString;
+                }
+                
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'short',
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } catch (error) {
+                console.error('Error formatting date:', error);
+                return dateString;
+            }
+        };
+
+        // Update analysis period
+        const updateAnalysisPeriod = () => {
+            const analysisPeriod = document.getElementById('analysisPeriod');
+            
+            if (!patternsData) return;
+            
+            const currentView = currentPatternView === '7day' ? '7day' : '30day';
+            const title = currentView === '7day' ? 'Past 7 Days' : 'Past 30 Days';
+            
+            analysisPeriod.textContent = title;
+        };
+
+        // Display patterns error
+        const displayPatternsError = () => {
+            const patternsContent = document.getElementById('patternsContent');
+            const suggestionsContent = document.getElementById('suggestionsContent');
+            
+            patternsContent.innerHTML = `
+                <div class="text-sm text-gray-500">
+                    Unable to load patterns analysis. Please try again later.
+                </div>
+            `;
+            
+            suggestionsContent.innerHTML = `
+                <div class="text-sm text-gray-500">
+                    Unable to load suggestions. Please try again later.
+                </div>
+            `;
+        };
+
+        // Add water intake
+        const addWaterIntake = async () => {
+            try {
+                const addWaterBtn = document.getElementById('addWaterBtn');
+                
+                // Show loading state
+                addWaterBtn.disabled = true;
+                addWaterBtn.classList.add('opacity-50');
+                
+                // Get current timezone
+                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                
+                const response = await fetch('/dashboard/water/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        browser_timezone: browserTimezone
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Show success feedback
+                    addWaterBtn.classList.add('scale-110');
+                    setTimeout(() => {
+                        addWaterBtn.classList.remove('scale-110');
+                    }, 200);
+                    
+                    // Reload today's stats to update water amount
+                    await loadTodayStats();
+                    
+                    // Show success message
+                    const waterAmount = document.getElementById('waterAmount');
+                    waterAmount.classList.add('text-green-600');
+                    setTimeout(() => {
+                        waterAmount.classList.remove('text-green-600');
+                    }, 1000);
+                    
+                } else {
+                    console.error('Failed to add water intake');
+                }
+            } catch (error) {
+                console.error('Error adding water intake:', error);
+            } finally {
+                // Restore button
+                const addWaterBtn = document.getElementById('addWaterBtn');
+                addWaterBtn.disabled = false;
+                addWaterBtn.classList.remove('opacity-50');
+            }
+        };
+
+        // Mood modal functionality
+        let selectedMood = null;
+        
+        const openMoodModal = () => {
+            document.getElementById('moodModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+        
+        const closeMoodModal = () => {
+            document.getElementById('moodModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            selectedMood = null;
+            document.getElementById('moodNotes').value = '';
+            // Reset mood option selections
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.classList.remove('border-mint-green');
+                option.classList.add('border-transparent');
+            });
+        };
+        
+        const selectMood = (mood) => {
+            selectedMood = mood;
+            // Update visual selection
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.classList.remove('border-mint-green');
+                option.classList.add('border-transparent');
+            });
+            event.target.closest('.mood-option').classList.remove('border-transparent');
+            event.target.closest('.mood-option').classList.add('border-mint-green');
+        };
+        
+        const addMoodEntry = async () => {
+            if (!selectedMood) {
+                alert('Please select a mood');
+                return;
+            }
+            
+            try {
+                const confirmMoodBtn = document.getElementById('confirmMoodBtn');
+                confirmMoodBtn.disabled = true;
+                confirmMoodBtn.textContent = 'Adding...';
+                
+                // Get current timezone
+                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const notes = document.getElementById('moodNotes').value;
+                
+                const response = await fetch('/dashboard/mood/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mood: selectedMood,
+                        notes: notes,
+                        browser_timezone: browserTimezone
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reload today's stats to update mood display
+                    await loadTodayStats();
+                    
+                    // Close modal
+                    closeMoodModal();
+                    
+                    // Show success feedback
+                    alert('Mood added successfully!');
+                } else {
+                    alert('Error adding mood: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error adding mood:', error);
+                alert('Error adding mood. Please try again.');
+            } finally {
+                const confirmMoodBtn = document.getElementById('confirmMoodBtn');
+                confirmMoodBtn.disabled = false;
+                confirmMoodBtn.textContent = 'Add Mood';
+            }
+        };
+
+        // Refresh patterns analysis
+        const refreshPatternsAnalysis = async () => {
+            try {
+                const refreshBtn = document.getElementById('refreshAnalysisBtn');
+                const patternsContent = document.getElementById('patternsContent');
+                const suggestionsContent = document.getElementById('suggestionsContent');
+                
+                // Show loading state
+                refreshBtn.innerHTML = `
+                    <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="text-sm">Refreshing...</span>
+                `;
+                refreshBtn.disabled = true;
+                
+                // Show loading in content areas
+                patternsContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-green mx-auto"></div>
+                        <p class="text-sm text-gray-600 mt-2">Generating new analysis...</p>
+                    </div>
+                `;
+                suggestionsContent.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-green mx-auto"></div>
+                        <p class="text-sm text-gray-600 mt-2">Generating new suggestions...</p>
+                    </div>
+                `;
+                
+                // Clear cache and reload
+                const response = await fetch('/dashboard/patterns/refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Reload patterns analysis
+                    await loadPatternsAnalysis();
+                } else {
+                    console.error('Failed to refresh analysis');
+                }
+            } catch (error) {
+                console.error('Error refreshing analysis:', error);
+            } finally {
+                // Restore button
+                const refreshBtn = document.getElementById('refreshAnalysisBtn');
+                refreshBtn.innerHTML = `
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="text-sm">Refresh</span>
+                `;
+                refreshBtn.disabled = false;
+            }
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfileName();
+            loadTodayStats();
+            loadPatternsAnalysis();
+
+            // Add event listeners for navigation buttons
+            const prevAnalysisBtn = document.getElementById('prevAnalysisBtn');
+            const nextAnalysisBtn = document.getElementById('nextAnalysisBtn');
+            const refreshAnalysisBtn = document.getElementById('refreshAnalysisBtn');
+            const addWaterBtn = document.getElementById('addWaterBtn');
+
+            prevAnalysisBtn.addEventListener('click', () => {
+                currentPatternView = currentPatternView === '7day' ? '30day' : '7day';
+                currentSuggestionView = currentSuggestionView === '7day' ? '30day' : '7day';
+                updatePatternsView();
+                updateSuggestionsView();
+                updateAnalysisPeriod();
+            });
+
+            nextAnalysisBtn.addEventListener('click', () => {
+                currentPatternView = currentPatternView === '7day' ? '30day' : '7day';
+                currentSuggestionView = currentSuggestionView === '7day' ? '30day' : '7day';
+                updatePatternsView();
+                updateSuggestionsView();
+                updateAnalysisPeriod();
+            });
+
+            refreshAnalysisBtn.addEventListener('click', refreshPatternsAnalysis);
+            addWaterBtn.addEventListener('click', addWaterIntake);
+
+            // Mood modal event listeners
+            const addMoodBtn = document.getElementById('addMoodBtn');
+            const closeMoodModal = document.getElementById('closeMoodModal');
+            const cancelMoodBtn = document.getElementById('cancelMoodBtn');
+            const confirmMoodBtn = document.getElementById('confirmMoodBtn');
+            const moodOptions = document.querySelectorAll('.mood-option');
+
+            addMoodBtn.addEventListener('click', openMoodModal);
+            closeMoodModal.addEventListener('click', closeMoodModal);
+            cancelMoodBtn.addEventListener('click', closeMoodModal);
+            confirmMoodBtn.addEventListener('click', addMoodEntry);
+
+            moodOptions.forEach(option => {
+                option.addEventListener('click', () => selectMood(option.dataset.mood));
+            });
+
+            // Share functionality
+            const shareButtons = document.querySelectorAll('.share-btn');
+            shareButtons.forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const tileType = button.dataset.tile;
+                    await shareTile(tileType);
+                });
+            });
+        });
+
+        // Share tile functionality
+        const shareTile = async (tileType) => {
+            try {
+                // Find the tile element
+                let tileElement = null;
+                let tileTitle = '';
+                
+                switch(tileType) {
+                    case 'water':
+                        tileElement = document.querySelector('[data-tile="water"]').closest('.bg-white');
+                        tileTitle = 'Water Intake';
+                        break;
+                    case 'macros':
+                        tileElement = document.querySelector('[data-tile="macros"]').closest('.bg-white');
+                        tileTitle = 'Macronutrients';
+                        break;
+                    case 'mood':
+                        tileElement = document.querySelector('[data-tile="mood"]').closest('.bg-white');
+                        tileTitle = 'Today\'s Mood';
+                        break;
+                }
+
+                if (!tileElement) {
+                    console.error('Tile element not found');
+                    return;
+                }
+
+                // Hide share buttons before taking screenshot
+                const shareButtons = tileElement.querySelectorAll('.share-btn');
+                const originalDisplayStates = [];
+                shareButtons.forEach(button => {
+                    originalDisplayStates.push(button.style.display);
+                    button.style.display = 'none';
+                });
+
+                if (!tileElement) {
+                    console.error('Tile element not found');
+                    return;
+                }
+
+                // Create a canvas to capture the tile
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to match tile dimensions
+                const rect = tileElement.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+
+                // Use html2canvas to capture the tile with enhanced styling
+                const html2canvas = window.html2canvas || await loadHtml2Canvas();
+                
+                const tileCanvas = await html2canvas(tileElement, {
+                    backgroundColor: '#ffffff',
+                    scale: 3, // Higher resolution for better quality
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    removeContainer: true
+                });
+
+                // Add logo watermark to the canvas
+                const logoImg = new Image();
+                logoImg.crossOrigin = 'anonymous';
+                
+                try {
+                    await new Promise((resolve, reject) => {
+                        logoImg.onload = resolve;
+                        logoImg.onerror = reject;
+                        logoImg.src = '/static/public/branding/logoname.png';
+                    });
+                } catch (error) {
+                    console.warn('Could not load logo for watermark:', error);
+                    // Continue without logo if it fails to load
+                }
+
+                // Create a new canvas with enhanced styling and logo overlay
+                const finalCanvas = document.createElement('canvas');
+                const finalCtx = finalCanvas.getContext('2d');
+                
+                // Set final canvas size with padding for better aesthetics
+                const padding = 40;
+                finalCanvas.width = tileCanvas.width + (padding * 2);
+                finalCanvas.height = tileCanvas.height + (padding * 2);
+                
+                // Fill background with a subtle gradient
+                const gradient = finalCtx.createLinearGradient(0, 0, 0, finalCanvas.height);
+                gradient.addColorStop(0, '#f8fafc');
+                gradient.addColorStop(1, '#ffffff');
+                finalCtx.fillStyle = gradient;
+                finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+                
+                // Add subtle shadow effect
+                finalCtx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                finalCtx.shadowBlur = 20;
+                finalCtx.shadowOffsetX = 0;
+                finalCtx.shadowOffsetY = 10;
+                
+                // Draw the original tile with padding
+                finalCtx.drawImage(tileCanvas, padding, padding);
+                
+                // Reset shadow for logo
+                finalCtx.shadowColor = 'transparent';
+                finalCtx.shadowBlur = 0;
+                
+                // Calculate logo position (bottom center) - bigger and more prominent
+                const logoWidth = Math.min(200, finalCanvas.width * 0.35); // 35% of canvas width, max 200px
+                const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
+                const logoX = (finalCanvas.width - logoWidth) / 2; // Center horizontally
+                const logoY = finalCanvas.height - logoHeight - 40; // 40px from bottom for more space
+                
+                // Add prominent background for logo with larger padding
+                finalCtx.fillStyle = 'rgba(255, 255, 255, 0.98)';
+                finalCtx.fillRect(logoX - 25, logoY - 25, logoWidth + 50, logoHeight + 50);
+                
+                // Add more prominent border around logo background
+                finalCtx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+                finalCtx.lineWidth = 2;
+                finalCtx.strokeRect(logoX - 25, logoY - 25, logoWidth + 50, logoHeight + 50);
+                
+                // Draw the logo
+                finalCtx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+
+                // Convert final canvas to blob
+                const blob = await new Promise(resolve => {
+                    finalCanvas.toBlob(resolve, 'image/png', 0.9);
+                });
+
+                // Restore share buttons after screenshot
+                shareButtons.forEach((button, index) => {
+                    button.style.display = originalDisplayStates[index] || '';
+                });
+
+                // Create customized share data based on tile type
+                let shareTitle, shareText;
+                
+                switch(tileType) {
+                    case 'water':
+                        shareTitle = `Hydration Progress - Ki Wellness, Self Health Simplified`;
+                        shareText = `Staying hydrated with ${document.getElementById('waterAmount').textContent} oz of water today! 💧 Track your wellness journey with Ki Wellness, Self Health Simplified.`;
+                        break;
+                    case 'macros':
+                        shareTitle = `Nutrition Balance - Ki Wellness, Self Health Simplified`;
+                        shareText = `Fueling my body with ${document.getElementById('totalCalories').textContent} calories - balanced macros for optimal health! 🥗 Discover your nutrition insights with Ki Wellness, Self Health Simplified.`;
+                        break;
+                    case 'mood':
+                        const moodEmoji = document.getElementById('moodEmoji').textContent;
+                        const moodText = document.getElementById('moodText').textContent;
+                        shareTitle = `Wellness Check-in - Ki Wellness, Self Health Simplified`;
+                        shareText = `Today's wellness check: ${moodText} ${moodEmoji} Prioritizing mental health and mindfulness with Ki Wellness, Self Health Simplified.`;
+                        break;
+                    default:
+                        shareTitle = `${tileTitle} - Ki Wellness, Self Health Simplified`;
+                        shareText = `Check out my ${tileTitle.toLowerCase()} from Ki Wellness, Self Health Simplified!`;
+                }
+
+                const shareData = {
+                    title: shareTitle,
+                    text: shareText,
+                    url: 'https://kiwellness.org',
+                    files: [new File([blob], `${tileTitle.toLowerCase().replace(/\s+/g, '-')}.png`, { type: 'image/png' })]
+                };
+
+                // Try to use native sharing API
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback: download the image
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${tileTitle.toLowerCase().replace(/\s+/g, '-')}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    // Show customized success message
+                    let successMessage;
+                    switch(tileType) {
+                        case 'water':
+                            successMessage = `Hydration progress screenshot saved! 💧 Share your wellness journey with the link: https://kiwellness.org\n\n"Ki Wellness, Self Health Simplified"`;
+                            break;
+                        case 'macros':
+                            successMessage = `Nutrition balance screenshot saved! 🥗 Share your health insights with the link: https://kiwellness.org\n\n"Ki Wellness, Self Health Simplified"`;
+                            break;
+                        case 'mood':
+                            successMessage = `Wellness check-in screenshot saved! 😊 Share your mindfulness journey with the link: https://kiwellness.org\n\n"Ki Wellness, Self Health Simplified"`;
+                            break;
+                        default:
+                            successMessage = `${tileTitle} screenshot saved! Share it with the link: https://kiwellness.org\n\n"Ki Wellness, Self Health Simplified"`;
+                    }
+                    alert(successMessage);
+                }
+
+            } catch (error) {
+                console.error('Error sharing tile:', error);
+                alert('Error sharing tile. Please try again.');
+            }
+        };
+
+        // Load html2canvas if not already loaded
+        const loadHtml2Canvas = async () => {
+            if (window.html2canvas) {
+                return window.html2canvas;
+            }
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                script.onload = () => resolve(window.html2canvas);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        };
+    </script>
+</body>
+</html>
+
