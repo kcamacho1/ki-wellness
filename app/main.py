@@ -8,7 +8,7 @@ import pytz
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
-from config import DevelopmentConfig
+from config import DevelopmentConfig, ProductionConfig
 from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -17,7 +17,12 @@ import hashlib
 import time
 
 app = Flask(__name__)
-app.config.from_object(DevelopmentConfig)
+
+# Determine which configuration to use based on environment
+if os.environ.get('FLASK_ENV') == 'production':
+    app.config.from_object(ProductionConfig)
+else:
+    app.config.from_object(DevelopmentConfig)
 
 # SECURITY: Configure session timeout to 1 hour (3600 seconds)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
@@ -30,6 +35,7 @@ app.config['TURNSTILE_SITE_KEY'] = os.environ.get('SITE_KEY')
 app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['TURNSTILE_ENABLED'] = os.environ.get('TURNSTILE_ENABLED', 'true').lower() == 'true'
 
+# Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
 # User Model for Authentication
@@ -1861,7 +1867,12 @@ def verify_turnstile(response):
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            print("✅ Database tables initialized successfully!")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not initialize database tables: {e}")
+            print("This is normal if the database is not available or tables already exist.")
     app.run(debug=True)
 
 
