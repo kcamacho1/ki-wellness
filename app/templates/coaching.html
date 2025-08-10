@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Health Coaching - Ki Wellness</title>
+    <meta name="description" content="Transform your life with personalized health coaching from Kristina. 30-minute sessions focused on mind, body, and spirit balance. Book your session today.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='public/icons/apple-touch-icon.png') }}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                    colors: {
+                        'forest-green': '#2d5016',
+                        'sage-green': '#9ca3af',
+                        'mint-green': '#10b981',
+                        'soft-green': '#f0f9ff',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#8b4513'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #2d5016 0%, #10b981 100%);
+        }
+        .story-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="bg-nature-gray font-sans">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-soft-green sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
+                    <a href="/" class="text-xl font-semibold text-forest-green hover:text-mint-green transition-colors duration-200">Ki Wellness</a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Home</a>
+                    <a href="/coaching" class="text-mint-green font-medium">Coaching</a>
+                    {% if session.get('user_id') %}
+                        <a href="/dashboard" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Dashboard</a>
+                        <a href="/logout" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Logout</a>
+                    {% else %}
+                        <a href="/login" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Login</a>
+                        <a href="/register" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 font-medium">
+                            Get Started
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Open menu">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                    <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Home</a>
+                    <a href="/coaching" class="block px-3 py-2 rounded-md text-base font-medium bg-mint-green text-white">Coaching</a>
+                    {% if session.get('user_id') %}
+                        <a href="/dashboard" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Dashboard</a>
+                        <a href="/logout" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Logout</a>
+                    {% else %}
+                        <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Login</a>
+                        <a href="/register" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-float">
+                Transform Your Life with 
+                <span class="text-yellow-300">Personal Health Coaching</span>
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 text-blue-50 max-w-3xl mx-auto">
+                Discover the power of mind, body, and spirit balance through personalized guidance from someone who's walked the path of recovery and transformation.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <span class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    💪 Certified Personal Trainer
+                </span>
+                <span class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    🥗 Certified Nutritionist
+                </span>
+                <span class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    ✨ 6+ Years Clean & Healthy
+                </span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://calendly.com/ki-wellness/human-health-coach" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="bg-yellow-400 text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Book Your 30-Minute Session
+                </a>
+                <a href="#my-story" 
+                   class="border-2 border-white text-white px-8 py-4 rounded-lg text-xl font-medium hover:bg-white hover:text-forest-green transition-all duration-300">
+                    Learn My Story
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- My Story Section -->
+    <section id="my-story" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-forest-green mb-4">My Journey of Transformation</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    From darkness to light, from struggle to strength - here's how I found my way to wellness and how I can help you find yours.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <!-- Story Content -->
+                <div class="space-y-6">
+                    <div class="story-card p-8 rounded-2xl shadow-xl border border-soft-green">
+                        <h3 class="text-2xl font-bold text-forest-green mb-4">The Dark Years (10 Years)</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            I spent a decade battling alcoholism, struggling with benzodiazepines and painkillers. 
+                            My life was consumed by anxiety, depression, and chronic lower back pain. 
+                            I felt trapped in a cycle of self-destruction, unable to see a way out.
+                        </p>
+                    </div>
+                    
+                    <div class="story-card p-8 rounded-2xl shadow-xl border border-soft-green">
+                        <h3 class="text-2xl font-bold text-mint-green mb-4">The Turning Point</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            Six years ago, I made the courageous decision to change my life. 
+                            I committed to sobriety and began exploring holistic approaches to healing. 
+                            It wasn't easy, but I discovered that true wellness comes from balancing mind, body, and spirit.
+                        </p>
+                    </div>
+                    
+                    <div class="story-card p-8 rounded-2xl shadow-xl border border-soft-green">
+                        <h3 class="text-2xl font-bold text-calm-blue mb-4">The Transformation</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            Today, I'm clean, healthy, and passionate about helping others find their path to wellness. 
+                            I've learned that recovery isn't just about stopping harmful behaviors - it's about creating 
+                            a life worth living through holistic health practices.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Visual Elements -->
+                <div class="relative">
+                    <div class="bg-gradient-to-br from-mint-green to-calm-blue p-8 rounded-2xl text-white text-center">
+                        <div class="text-6xl mb-4">🌟</div>
+                        <h3 class="text-2xl font-bold mb-4">My Approach</h3>
+                        <ul class="text-left space-y-3 text-lg">
+                            <li class="flex items-center">
+                                <span class="mr-3">🧠</span>
+                                <span>Mind: Mental health & emotional balance</span>
+                            </li>
+                            <li class="flex items-center">
+                                <span class="mr-3">💪</span>
+                                <span>Body: Physical health & nutrition</span>
+                            </li>
+                            <li class="flex items-center">
+                                <span class="mr-3">✨</span>
+                                <span>Spirit: Purpose & inner peace</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Floating elements -->
+                    <div class="absolute -top-4 -right-4 bg-yellow-400 text-forest-green p-4 rounded-full animate-float">
+                        <span class="text-2xl">💚</span>
+                    </div>
+                    <div class="absolute -bottom-4 -left-4 bg-soft-green text-forest-green p-4 rounded-full animate-float" style="animation-delay: 2s;">
+                        <span class="text-2xl">🌱</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coaching Session Details -->
+    <section class="py-20 gradient-bg">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-forest-green mb-4">Your 30-Minute Transformation Session</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Experience personalized guidance tailored to your unique journey and challenges.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h3 class="text-xl font-bold text-forest-green mb-3">Personalized Assessment</h3>
+                    <p class="text-gray-600">
+                        We'll discuss your current challenges, goals, and create a roadmap for your wellness journey.
+                    </p>
+                </div>
+                
+                <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                    <div class="text-4xl mb-4">💡</div>
+                    <h3 class="text-xl font-bold text-forest-green mb-3">Practical Strategies</h3>
+                    <p class="text-gray-600">
+                        Learn actionable techniques for managing stress, improving mental health, and building healthy habits.
+                    </p>
+                </div>
+                
+                <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                    <div class="text-4xl mb-4">🚀</div>
+                    <h3 class="text-xl font-bold text-forest-green mb-3">Ongoing Support</h3>
+                    <p class="text-gray-600">
+                        Receive resources, tools, and guidance to continue your transformation beyond our session.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Pricing & Booking -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
+                <h3 class="text-2xl font-bold text-forest-green mb-4">Donation-Based Pricing</h3>
+                <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+                    I believe wellness should be accessible to everyone. My sessions are donation-based, 
+                    meaning you pay what you can afford. Your investment in yourself is what matters most.
+                </p>
+                
+                <div class="bg-mint-green text-white p-6 rounded-xl mb-8">
+                    <p class="text-lg mb-2">Suggested Donation Range:</p>
+                    <p class="text-3xl font-bold">$25 - $100</p>
+                    <p class="text-sm opacity-90">Pay what feels right for you</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                    <a href="https://calendly.com/ki-wellness/human-health-coach" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="inline-block bg-yellow-400 text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        Schedule Your Session
+                    </a>
+                    <a href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       class="inline-block bg-calm-blue text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        Make a Donation
+                    </a>
+                </div>
+                
+                <p class="text-sm text-gray-500 mt-4">
+                    Sessions are conducted via video call • 30 minutes duration • Flexible scheduling
+                </p>
+                
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p class="text-sm text-blue-800">
+                        <strong>How it works:</strong> Book your session first, then use the donation link to contribute what feels right for you. 
+                        Your donation supports my mission to make wellness accessible to everyone.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certifications Section -->
+    <section class="py-20 bg-soft-green">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-forest-green mb-4">Professional Certifications</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Beyond my personal journey, I'm professionally certified to provide expert guidance in fitness and nutrition.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <!-- Personal Training Certification -->
+                <div class="text-center">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg mb-6">
+                        <div class="text-4xl mb-4">💪</div>
+                        <h3 class="text-2xl font-bold text-forest-green mb-3">Personal Training</h3>
+                        <p class="text-gray-600 mb-4">
+                            Certified personal trainer with expertise in creating safe, effective workout plans 
+                            tailored to individual needs and recovery goals.
+                        </p>
+                        <div class="bg-mint-green text-white px-4 py-2 rounded-lg inline-block">
+                            <span class="font-semibold">2025 PT Certification</span>
+                        </div>
+                    </div>
+                    <img src="{{ url_for('static', filename='public/certs/2025PTcert.png') }}" 
+                         alt="Personal Training Certification 2025" 
+                         class="w-full max-w-md mx-auto rounded-lg shadow-lg border-4 border-white">
+                </div>
+                
+                <!-- Nutrition Certification -->
+                <div class="text-center">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg mb-6">
+                        <div class="text-4xl mb-4">🥗</div>
+                        <h3 class="text-2xl font-bold text-forest-green mb-3">Nutrition & Wellness</h3>
+                        <p class="text-gray-600 mb-4">
+                            Certified nutritionist specializing in holistic nutrition approaches that support 
+                            mental health, recovery, and overall wellness.
+                        </p>
+                        <div class="bg-mint-green text-white px-4 py-2 rounded-lg inline-block">
+                            <span class="font-semibold">2025 Nutritionist Certification</span>
+                        </div>
+                    </div>
+                    <img src="{{ url_for('static', filename='public/certs/2025nutritionistCert.png') }}" 
+                         alt="Nutritionist Certification 2025" 
+                         class="w-full max-w-md mx-auto rounded-lg shadow-lg border-4 border-white">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials/Trust Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-forest-green mb-4">Why Choose Me?</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    I bring real-life experience, empathy, and proven strategies to help you transform your life.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-soft-green p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold text-forest-green mb-4">Lived Experience</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>10+ years of personal struggle with addiction</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>6+ years of successful recovery and transformation</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Deep understanding of mental health challenges</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-soft-green p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold text-forest-green mb-4">Professional Credentials</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Certified Personal Trainer (2025)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Certified Nutritionist (2025)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Evidence-based wellness strategies</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-soft-green p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold text-forest-green mb-4">Holistic Approach</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Mind-body-spirit balance methodology</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Personalized guidance and support</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-mint-green mr-3 mt-1">✓</span>
+                            <span>Comprehensive wellness coaching</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="py-20 hero-gradient text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">
+                Ready to Start Your Transformation?
+            </h2>
+            <p class="text-xl mb-8 text-blue-50">
+                Your journey to wellness starts with a single step. Let's take that step together.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://calendly.com/ki-wellness/human-health-coach" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="bg-yellow-400 text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Book Your Session
+                </a>
+                <a href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   class="bg-calm-blue text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    Make a Donation
+                </a>
+                <a href="/" 
+                   class="border-2 border-white text-white px-8 py-4 rounded-lg text-xl font-medium hover:bg-white hover:text-forest-green transition-all duration-300">
+                    Explore Ki Wellness
+                </a>
+            </div>
+            
+            <p class="text-sm text-blue-100 mt-6">
+                Questions? Feel free to reach out through the booking system or explore our wellness platform.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-forest-green text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-12 w-auto mx-auto mb-4">
+                <h3 class="text-xl font-semibold mb-4">Ki Wellness</h3>
+                <p class="text-blue-100 mb-6 max-w-2xl mx-auto">
+                    Empowering individuals to achieve holistic wellness through mind, body, and spirit balance.
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="/" class="text-blue-100 hover:text-white transition-colors duration-200">Home</a>
+                    <a href="/coaching" class="text-blue-100 hover:text-white transition-colors duration-200">Coaching</a>
+                    {% if not session.get('user_id') %}
+                        <a href="/login" class="text-blue-100 hover:text-white transition-colors duration-200">Login</a>
+                        <a href="/register" class="text-blue-100 hover:text-white transition-colors duration-200">Register</a>
+                    {% endif %}
+                </div>
+                <p class="text-blue-200 text-sm mt-6">
+                    © 2024 Ki Wellness. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenuButton?.contains(e.target) && !mobileMenu?.contains(e.target)) {
+                mobileMenu?.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -31,10 +31,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# Cloudflare Turnstile Configuration
-app.config['TURNSTILE_SITE_KEY'] = os.environ.get('SITE_KEY')
-app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['TURNSTILE_ENABLED'] = os.environ.get('TURNSTILE_ENABLED', 'true').lower() == 'true'
+# Cloudflare Turnstile Configuration is now handled in config.py
 
 # Ensure database URL is properly set
 if not app.config.get('SQLALCHEMY_DATABASE_URI'):
@@ -507,6 +504,10 @@ def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return render_template('landing.html')
+
+@app.route('/coaching')
+def coaching():
+    return render_template('coaching.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

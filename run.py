@@ -5,39 +5,28 @@ Startup script for KI Wellness Profile System
 
 import os
 import sys
-import subprocess
 
 def check_dependencies():
     """Check if required dependencies are installed"""
     try:
         import flask
         import flask_sqlalchemy
-        import psycopg2
+        # Try both psycopg versions for compatibility
+        try:
+            import psycopg
+            print("✅ Using psycopg (newer version)")
+        except ImportError:
+            try:
+                import psycopg2
+                print("✅ Using psycopg2 (legacy version)")
+            except ImportError:
+                print("⚠️  No PostgreSQL adapter found - will use SQLite for development")
+        
         print("✅ All dependencies are installed")
         return True
     except ImportError as e:
         print(f"❌ Missing dependency: {e}")
         print("Please run: pip install -r requirements.txt")
-        return False
-
-def check_postgresql():
-    """Check if PostgreSQL is accessible"""
-    try:
-        from config import config
-        import psycopg2
-        
-        conn = psycopg2.connect(
-            host=config['development'].POSTGRES_HOST,
-            port=config['development'].POSTGRES_PORT,
-            user=config['development'].POSTGRES_USER,
-            password=config['development'].POSTGRES_PASSWORD
-        )
-        conn.close()
-        print("✅ PostgreSQL connection successful")
-        return True
-    except Exception as e:
-        print(f"❌ PostgreSQL connection failed: {e}")
-        print("Please make sure PostgreSQL is running and configured correctly")
         return False
 
 def main():
@@ -49,28 +38,22 @@ def main():
     if not check_dependencies():
         sys.exit(1)
     
-    # Check PostgreSQL
-    if not check_postgresql():
-        print("\nTo fix PostgreSQL issues:")
-        print("1. Make sure PostgreSQL is installed and running")
-        print("2. Update the database configuration in config.py")
-        print("3. Run: python init_db.py")
-        sys.exit(1)
-    
-    # Set environment variables
+    # Set environment variables for development
     os.environ['FLASK_ENV'] = 'development'
     os.environ['FLASK_DEBUG'] = '1'
     
     print("\n✅ All checks passed!")
     print("🌐 Starting Flask application...")
-    print("📱 The application will be available at: http://localhost:5000")
+    print("📱 The application will be available at: http://localhost:5001")
+    print("🗄️  Using SQLite database for development (auto-created)")
+    print("🔒 Turnstile captcha disabled for development")
     print("⏹️  Press Ctrl+C to stop the server")
     print("=" * 50)
     
     # Start the Flask application
     try:
         from app.main import app
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, host='0.0.0.0', port=5001)
     except KeyboardInterrupt:
         print("\n👋 Server stopped by user")
     except Exception as e:
