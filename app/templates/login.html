@@ -215,10 +215,18 @@
             
             // Turnstile validation (only if enabled and module is available)
             {% if config.TURNSTILE_ENABLED %}
-            if (window.TurnstileModule && !window.TurnstileModule.getToken()) {
-                e.preventDefault();
-                alert('Please complete the security verification.');
-                return;
+            if (window.TurnstileModule) {
+                console.log('Turnstile: Module available, checking token...');
+                const token = window.TurnstileModule.getToken();
+                console.log('Turnstile: Token check result:', token ? 'TOKEN_PRESENT' : 'NO_TOKEN');
+                
+                if (!token) {
+                    e.preventDefault();
+                    alert('Please complete the security verification.');
+                    return;
+                }
+            } else {
+                console.warn('Turnstile: Module not available');
             }
             {% endif %}
             
