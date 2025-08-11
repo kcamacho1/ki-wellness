@@ -100,6 +100,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)  # Phone number field
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -122,6 +123,7 @@ class UserProfile(db.Model):
     weight = db.Column(db.Float, nullable=True)
     height = db.Column(db.Float, nullable=True)
     goals = db.Column(db.Text, nullable=True)
+    goal = db.Column(db.String(200), nullable=True)  # Primary wellness goal
     ailments = db.Column(db.Text, nullable=True)
     daily_activities = db.Column(db.Text, nullable=True)
     day_notes = db.Column(db.Text, nullable=True)
@@ -412,6 +414,24 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+class UserAgreement(db.Model):
+    __tablename__ = 'user_agreements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    privacy_policy_accepted = db.Column(db.Boolean, default=False)
+    terms_of_service_accepted = db.Column(db.Boolean, default=False)
+    disclaimer_accepted = db.Column(db.Boolean, default=False)
+    privacy_policy_version = db.Column(db.String(20), nullable=True)
+    terms_version = db.Column(db.String(20), nullable=True)
+    disclaimer_version = db.Column(db.String(20), nullable=True)
+    accepted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 # Timezone helper function
 def get_browser_timezone_datetime(browser_timezone=None):
     """Get current datetime in browser timezone"""
@@ -559,7 +579,22 @@ def index():
 
 @app.route('/coaching')
 def coaching():
+    return render_template('coaching_selection.html')
+
+
+@app.route('/human-coaching')
+def human_coaching():
     return render_template('coaching.html')
+
+
+@app.route('/ai-coaching')
+def ai_coaching():
+    return render_template('ai_coaching.html')
+
+
+@app.route('/coaching-selection')
+def coaching_selection():
+    return render_template('coaching_selection.html')
 
 @app.route('/terms')
 def terms():
@@ -572,6 +607,12 @@ def privacy():
 @app.route('/disclaimer')
 def disclaimer():
     return render_template('disclaimer.html')
+
+
+@app.route('/ai-self-health')
+def ai_self_health():
+    """AI Self Health informational page that leads to login"""
+    return render_template('ai_self_health.html')
 
 
 @app.route('/reviews')
@@ -924,14 +965,107 @@ def register():
             db.session.add(profile)
             db.session.commit()
             
-            session['user_id'] = user.id
-            flash('Registration successful! Welcome to KI Wellness!', 'success')
-            return redirect(url_for('dashboard'))
+            # Store user info in session for onboarding
+            session['onboarding_user_id'] = user.id
+            session['onboarding_username'] = user.username
+            session['onboarding_email'] = user.email
+            
+            flash('Account created successfully! Please complete your profile setup.', 'success')
+            return redirect(url_for('onboarding'))
         except Exception as e:
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
     
     return render_template('register.html')
+
+
+@app.route('/onboarding', methods=['GET', 'POST'])
+def onboarding():
+    """Multi-step onboarding process for new users"""
+    # Check if user is in onboarding process
+    user_id = session.get('onboarding_user_id')
+    if not user_id:
+        flash('Please create an account first.', 'error')
+        return redirect(url_for('register'))
+    
+    if request.method == 'POST':
+        step = request.form.get('step', '1')
+        
+        if step == '1':  # Agreement acceptance
+            privacy_accepted = request.form.get('privacy_policy') == 'on'
+            terms_accepted = request.form.get('terms_of_service') == 'on'
+            disclaimer_accepted = request.form.get('disclaimer') == 'on'
+            
+            if not all([privacy_accepted, terms_accepted, disclaimer_accepted]):
+                flash('You must accept all agreements to continue.', 'error')
+                return render_template('onboarding.html', step=1, user_id=user_id)
+            
+            # Store agreements in session for next step
+            session['agreements_accepted'] = True
+            return render_template('onboarding.html', step=2, user_id=user_id)
+            
+        elif step == '2':  # Basic profile details
+            name = request.form.get('name', '').strip()
+            phone = request.form.get('phone', '').strip()
+            height = request.form.get('height', '').strip()
+            weight = request.form.get('weight', '').strip()
+            goal = request.form.get('goal', '').strip()
+            
+            if not name:
+                flash('Name is required.', 'error')
+                return render_template('onboarding.html', step=2, user_id=user_id)
+            
+            try:
+                # Update user with phone number
+                user = User.query.get(user_id)
+                if user:
+                    user.phone = phone
+                
+                # Update user profile
+                profile = UserProfile.query.filter_by(user_id=user_id).first()
+                if profile:
+                    profile.name = name
+                    profile.height = float(height) if height else None
+                    profile.weight = float(weight) if weight else None
+                    profile.goal = goal
+                
+                # Create user agreement record
+                agreement = UserAgreement(
+                    user_id=user_id,
+                    privacy_policy_accepted=True,
+                    terms_of_service_accepted=True,
+                    disclaimer_accepted=True,
+                    privacy_policy_version='1.0',
+                    terms_version='1.0',
+                    disclaimer_version='1.0',
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get('User-Agent', '')
+                )
+                
+                db.session.add(agreement)
+                db.session.commit()
+                
+                # Clear onboarding session data
+                session.pop('onboarding_user_id', None)
+                session.pop('onboarding_username', None)
+                session.pop('onboarding_email', None)
+                session.pop('agreements_accepted', None)
+                
+                # Log the user in
+                session['user_id'] = user_id
+                
+                flash('Profile setup completed successfully! Welcome to Ki Wellness.', 'success')
+                return redirect(url_for('dashboard'))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash('Error saving profile. Please try again.', 'error')
+                return render_template('onboarding.html', step=2, user_id=user_id)
+    
+    # GET request - show appropriate step
+    step = session.get('agreements_accepted', False)
+    return render_template('onboarding.html', step=1 if not step else 2, user_id=user_id)
+
 
 @app.route('/logout')
 def logout():
@@ -1104,6 +1238,11 @@ def save_profile():
         # Update profile fields
         profile.name = data.get('name')
         
+        # Update user phone field
+        user = get_current_user()
+        if user:
+            user.phone = data.get('phone')
+        
         # Handle date_of_birth with better error handling
         try:
             if data.get('date_of_birth'):
@@ -1131,6 +1270,7 @@ def save_profile():
             profile.height = None
         
         profile.goals = data.get('goals')
+        profile.goal = data.get('goal')  # Primary wellness goal
         profile.ailments = data.get('ailments')
         profile.daily_activities = data.get('daily_activities')
         profile.day_notes = data.get('day_notes')
@@ -1177,11 +1317,13 @@ def get_profile_data():
                 'name': profile.name,
                 'username': user.username if user else None,
                 'email': user.email if user else None,
+                'phone': user.phone if user else None,
                 'date_of_birth': profile.date_of_birth.isoformat() if profile.date_of_birth else None,
                 'age': profile.age,
                 'weight': profile.weight,
                 'height': profile.height,
                 'goals': profile.goals,
+                'goal': profile.goal,
                 'ailments': profile.ailments,
                 'daily_activities': profile.daily_activities,
                 'day_notes': profile.day_notes,

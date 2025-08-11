@@ -504,6 +504,18 @@
                         >
                         <p class="text-xs text-gray-500">Email cannot be changed</p>
                     </div>
+                    
+                    <div class="space-y-2">
+                        <label for="phone" class="block text-sm font-medium text-gray-700">Phone:</label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            name="phone" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            placeholder="Enter phone number"
+                            aria-label="Enter your phone number"
+                        >
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
@@ -610,6 +622,41 @@
                             placeholder="Any health conditions or ailments?"
                             aria-label="Enter any health conditions or ailments"
                         ></textarea>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="space-y-2">
+                        <label for="goal" class="block text-sm font-medium text-gray-700">Primary Goal:</label>
+                        <select 
+                            id="goal" 
+                            name="goal" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            aria-label="Select your primary wellness goal"
+                        >
+                            <option value="">Select your primary goal</option>
+                            <option value="weight_loss">Weight Loss</option>
+                            <option value="muscle_gain">Muscle Gain</option>
+                            <option value="better_nutrition">Better Nutrition</option>
+                            <option value="improve_mood">Improve Mood & Mental Health</option>
+                            <option value="increase_energy">Increase Energy</option>
+                            <option value="better_sleep">Better Sleep</option>
+                            <option value="stress_reduction">Stress Reduction</option>
+                            <option value="overall_wellness">Overall Wellness</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="custom_goal" class="block text-sm font-medium text-gray-700">Custom Goal:</label>
+                        <input 
+                            type="text" 
+                            id="custom_goal" 
+                            name="custom_goal" 
+                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+                            placeholder="Describe your specific goal"
+                            aria-label="Enter your custom wellness goal"
+                        >
                     </div>
                 </div>
                 
@@ -1500,5 +1547,8 @@
             }
         });
     </script>
+    
+    <!-- AI Chat Box for logged-in users -->
+    {% include 'includes/ai_chat.html' %}
 </body>
 </html>

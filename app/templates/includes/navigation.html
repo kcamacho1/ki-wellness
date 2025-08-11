@@ -1,20 +1,43 @@
 <!-- Navigation Bar -->
-<nav class="bg-white shadow-lg border-b border-soft-green">
+<nav class="bg-white shadow-lg border-b border-soft-green sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Logo and Brand -->
             <div class="flex items-center">
-                <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
-                <h1 class="text-xl font-semibold text-forest-green" style="font-family: 'Quicksand', sans-serif;">Ki Wellness LLC</h1>
+                <a href="/" class="flex items-center hover:opacity-80 transition-opacity duration-200">
+                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
+                    <h1 class="text-xl font-semibold text-forest-green" style="font-family: 'Quicksand', sans-serif;">Ki Wellness</h1>
+                </a>
             </div>
 
             <!-- Main Navigation Items -->
             <div class="hidden md:flex items-center space-x-4">
-                <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
-                <a href="/food-journal" class="nav-link {{ 'nav-active' if request.endpoint == 'food_journal' else '' }}" data-endpoint="food_journal">Nutritional Journal</a>
+                <!-- Always visible links -->
                 <a href="/coaching" class="nav-link {{ 'nav-active' if request.endpoint == 'coaching' else '' }}" data-endpoint="coaching">Coaching</a>
                 <a href="/reviews" class="nav-link {{ 'nav-active' if request.endpoint == 'reviews' else '' }}" data-endpoint="reviews">Reviews</a>
                 <a href="/contact" class="nav-link {{ 'nav-active' if request.endpoint == 'contact' else '' }}" data-endpoint="contact">Contact</a>
+                
+                <!-- AI Self Health link - always visible, leads to login -->
+                <a href="/ai-self-health" class="nav-link {{ 'nav-active' if request.endpoint == 'ai_self_health' else '' }}" data-endpoint="ai_self_health">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        AI Self Health
+                    </div>
+                </a>
+                
+                <!-- Login-required links - only visible when logged in -->
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
+                    <a href="/food-journal" class="nav-link {{ 'nav-active' if request.endpoint == 'food_journal' else '' }}" data-endpoint="food_journal">Nutritional Journal</a>
+                {% else %}
+                    <!-- Public page navigation items -->
+                    <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+                    <a href="{{ url_for('register') }}" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-sage-green transition-colors duration-200 font-medium">
+                        Get Started
+                    </a>
+                {% endif %}
             </div>
 
             <!-- Hamburger Menu Button (Mobile) -->
@@ -38,15 +61,15 @@
                     
                     <!-- Desktop Dropdown Menu -->
                     <div id="desktop-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 hidden">
-                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ 'bg-gray-100 text-gray-900' if request.endpoint == 'profile' else '' }}">
-                            <div class="flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                Profile
-                            </div>
-                        </a>
                         {% if session.get('user_id') %}
+                            <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ 'bg-gray-100 text-gray-900' if request.endpoint == 'profile' else '' }}">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Profile
+                                </div>
+                            </a>
                             {% set user = get_current_user() %}
                             {% if user and user.is_admin %}
                             <a href="/admin" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ 'bg-gray-100 text-gray-900' if request.endpoint == 'admin_dashboard' else '' }}">
@@ -58,16 +81,34 @@
                                 </div>
                             </a>
                             {% endif %}
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    Logout
+                                </div>
+                            </a>
+                        {% else %}
+                            <!-- Login/Register links for non-logged-in users -->
+                            <a href="/login" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                    </svg>
+                                    Login
+                                </div>
+                            </a>
+                            <a href="/register" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                    </svg>
+                                    Register
+                                </div>
+                            </a>
                         {% endif %}
-                        <div class="border-t border-gray-200 my-1"></div>
-                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                            <div class="flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                </svg>
-                                Logout
-                            </div>
-                        </a>
                     </div>
                 </div>
             </div>
@@ -76,23 +117,38 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="md:hidden hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-                <a href="/dashboard" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'dashboard' else 'text-gray-700 hover:bg-gray-100' }}">
+                <!-- AI Self Health link - always visible -->
+                <a href="/ai-self-health" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'ai_self_health' else 'text-gray-700 hover:bg-gray-100' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                         </svg>
-                        Dashboard
+                        AI Self Health
                     </div>
                 </a>
-                <a href="/food-journal" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'food_journal' else 'text-gray-700 hover:bg-gray-100' }}">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Nutritional Journal
-                    </div>
-                </a>
+                
+                <!-- Login-required links - only visible when logged in -->
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'dashboard' else 'text-gray-700 hover:bg-gray-100' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+                            </svg>
+                            Dashboard
+                        </div>
+                    </a>
+                    <a href="/food-journal" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'food_journal' else 'text-gray-700 hover:bg-gray-100' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Nutritional Journal
+                        </div>
+                    </a>
+                {% endif %}
+                
+                <!-- Always visible links -->
                 <a href="/coaching" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'coaching' else 'text-gray-700 hover:bg-gray-100' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,15 +173,15 @@
                         Contact
                     </div>
                 </a>
-                <a href="/profile" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'profile' else 'text-gray-700 hover:bg-gray-100' }}">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Profile
-                    </div>
-                </a>
                 {% if session.get('user_id') %}
+                    <a href="/profile" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'profile' else 'text-gray-700 hover:bg-gray-100' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Profile
+                        </div>
+                    </a>
                     {% set user = get_current_user() %}
                     {% if user and user.is_admin %}
                     <a href="/admin" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'admin_dashboard' else 'text-gray-700 hover:bg-gray-100' }}">
@@ -137,16 +193,35 @@
                         </div>
                     </a>
                     {% endif %}
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="/logout" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                        </div>
+                    </a>
+                {% else %}
+                    <!-- Login/Register links for non-logged-in users -->
+                    <div class="border-t border-gray-200 my-2"></div>
+                    <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                            </svg>
+                            Login
+                        </div>
+                    </a>
+                    <a href="/register" class="block px-3 py-2 rounded-md text-base font-medium bg-mint-green text-white rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Register
+                        </div>
+                    </a>
                 {% endif %}
-                <div class="border-t border-gray-200 my-2"></div>
-                <a href="/logout" class="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Logout
-                    </div>
-                </a>
             </div>
         </div>
     </div>

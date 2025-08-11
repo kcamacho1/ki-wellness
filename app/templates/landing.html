@@ -65,52 +65,7 @@
 </head>
 <body class="bg-nature-gray font-sans">
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg border-b border-soft-green sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
-                    <h1 class="text-xl font-semibold text-forest-green">Ki Wellness</h1>
-                </div>
-                
-                <!-- Navigation Links -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#features" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Features</a>
-                    <a href="#dashboard" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Dashboard</a>
-                    <a href="#about" class="text-gray-700 hover:text-mint-green transition-colors duration-200">About</a>
-                    <a href="/reviews" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Reviews</a>
-                    <a href="/coaching" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Coaching</a>
-                    <a href="{{ url_for('login') }}" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Login</a>
-                    <a href="{{ url_for('register') }}" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 font-medium">
-                        Get Started
-                    </a>
-                </div>
-                
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Mobile menu -->
-            <div id="mobile-menu" class="md:hidden hidden">
-                <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-                    <a href="/coaching" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Coaching</a>
-                    <a href="#features" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Features</a>
-                    <a href="#dashboard" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Dashboard</a>
-                    <a href="#about" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">About</a>
-                    <a href="/reviews" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Reviews</a>
-                    <a href="{{ url_for('login') }}" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Login</a>
-                    <a href="{{ url_for('register') }}" class="block px-3 py-2 bg-mint-green text-white rounded-md">Get Started</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    {% include 'includes/navigation.html' %}
 
     <!-- Hero Section -->
     <section class="hero-gradient text-white py-20 lg:py-32">
@@ -184,9 +139,16 @@
                         </svg>
                     </div>
                     <h3 class="text-xl font-semibold text-forest-green mb-4">AI-Powered Analysis</h3>
-                    <p class="text-gray-600 leading-relaxed">
+                    <p class="text-gray-600 leading-relaxed mb-4">
                         Get intelligent insights into your nutrition patterns, mood trends, and wellness habits with our advanced AI analysis.
                     </p>
+                    <a href="{{ url_for('ai_self_health') }}" 
+                       class="inline-flex items-center text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
+                        <span>Learn more about AI Self Health</span>
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </a>
                 </div>
                 
                 <!-- Feature 2: Nutrition Tracking -->
@@ -436,6 +398,10 @@
                 <a href="{{ url_for('login') }}" 
                    class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-forest-green transition-colors duration-200">
                     Sign In
+                </a>
+                <a href="{{ url_for('ai_self_health') }}" 
+                   class="border-2 border-mint-green text-mint-green px-8 py-4 rounded-lg text-lg font-medium hover:bg-mint-green hover:text-forest-green transition-all duration-300">
+                    Learn About AI Features
                 </a>
             </div>
         </div>
