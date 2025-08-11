@@ -78,7 +78,7 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#features" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Features</a>
                     <a href="#about" class="text-gray-700 hover:text-mint-green transition-colors duration-200">About</a>
-                    <a href="#testimonials" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Testimonials</a>
+                    <a href="/reviews" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Reviews</a>
                     <a href="/coaching" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Coaching</a>
                     <a href="{{ url_for('login') }}" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Login</a>
                     <a href="{{ url_for('register') }}" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 font-medium">
@@ -102,7 +102,7 @@
                     <a href="/coaching" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Coaching</a>
                     <a href="#features" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Features</a>
                     <a href="#about" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">About</a>
-                    <a href="#testimonials" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Testimonials</a>
+                    <a href="/reviews" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Reviews</a>
                     <a href="{{ url_for('login') }}" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Login</a>
                     <a href="{{ url_for('register') }}" class="block px-3 py-2 bg-mint-green text-white rounded-md">Get Started</a>
                 </div>
@@ -297,65 +297,37 @@
         </div>
     </section>
 
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="py-20 bg-white">
+    <!-- Reviews Section -->
+    <section id="reviews" class="py-20 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl lg:text-4xl font-bold text-forest-green mb-4">
-                    What Our Users Say
+                    Community Reviews
                 </h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Join thousands of users who have transformed their wellness journey with Ki Wellness.
+                    Hear from our community members about their wellness journey with Ki Wellness LLC
                 </p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Testimonial 1 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg border border-soft-green">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-mint-green rounded-full flex items-center justify-center mr-4">
-                            <span class="text-white font-semibold">S</span>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-forest-green">Sarah Johnson</h4>
-                            <p class="text-gray-500 text-sm">Wellness Enthusiast</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-700 leading-relaxed">
-                        "Ki Wellness has completely transformed how I approach my health. The AI insights are incredibly accurate and have helped me make better food choices."
+            <div class="text-center">
+                <div class="bg-soft-green p-12 rounded-2xl shadow-lg max-w-2xl mx-auto">
+                    <div class="text-6xl mb-6">🌟</div>
+                    <h3 class="text-2xl font-bold text-forest-green mb-4">Real Experiences, Real Results</h3>
+                    <p class="text-gray-700 leading-relaxed mb-8">
+                        Our community shares authentic stories about their wellness transformation. 
+                        From nutrition insights to mental health breakthroughs, discover how Ki Wellness 
+                        has helped others achieve their health goals.
                     </p>
-                </div>
-                
-                <!-- Testimonial 2 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg border border-soft-green">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-calm-blue rounded-full flex items-center justify-center mr-4">
-                            <span class="text-white font-semibold">M</span>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-forest-green">Michael Chen</h4>
-                            <p class="text-gray-500 text-sm">Fitness Coach</p>
-                        </div>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="/reviews" 
+                           class="bg-mint-green text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-sage-green transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            Read Reviews
+                        </a>
+                        <a href="/reviews#submit-review" 
+                           class="border-2 border-forest-green text-forest-green px-8 py-4 rounded-lg text-xl font-medium hover:bg-forest-green hover:text-white transition-all duration-300">
+                            Share Your Story
+                        </a>
                     </div>
-                    <p class="text-gray-700 leading-relaxed">
-                        "As a fitness coach, I recommend Ki Wellness to all my clients. The mood tracking and nutrition analysis are game-changers for holistic wellness."
-                    </p>
-                </div>
-                
-                <!-- Testimonial 3 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg border border-soft-green">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mr-4">
-                            <span class="text-white font-semibold">E</span>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-forest-green">Emma Rodriguez</h4>
-                            <p class="text-gray-500 text-sm">Yoga Instructor</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-700 leading-relaxed">
-                        "The personalized insights from Ki Wellness have helped me understand the connection between my nutrition, mood, and overall well-being."
-                    </p>
                 </div>
             </div>
         </div>
