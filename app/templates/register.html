@@ -85,6 +85,38 @@
             </p>
         </div>
 
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-4 rounded-lg border {% if category == 'error' %}bg-red-50 border-red-200 text-red-800{% elif category == 'success' %}bg-green-50 border-green-200 text-green-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    {% if category == 'error' %}
+                                        <svg class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    {% elif category == 'success' %}
+                                        <svg class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    {% else %}
+                                        <svg class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">{{ message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <!-- Register Form -->
         <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
             <div class="bg-white py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-soft-green">
@@ -220,10 +252,13 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Include Footer -->
-            {% include 'includes/footer.html' %}
         </div>
+    </div>
+
+    <!-- Footer - Full Width -->
+    <div class="w-full mt-16">
+        {% include 'includes/footer.html' %}
+    </div>
     </div>
 
     <!-- CAPTCHA and Security JavaScript -->

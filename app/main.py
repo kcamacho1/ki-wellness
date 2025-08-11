@@ -398,6 +398,46 @@ def initialize_system_settings(admin_user_id):
                     'key': 'monthly_token_limit',
                     'value': '1000000',
                     'description': 'Monthly token usage limit'
+                },
+                {
+                    'key': 'current_gpt_model',
+                    'value': 'gpt-3.5-turbo',
+                    'description': 'Current GPT model being used for AI analysis'
+                },
+                {
+                    'key': 'max_input_tokens',
+                    'value': '2000',
+                    'description': 'Maximum input/prompt tokens per request'
+                },
+                {
+                    'key': 'max_output_tokens',
+                    'value': '1500',
+                    'description': 'Maximum output/completion tokens per request'
+                },
+                {
+                    'key': 'max_total_tokens',
+                    'value': '3500',
+                    'description': 'Maximum total tokens per request (input + output)'
+                },
+                {
+                    'key': 'flexible_service_tier',
+                    'value': 'true',
+                    'description': 'Enable flexible service tier for cost optimization'
+                },
+                {
+                    'key': 'presence_penalty',
+                    'value': '0.0',
+                    'description': 'Presence penalty for OpenAI API (0.0 = disabled)'
+                },
+                {
+                    'key': 'frequency_penalty',
+                    'value': '0.0',
+                    'description': 'Frequency penalty for OpenAI API (0.0 = disabled)'
+                },
+                {
+                    'key': 'top_p',
+                    'value': '0.9',
+                    'description': 'Top-p sampling for OpenAI API (0.9 = focused responses)'
                 }
             ]
             
@@ -410,30 +450,30 @@ def initialize_system_settings(admin_user_id):
                 )
                 db.session.add(system_setting)
             
-            # Initialize default API costs
+            # Initialize default API costs (per 1M tokens)
             default_api_costs = [
                 {
                     'model_name': 'gpt-4',
-                    'input_cost_per_1k': 0.03,
-                    'output_cost_per_1k': 0.06
+                    'input_cost_per_1m': 30.0,
+                    'output_cost_per_1m': 60.0
                 },
                 {
                     'model_name': 'gpt-4-turbo',
-                    'input_cost_per_1k': 0.01,
-                    'output_cost_per_1k': 0.03
+                    'input_cost_per_1m': 10.0,
+                    'output_cost_per_1m': 30.0
                 },
                 {
                     'model_name': 'gpt-3.5-turbo',
-                    'input_cost_per_1k': 0.0015,
-                    'output_cost_per_1k': 0.002
+                    'input_cost_per_1m': 1.5,
+                    'output_cost_per_1m': 2.0
                 }
             ]
             
             for cost in default_api_costs:
                 api_cost = APICosts(
                     model_name=cost['model_name'],
-                    input_cost_per_1k=cost['input_cost_per_1k'],
-                    output_cost_per_1k=cost['output_cost_per_1k'],
+                    input_cost_per_1m=cost['input_cost_per_1m'],
+                    output_cost_per_1m=cost['output_cost_per_1m'],
                     updated_by=admin_user_id
                 )
                 db.session.add(api_cost)
@@ -453,9 +493,20 @@ def get_system_setting(key, default=None):
     try:
         setting = SystemSettings.query.filter_by(key=key).first()
         if setting:
-            if isinstance(setting.value, str) and setting.value.lower() in ['true', 'false']:
-                return setting.value.lower() == 'true'
-            return setting.value
+            # For boolean settings, convert string 'true'/'false' to boolean
+            if key in ['flexible_service_tier', 'openai_api_enabled', 'emergency_stop_active', 'new_accounts_enabled']:
+                if isinstance(setting.value, str):
+                    return setting.value.lower() == 'true'
+                elif isinstance(setting.value, bool):
+                    return setting.value
+                else:
+                    return default
+            # For numeric settings, return as string (let caller convert)
+            elif key in ['presence_penalty', 'frequency_penalty', 'top_p', 'max_input_tokens', 'max_output_tokens', 'max_total_tokens']:
+                return setting.value
+            # For other settings, return as is
+            else:
+                return setting.value
         return default
     except Exception as e:
         print(f"Error getting system setting {key}: {e}")
@@ -500,6 +551,60 @@ def is_emergency_stop_active():
 def are_new_accounts_enabled():
     """Check if new account creation is enabled"""
     return get_system_setting('new_accounts_enabled', True)
+
+def get_current_gpt_model():
+    """Get the current GPT model being used"""
+    return get_system_setting('current_gpt_model', 'gpt-3.5-turbo')
+
+def get_max_input_tokens():
+    """Get the maximum input tokens allowed per request"""
+    return int(get_system_setting('max_input_tokens', 2000))
+
+def get_max_output_tokens():
+    """Get the maximum output tokens allowed per request"""
+    return int(get_system_setting('max_output_tokens', 1500))
+
+def get_max_total_tokens():
+    """Get the maximum total tokens allowed per request"""
+    return int(get_system_setting('max_total_tokens', 3500))
+
+
+def get_flexible_service_tier():
+    """Get whether flexible service tier is enabled"""
+    value = get_system_setting('flexible_service_tier', 'true')
+    if isinstance(value, bool):
+        return value
+    elif isinstance(value, str):
+        return value.lower() == 'true'
+    else:
+        return True  # Default to enabled
+
+
+def get_presence_penalty():
+    """Get the presence penalty value for OpenAI API"""
+    value = get_system_setting('presence_penalty', '0.0')
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_frequency_penalty():
+    """Get the frequency penalty value for OpenAI API"""
+    value = get_system_setting('frequency_penalty', '0.0')
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def get_top_p():
+    """Get the top-p sampling value for OpenAI API"""
+    value = get_system_setting('top_p', '0.9')
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.9
 
 # Authentication decorator with session timeout
 def login_required(f):
@@ -1187,7 +1292,7 @@ def login():
 
 def is_kiwellness_username(username):
     """
-    Check if username contains 'kiwellness' in any form (with or without spaces, underscores, numbers)
+    Check if username contains 'kiwellness' in any form including special characters, numbers, and variations
     Returns True if the username contains 'kiwellness' in any form, False otherwise
     """
     import re
@@ -1195,14 +1300,15 @@ def is_kiwellness_username(username):
     # Convert to lowercase for case-insensitive comparison
     username_lower = username.lower()
     
-    # Remove spaces, underscores, and numbers for comparison
-    cleaned_username = re.sub(r'[\s_0-9]', '', username_lower)
+    # Remove ALL special characters, spaces, and numbers for comparison
+    # This catches variations like: k!wellness, k1wellness, k@wellness, etc.
+    cleaned_username = re.sub(r'[^a-zA-Z]', '', username_lower)
     
     # Check if 'kiwellness' is contained in the cleaned username
     if 'kiwellness' in cleaned_username:
         return True
     
-    # Also check for common variations and patterns
+    # Check for common variations with special characters and numbers
     variations = [
         'kiwellness',
         'ki_wellness', 
@@ -1223,88 +1329,145 @@ def is_kiwellness_username(username):
         'kiwellness2025',
         'ki_wellness_2025',
         'ki-wellness-2025',
-        'ki wellness 2025'
+        'ki wellness 2025',
+        # Special character variations
+        'k!wellness',
+        'k1wellness',
+        'k@wellness',
+        'k#wellness',
+        'k$wellness',
+        'k%wellness',
+        'k^wellness',
+        'k&wellness',
+        'k*wellness',
+        'k(wellness',
+        'k)wellness',
+        'k-wellness',
+        'k+wellness',
+        'k=wellness',
+        'k[wellness',
+        'k]wellness',
+        'k{wellness',
+        'k}wellness',
+        'k|wellness',
+        'k\\wellness',
+        'k:wellness',
+        'k;wellness',
+        'k"wellness',
+        'k\'wellness',
+        'k<wellness',
+        'k>wellness',
+        'k,wellness',
+        'k.wellness',
+        'k?wellness',
+        'k/wellness'
     ]
     
     for variation in variations:
         if variation in username_lower:
             return True
     
-    # Check for patterns like ki_wellness, ki-wellness, ki wellness
+    # Check for patterns with special characters and numbers
     patterns = [
-        r'ki\s*wellness',
-        r'ki_wellness',
-        r'ki-wellness',
-        r'kiwellness'
+        r'ki\s*wellness',           # ki wellness, ki  wellness
+        r'ki_wellness',             # ki_wellness
+        r'ki-wellness',             # ki-wellness
+        r'kiwellness',              # kiwellness
+        r'k[!@#$%^&*()_+\-=\[\]{}|\\:;"\'<>,.?/0-9]*wellness',  # k followed by any special chars/numbers + wellness
+        r'ki[!@#$%^&*()_+\-=\[\]{}|\\:;"\'<>,.?/0-9]*wellness', # ki followed by any special chars/numbers + wellness
+        r'k[!@#$%^&*()_+\-=\[\]{}|\\:;"\'<>,.?/0-9]*i[!@#$%^&*()_+\-=\[\]{}|\\:;"\'<>,.?/0-9]*wellness'  # k + special chars + i + special chars + wellness
     ]
     
     for pattern in patterns:
         if re.search(pattern, username_lower):
             return True
     
+    # Additional check: look for 'ki' followed by any characters, then 'wellness'
+    # This catches cases like: k1wellness, k!wellness, k@wellness, etc.
+    ki_pattern = re.search(r'k[^a-zA-Z]*i[^a-zA-Z]*wellness', username_lower)
+    if ki_pattern:
+        return True
+    
     return False
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Check if new account creation is disabled
+        if not are_new_accounts_enabled():
+            flash('🚫 Account Creation Disabled: New account creation is currently disabled by the administrator. Please contact support for assistance.', 'error')
+            return render_template('register.html')
+        
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         turnstile_response = request.form.get('cf-turnstile-response')
         
-        # Validation
+        # Enhanced validation with detailed error messages
         if not username or not email or not password:
-            flash('All fields are required', 'error')
+            flash('❌ Missing Information: All fields are required. Please fill in username, email, and password.', 'error')
             return render_template('register.html')
         
         # Turnstile validation (only if enabled)
-        # Check if running on localhost
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
         turnstile_enabled = not is_localhost
         
         if turnstile_enabled:
             if not turnstile_response:
-                flash('Please complete the security verification', 'error')
+                flash('🔒 Security Required: Please complete the security verification to proceed.', 'error')
                 return render_template('register.html')
             
             # Verify Turnstile
             if not verify_turnstile(turnstile_response):
-                flash('Security verification failed. Please try again.', 'error')
+                flash('⚠️ Security Failed: Security verification failed. Please try again.', 'error')
                 return render_template('register.html')
         
-        # Username validation
+        # Enhanced username validation with detailed feedback
         username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
         if not username_pattern.match(username):
-            flash('Username must start and end with a letter or number. Can contain letters, numbers, periods, underscores, and dashes in the middle.', 'error')
+            flash('❌ Invalid Username Format: Username must start and end with a letter or number. Can contain letters, numbers, periods, underscores, and dashes in the middle.', 'error')
             return render_template('register.html')
         
         if len(username) < 3:
-            flash('Username must be at least 3 characters long', 'error')
+            flash('❌ Username Too Short: Username must be at least 3 characters long.', 'error')
             return render_template('register.html')
         
         if len(username) > 30:
-            flash('Username must be 30 characters or less', 'error')
+            flash('❌ Username Too Long: Username must be 30 characters or less.', 'error')
             return render_template('register.html')
         
-        # Check for 'kiwellness' in username
+        # Enhanced check for 'kiwellness' in username with detailed explanation
         if is_kiwellness_username(username):
-            flash('Username cannot contain "kiwellness" or similar variations', 'error')
+            flash('🚫 Restricted Username: Username cannot contain "kiwellness" or similar variations (including special characters, numbers, or spacing). This is a protected brand name.', 'error')
+            return render_template('register.html')
+        
+        # Password validation
+        if len(password) < 8:
+            flash('❌ Password Too Weak: Password must be at least 8 characters long for security.', 'error')
             return render_template('register.html')
         
         if password != confirm_password:
-            flash('Passwords do not match', 'error')
+            flash('❌ Password Mismatch: Passwords do not match. Please ensure both password fields are identical.', 'error')
+            return render_template('register.html')
+        
+        # Email format validation
+        email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        if not email_pattern.match(email):
+            flash('❌ Invalid Email Format: Please enter a valid email address.', 'error')
             return render_template('register.html')
         
         # Ensure database tables exist before querying
         ensure_tables_exist()
         
+        # Check for existing username
         if User.query.filter(User.username.ilike(username)).first():
-            flash('Username already exists', 'error')
+            flash('❌ Username Taken: This username is already in use. Please choose a different username.', 'error')
             return render_template('register.html')
         
+        # Check for existing email
         if User.query.filter(User.email.ilike(email)).first():
-            flash('Email already exists', 'error')
+            flash('❌ Email Already Registered: This email address is already registered. Please use a different email or try logging in.', 'error')
             return render_template('register.html')
         
         # Create new user
@@ -1329,11 +1492,12 @@ def register():
             session['onboarding_username'] = user.username
             session['onboarding_email'] = user.email
             
-            flash('Account created successfully! Please complete your profile setup.', 'success')
+            flash('✅ Success! Account created successfully. Please complete your profile setup.', 'success')
             return redirect(url_for('onboarding'))
         except Exception as e:
             db.session.rollback()
-            flash('Registration failed. Please try again.', 'error')
+            print(f"Registration error: {e}")
+            flash('❌ Registration Failed: An error occurred during registration. Please try again or contact support if the problem persists.', 'error')
     
     return render_template('register.html')
 
@@ -1532,28 +1696,31 @@ def dashboard():
 @admin_required
 def admin_dashboard():
     """Admin dashboard - only accessible by admin users"""
-    # Get all users
-    users = User.query.all()
+    # Get only top 5 recently active users (by last activity/updated_at)
+    users = User.query.order_by(User.updated_at.desc()).limit(5).all()
+    
+    # Get total user count for statistics
+    total_users_count = User.query.count()
     
     # Try to get user profiles, but handle gracefully if table doesn't exist
     try:
         user_profiles = UserProfile.query.all()
         users_with_profiles = len(user_profiles)
-        users_without_profiles = len(users) - len(user_profiles)
+        users_without_profiles = total_users_count - len(user_profiles)
     except Exception:
         # If UserProfile table doesn't exist or has issues, default to 0
         user_profiles = []
         users_with_profiles = 0
-        users_without_profiles = len(users)
+        users_without_profiles = total_users_count
     
     # Enhanced user statistics
     user_stats = {
-        'total_users': len(users),
-        'admin_users': len([u for u in users if u.is_admin]),
-        'regular_users': len([u for u in users if not u.is_admin]),
+        'total_users': total_users_count,
+        'admin_users': User.query.filter_by(is_admin=True).count(),
+        'regular_users': User.query.filter_by(is_admin=False).count(),
         'users_with_profiles': users_with_profiles,
         'users_without_profiles': users_without_profiles,
-        'recent_signups': len([u for u in users if (datetime.utcnow() - u.created_at).days <= 7])
+        'recent_signups': User.query.filter(User.created_at >= (datetime.utcnow() - timedelta(days=7))).count()
     }
     
     # System statistics
@@ -1570,8 +1737,8 @@ def admin_dashboard():
     # Get pending reviews
     pending_reviews = Review.query.filter_by(is_approved=False).order_by(Review.created_at.desc()).all()
     
-    # Get recent user activity
-    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    # Get recent user activity (already limited to 5 above)
+    recent_users = users
     
     # Get system health data
     system_health = {
@@ -1581,14 +1748,27 @@ def admin_dashboard():
         'uptime': '99.9%'  # Placeholder for uptime tracking
     }
     
-    # Get current month token usage
+    # Get current month token usage and calculate profit
     current_month = datetime.utcnow().strftime('%Y-%m')
     monthly_token_usage = TokenUsage.query.filter_by(month=current_month).all()
-    total_monthly_tokens = sum(usage.tokens_used for usage in monthly_token_usage)
+    total_monthly_tokens = sum(usage.total_tokens for usage in monthly_token_usage)
     total_monthly_cost = sum(usage.cost_usd for usage in monthly_token_usage)
+    
+    # Calculate current month profit (simplified calculation)
+    # In a real app, you'd get this from actual payment/subscription data
+    # For now, using a placeholder calculation based on active users
+    active_users_this_month = len(set(usage.user_id for usage in monthly_token_usage))
+    
+    # Assume $10/month per active user (placeholder for actual subscription model)
+    estimated_monthly_revenue = active_users_this_month * 10.0
+    current_month_profit = estimated_monthly_revenue - total_monthly_cost
     
     # Get API costs for display
     api_costs = APICosts.query.filter_by(is_active=True).all()
+    
+    # Get current GPT model and its costs
+    current_model = get_current_gpt_model()
+    current_model_costs = next((cost for cost in api_costs if cost.model_name == current_model), None)
     
     return render_template('admin_dashboard.html', 
                          users=users, 
@@ -1603,7 +1783,18 @@ def admin_dashboard():
                          monthly_token_usage=monthly_token_usage,
                          total_monthly_tokens=total_monthly_tokens,
                          total_monthly_cost=total_monthly_cost,
-                         api_costs=api_costs)
+                         current_month_profit=current_month_profit,
+                         estimated_monthly_revenue=estimated_monthly_revenue,
+                         api_costs=api_costs,
+                         current_gpt_model=current_model,
+                         current_model_costs=current_model_costs,
+                         max_input_tokens=get_max_input_tokens(),
+                         max_output_tokens=get_max_output_tokens(),
+                         max_total_tokens=get_max_total_tokens(),
+                         flexible_service_tier=get_flexible_service_tier(),
+                         presence_penalty=get_presence_penalty(),
+                         frequency_penalty=get_frequency_penalty(),
+                         top_p=get_top_p())
 
 
 @app.route('/admin/reviews/<int:review_id>/approve', methods=['POST'])
@@ -2254,6 +2445,24 @@ def import_food_journal():
 def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
     """Analyze food journal patterns using OpenAI API with user profile context"""
     try:
+        # Check emergency stop first
+        if is_emergency_stop_active():
+            print("🚨 EMERGENCY STOP ACTIVE: OpenAI API calls are disabled")
+            return {
+                'analysis': "⚠️ AI analysis is temporarily unavailable due to emergency stop. Please try again later or contact support.",
+                'suggestions': "System is in maintenance mode. Please check back later.",
+                'error': 'emergency_stop_active'
+            }
+        
+        # Check if OpenAI is enabled
+        if not is_openai_enabled():
+            print("🚫 OpenAI API is disabled")
+            return {
+                'analysis': "⚠️ AI analysis is currently disabled. Please try again later or contact support.",
+                'suggestions': "System is in maintenance mode. Please check back later.",
+                'error': 'openai_disabled'
+            }
+        
         # Initialize OpenAI client
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
@@ -2458,16 +2667,115 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         Use HTML tags like <strong>, <em>, <span class="highlight">, etc. to make the content visually appealing. Speak directly to {user_name} using "you" and "your" throughout. Keep it encouraging, practical, and specifically tailored to {user_name}'s unique situation. Make it feel like a personal conversation with their wellness coach.
         """
         
-        # Call OpenAI API
+        # Get current token limits from system settings
+        max_input_tokens = get_max_input_tokens()
+        max_output_tokens = get_max_output_tokens()
+        max_total_tokens = get_max_total_tokens()
+        
+        # Calculate estimated input tokens (rough approximation)
+        estimated_input_tokens = len(prompt) + len(f"You are {user_name}'s personal wellness coach. Speak directly to them using their name and 'you'/'your' throughout. Be encouraging, supportive, and provide actionable insights tailored specifically to their unique situation. Make it feel like a personal conversation.") + 100  # Buffer for system overhead
+        
+        # Ensure we don't exceed total token limit
+        if estimated_input_tokens > max_total_tokens:
+            # Truncate prompt if necessary
+            max_prompt_length = max_total_tokens - 200  # Leave room for system message
+            prompt = prompt[:max_prompt_length] + "..."
+            estimated_input_tokens = max_prompt_length + 200
+        
+        # Calculate max output tokens based on remaining budget
+        available_output_tokens = min(max_output_tokens, max_total_tokens - estimated_input_tokens)
+        
+        # Call OpenAI API with flexible service tier configuration
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=get_current_gpt_model(),
             messages=[
                 {"role": "system", "content": f"You are {user_name}'s personal wellness coach. Speak directly to them using their name and 'you'/'your' throughout. Be encouraging, supportive, and provide actionable insights tailored specifically to their unique situation. Make it feel like a personal conversation."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=available_output_tokens,
+            temperature=0.7,
+            # Flexible service tier options for better cost control
+            presence_penalty=get_presence_penalty(),
+            frequency_penalty=get_frequency_penalty(),
+            top_p=get_top_p(),
+            logprobs=None,  # Disable for cost savings
+            top_logprobs=None  # Disable for cost savings
         )
+        
+        # Extract token usage information with error handling
+        try:
+            if hasattr(response, 'usage') and response.usage:
+                input_tokens = getattr(response.usage, 'prompt_tokens', 0)
+                output_tokens = getattr(response.usage, 'completion_tokens', 0)
+                total_tokens = getattr(response.usage, 'total_tokens', 0)
+            else:
+                # Fallback if usage information is not available
+                input_tokens = estimated_input_tokens
+                output_tokens = len(full_response.split()) * 1.3  # Rough estimate
+                total_tokens = input_tokens + output_tokens
+                print(f"⚠️ OpenAI API usage info not available, using estimates: input={input_tokens}, output={output_tokens}")
+        except Exception as e:
+            print(f"⚠️ Error extracting token usage: {e}, using estimates")
+            input_tokens = estimated_input_tokens
+            output_tokens = len(full_response.split()) * 1.3  # Rough estimate
+            total_tokens = input_tokens + output_tokens
+        
+        # Track token usage for analytics
+        try:
+            current_month = datetime.utcnow().strftime('%Y-%m')
+            current_user = get_current_user()
+            
+            if not current_user:
+                print("⚠️ No current user found for token tracking")
+                return
+            
+            # Get or create token usage record for current month
+            token_usage = TokenUsage.query.filter_by(
+                user_id=current_user.id,
+                month=current_month
+            ).first()
+            
+            if not token_usage:
+                token_usage = TokenUsage(
+                    user_id=current_user.id,
+                    month=current_month,
+                    input_tokens=0,
+                    output_tokens=0,
+                    total_tokens=0,
+                    cost_usd=0.0,
+                    model_used=get_current_gpt_model()
+                )
+                db.session.add(token_usage)
+                print(f"📊 Created new token usage record for user {current_user.id} in {current_month}")
+            
+            # Update token counts
+            token_usage.input_tokens += input_tokens
+            token_usage.output_tokens += output_tokens
+            token_usage.total_tokens += total_tokens
+            
+            # Calculate cost based on current model pricing
+            api_costs = APICosts.query.filter_by(
+                model_name=get_current_gpt_model(),
+                is_active=True
+            ).first()
+            
+            if api_costs:
+                input_cost = (input_tokens / 1000000) * api_costs.input_cost_per_1m
+                output_cost = (output_tokens / 1000000) * api_costs.output_cost_per_1m
+                total_cost = input_cost + output_cost
+                token_usage.cost_usd += total_cost
+                print(f"💰 Token cost calculated: input=${input_cost:.6f}, output=${output_cost:.6f}, total=${total_cost:.6f}")
+            else:
+                print(f"⚠️ No API costs found for model {get_current_gpt_model()}")
+            
+            db.session.commit()
+            print(f"✅ Token usage tracked: input={input_tokens}, output={output_tokens}, total={total_tokens}")
+            
+        except Exception as e:
+            # Log error but don't fail the main function
+            print(f"❌ Error tracking token usage: {e}")
+            if 'db' in locals() and hasattr(db, 'session'):
+                db.session.rollback()
         
         # Parse the response to separate patterns and suggestions
         full_response = response.choices[0].message.content
@@ -3658,6 +3966,121 @@ def emergency_stop():
         return jsonify({'success': False, 'error': f'Error updating emergency stop: {str(e)}'})
 
 
+@app.route('/admin/system/update-gpt-model', methods=['POST'])
+@admin_required
+def update_gpt_model():
+    """Update the current GPT model being used"""
+    try:
+        data = request.get_json()
+        new_model = data.get('model')
+        
+        if not new_model:
+            return jsonify({'success': False, 'error': 'Model name is required'})
+        
+        # Update the system setting
+        set_system_setting('current_gpt_model', new_model, f'GPT model updated to {new_model}', get_current_user().id if get_current_user() else None)
+        
+        return jsonify({'success': True, 'message': f'GPT model updated to {new_model}'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error updating GPT model: {str(e)}'})
+
+
+@app.route('/admin/system/update-token-limit', methods=['POST'])
+@admin_required
+def update_token_limit():
+    """Update token usage limits"""
+    try:
+        data = request.get_json()
+        limit_type = data.get('limit_type')
+        new_value = data.get('new_value')
+        
+        if not limit_type or not new_value:
+            return jsonify({'success': False, 'error': 'Limit type and new value are required'})
+        
+        # Validate the limit type
+        valid_types = ['max_input_tokens', 'max_output_tokens', 'max_total_tokens']
+        if limit_type not in valid_types:
+            return jsonify({'success': False, 'error': 'Invalid limit type'})
+        
+        # Validate the new value
+        if limit_type == 'max_input_tokens' and (new_value < 300 or new_value > 2000):
+            return jsonify({'success': False, 'error': 'Input tokens must be between 300 and 2000'})
+        elif limit_type == 'max_output_tokens' and (new_value < 300 or new_value > 1500):
+            return jsonify({'success': False, 'error': 'Output tokens must be between 300 and 1500'})
+        elif limit_type == 'max_total_tokens' and (new_value < 600 or new_value > 3500):
+            return jsonify({'success': False, 'error': 'Total tokens must be between 600 and 3500'})
+        
+        # Update the system setting
+        set_system_setting(limit_type, str(new_value), f'{limit_type.replace("_", " ").title()} updated to {new_value}', get_current_user().id if get_current_user() else None)
+        
+        return jsonify({'success': True, 'message': f'{limit_type.replace("_", " ").title()} updated to {new_value}'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error updating token limit: {str(e)}'})
+
+
+@app.route('/admin/system/toggle-account-creation', methods=['POST'])
+@admin_required
+def toggle_account_creation():
+    """Toggle new account creation on/off"""
+    try:
+        current_status = are_new_accounts_enabled()
+        new_status = not current_status
+        
+        if set_system_setting('new_accounts_enabled', str(new_status).lower(), 
+                             f'Account creation {"enabled" if new_status else "disabled"} by admin', 
+                             get_current_user().id):
+            action = "enabled" if new_status else "disabled"
+            return jsonify({
+                'success': True, 
+                'message': f'New account creation has been {action}',
+                'new_status': new_status
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to update setting'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error toggling account creation: {str(e)}'})
+
+
+@app.route('/admin/system/update-flexible-tier', methods=['POST'])
+@admin_required
+def update_flexible_tier():
+    """Update flexible service tier settings"""
+    try:
+        data = request.get_json()
+        setting_type = data.get('setting_type')
+        new_value = data.get('new_value')
+        
+        if not setting_type or new_value is None:
+            return jsonify({'success': False, 'error': 'Setting type and new value are required'})
+        
+        # Validate the setting type
+        valid_types = ['flexible_service_tier', 'presence_penalty', 'frequency_penalty', 'top_p']
+        if setting_type not in valid_types:
+            return jsonify({'success': False, 'error': 'Invalid setting type'})
+        
+        # Validate the new value based on type
+        if setting_type == 'flexible_service_tier':
+            if not isinstance(new_value, bool):
+                return jsonify({'success': False, 'error': 'Flexible service tier must be true or false'})
+        elif setting_type in ['presence_penalty', 'frequency_penalty']:
+            if not isinstance(new_value, (int, float)) or new_value < -2.0 or new_value > 2.0:
+                return jsonify({'success': False, 'error': 'Penalty values must be between -2.0 and 2.0'})
+        elif setting_type == 'top_p':
+            if not isinstance(new_value, (int, float)) or new_value < 0.0 or new_value > 1.0:
+                return jsonify({'success': False, 'error': 'Top-p value must be between 0.0 and 1.0'})
+        
+        # Update the system setting
+        set_system_setting(setting_type, str(new_value), f'{setting_type.replace("_", " ").title()} updated to {new_value}', get_current_user().id if get_current_user() else None)
+        
+        return jsonify({'success': True, 'message': f'{setting_type.replace("_", " ").title()} updated to {new_value}'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error updating flexible tier setting: {str(e)}'})
+
+
 @app.route('/admin/users/search')
 @admin_required
 def search_users():
@@ -3857,8 +4280,12 @@ def update_token_usage():
         data = request.get_json()
         user_id = data.get('user_id')
         month = data.get('month', datetime.utcnow().strftime('%Y-%m'))
-        tokens_used = data.get('tokens_used', 0)
+        input_tokens = data.get('input_tokens', 0)
+        output_tokens = data.get('output_tokens', 0)
         model_used = data.get('model_used', 'gpt-4')
+        
+        # Calculate total tokens
+        total_tokens = input_tokens + output_tokens
         
         # Get or create token usage record
         token_usage = TokenUsage.query.filter_by(
@@ -3867,13 +4294,17 @@ def update_token_usage():
         ).first()
         
         if token_usage:
-            token_usage.tokens_used = tokens_used
+            token_usage.input_tokens = input_tokens
+            token_usage.output_tokens = output_tokens
+            token_usage.total_tokens = total_tokens
             token_usage.model_used = model_used
         else:
             token_usage = TokenUsage(
                 user_id=user_id,
                 month=month,
-                tokens_used=tokens_used,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
                 model_used=model_used
             )
             db.session.add(token_usage)
@@ -3881,11 +4312,9 @@ def update_token_usage():
         # Calculate cost based on current API costs
         api_cost = APICosts.query.filter_by(model_name=model_used, is_active=True).first()
         if api_cost:
-            # Estimate cost (assuming 80% input, 20% output tokens)
-            estimated_input_tokens = int(tokens_used * 0.8)
-            estimated_output_tokens = int(tokens_used * 0.2)
-            cost = (estimated_input_tokens / 1000 * api_cost.input_cost_per_1k + 
-                   estimated_output_tokens / 1000 * api_cost.output_cost_per_1k)
+            # Calculate exact cost based on actual input/output tokens
+            cost = (input_tokens / 1000000 * api_cost.input_cost_per_1m +
+                   output_tokens / 1000000 * api_cost.output_cost_per_1m)
             token_usage.cost_usd = round(cost, 4)
         
         db.session.commit()
@@ -3917,7 +4346,9 @@ class TokenUsage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     month = db.Column(db.String(7), nullable=False)  # YYYY-MM format
-    tokens_used = db.Column(db.Integer, default=0)
+    input_tokens = db.Column(db.Integer, default=0)  # Prompt/input tokens
+    output_tokens = db.Column(db.Integer, default=0)  # Completion/output tokens
+    total_tokens = db.Column(db.Integer, default=0)  # Total tokens (input + output)
     cost_usd = db.Column(db.Float, default=0.0)
     model_used = db.Column(db.String(50), nullable=True)  # gpt-4, gpt-3.5-turbo, etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -3930,8 +4361,8 @@ class APICosts(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     model_name = db.Column(db.String(50), nullable=False)
-    input_cost_per_1k = db.Column(db.Float, nullable=False)  # Cost per 1K input tokens
-    output_cost_per_1k = db.Column(db.Float, nullable=False)  # Cost per 1K output tokens
+    input_cost_per_1m = db.Column(db.Float, nullable=False)  # Cost per 1M input tokens
+    output_cost_per_1m = db.Column(db.Float, nullable=False)  # Cost per 1M output tokens
     is_active = db.Column(db.Boolean, default=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
