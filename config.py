@@ -8,8 +8,11 @@ def get_database_url():
     database_url = os.getenv('DATABASE_URL')
     
     if not database_url:
-        # Default to SQLite for development
-        return 'sqlite:///ki_wellness.db'
+        # Default to SQLite for development - use absolute path
+        # Get the project root directory (parent of app directory)
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        db_path = os.path.join(project_root, 'ki_wellness.db')
+        return f'sqlite:///{db_path}'
     
     # Handle Render's PostgreSQL URL format and update to use psycopg3
     if database_url.startswith('postgres://'):
@@ -63,8 +66,11 @@ class DevelopmentConfig(Config):
         super().__init__()
         # Force SQLite for development unless explicitly overridden
         if not os.getenv('FORCE_POSTGRES_DEV'):
-            self.SQLALCHEMY_DATABASE_URI = 'sqlite:///ki_wellness.db'
-            print("🔧 Development mode: Using SQLite database")
+            # Use absolute path for development database
+            project_root = os.path.dirname(os.path.abspath(__file__))
+            db_path = os.path.join(project_root, 'ki_wellness.db')
+            self.SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+            print(f"🔧 Development mode: Using SQLite database at {db_path}")
         else:
             print("🔧 Development mode: Using PostgreSQL database (FORCE_POSTGRES_DEV set)")
         

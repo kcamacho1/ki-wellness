@@ -3,9 +3,13 @@ import json
 import requests
 import csv
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import pytz
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import requests
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session, make_response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, inspect
 from config import DevelopmentConfig, ProductionConfig
@@ -16,6 +20,9 @@ import random
 import hashlib
 import time
 import re
+import uuid
+import base64
+import sqlite3
 
 app = Flask(__name__)
 
@@ -36,39 +43,216 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Ensure database URL is properly set
 if not app.config.get('SQLALCHEMY_DATABASE_URI'):
     # Fallback to SQLite if no database URL is set
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
+    # Use absolute path to ensure we're using the correct database file
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_path = os.path.join(project_root, 'ki_wellness.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    print(f"🔧 Fallback database path: {db_path}")
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
-def init_database():
-    """Initialize database tables"""
-    with app.app_context():
-        try:
-            # Check if tables exist by trying to query one
-            inspector = inspect(db.engine)
-            existing_tables = inspector.get_table_names()
-            
-            if not existing_tables:
-                print("🔄 Creating database tables...")
-                db.create_all()
-                print("✅ Database tables created successfully!")
-                
-                # Create admin account after tables are created
-                create_admin_account()
-            else:
-                print(f"✅ Database tables already exist: {existing_tables}")
-                
-                # Check if admin account exists (in case tables exist but admin doesn't)
-                create_admin_account()
-                
-        except Exception as e:
-            print(f"⚠️ Warning: Could not initialize database tables: {e}")
-            print("This is normal if the database is not available or tables already exist.")
-            print("Tables will be created when the first request is made.")
+# Database initialization will be handled by the create_admin_account function
+# def init_database():
+#     """Initialize the database and create tables"""
+#     try:
+#         print("🔄 Initializing database...")
+#         
+#         # Create all tables
+#         db.create_all()
+#         print("✅ Database tables created successfully")
+#         
+#         # Ensure tables exist
+#         ensure_tables_exist()
+#         
+#         # Create admin account
+#         create_admin_account()
+#         
+#         # Initialize system settings
+#         init_system_settings()
+#         
+#         # Initialize default API costs
+#         init_default_api_costs()
+#         
+#         print("✅ Database initialization completed successfully!")
+#         
+#     except Exception as e:
+#         print(f"❌ Database initialization failed: {str(e)}")
+#         raise
 
-# Initialize database on app startup
-init_database()
+
+# This function is duplicated - using the one below instead
+# def init_system_settings():
+#     """Initialize default system settings"""
+#     try:
+#         # Check if settings already exist
+#         if SystemSettings.query.count() == 0:
+#             print("🔄 Initializing system settings...")
+#             
+#             default_settings = [
+#                 {
+#                     'key': 'new_accounts_enabled',
+#                     'value': 'true',
+#                     'description': 'Allow new user registrations'
+#                 },
+#                 {
+#                     'key': 'openai_api_enabled',
+#                     'value': 'true',
+#                     'description': 'Enable OpenAI API calls'
+#                 },
+#                 {
+#                     'key': 'emergency_stop_active',
+#                     'value': 'false',
+#                     'description': 'Emergency stop for OpenAI API'
+#                 },
+#                 {
+#                     'key': 'monthly_token_limit',
+#                     'value': '1000000',
+#                     'description': 'Monthly token usage limit'
+#                 }
+#             ]
+#             
+#             for setting in default_settings:
+#                 system_setting = SystemSettings(
+#                     key=setting['key'],
+#                     value=setting['value'],
+#                     description=setting['description'],
+#                     updated_by=None
+#                 )
+#                 db.session.add(system_setting)
+#             
+#             # Initialize default API costs
+#             default_api_costs = [
+#                 {
+#                     'model_name': 'gpt-4',
+#                     'input_cost_per_1k': 0.03,
+#                     'output_cost_per_1k': 0.06
+#                 },
+#                 {
+#                     'model_name': 'gpt-4-turbo',
+#                     'input_cost_per_1k': 0.01,
+#                     'output_cost_per_1k': 0.03
+#                 },
+#                 {
+#                     'model_name': 'gpt-3.5-turbo',
+#                     'input_cost_per_1k': 0.0015,
+#                     'output_cost_per_1k': 0.002
+#                 }
+#             ]
+#             
+#             for cost in default_api_costs:
+#                 api_cost = APICosts(
+#                     model_name=cost['model_name'],
+#                     input_cost_per_1k=cost['input_cost_per_1k'],
+#                     output_cost_per_1k=cost['output_cost_per_1k'],
+#                     updated_by=None
+#                 )
+#                 db.session.add(api_cost)
+#             
+#             db.session.commit()
+#             print("✅ System settings initialized successfully!")
+#         else:
+#             print("ℹ️  System settings already exist")
+#             
+#     except Exception as e:
+#         print(f"❌ Error initializing system settings: {e}")
+#         db.session.rollback()
+
+
+# This function is duplicated - using the one below instead
+# def init_default_api_costs():
+#     """Initialize default OpenAI API costs (as of 2024)"""
+#     try:
+#         # Check if API costs already exist
+#         if APICosts.query.count() == 0:
+#             print("🔄 Initializing default API costs...")
+#             
+#             default_costs = [
+#                 {
+#                     'model_name': 'gpt-4',
+#                     'input_cost_per_1k': 0.03,
+#                     'output_cost_per_1k': 0.06
+#                 },
+#                 {
+#                     'model_name': 'gpt-4-turbo',
+#                     'input_cost_per_1k': 0.01,
+#                     'output_cost_per_1k': 0.03
+#                 },
+#                 {
+#                     'model_name': 'gpt-3.5-turbo',
+#                     'input_cost_per_1k': 0.0015,
+#                     'output_cost_per_1k': 0.002
+#                 }
+#             ]
+#             
+#             for cost in default_costs:
+#                 new_cost = APICosts(**cost)
+#                 db.session.add(new_cost)
+#             
+#             db.session.commit()
+#             print("✅ Default API costs initialized successfully!")
+#         else:
+#             print("ℹ️  API costs already exist")
+#             
+#     except Exception as e:
+#         print(f"⚠️  Warning: Could not initialize API costs: {e}")
+#         db.session.rollback()
+
+
+# These functions are duplicated - using the ones below instead
+# def get_system_setting(key, default=None):
+#     """Get a system setting value"""
+#     try:
+#         setting = SystemSettings.query.filter_by(key=key).first()
+#         if setting:
+#             if setting.value.lower() in ['true', 'false']:
+#                 return setting.value.lower() == 'true'
+#             return setting.value
+#         return default
+#     except Exception as e:
+#         print(f"Error getting system setting {key}: {e}")
+#         return default
+# 
+# 
+# def set_system_setting(key, value, description=None, user_id=None):
+#     """Set a system setting value"""
+#     try:
+#         setting = SystemSettings.query.filter_by(key=key).first()
+#         if setting:
+#             setting.value = str(value)
+#             setting.updated_at = datetime.utcnow()
+#             setting.updated_by = user_id
+#         else:
+#             setting = SystemSettings(
+#                 key=key,
+#                 value=str(value),
+#                 description=description,
+#                 updated_by=user_id
+#             )
+#             db.session.add(setting)
+#         
+#         db.session.commit()
+#         return True
+#     except Exception as e:
+#         print(f"Error setting system setting {key}: {e}")
+#         db.session.rollback()
+#         return False
+# 
+# 
+# def is_openai_enabled():
+#     """Check if OpenAI API is enabled"""
+#     return get_system_setting('openai_api_enabled', True) and not get_system_setting('emergency_stop_active', False)
+# 
+# 
+# def is_emergency_stop_active():
+#     """Check if emergency stop is active"""
+#     return get_system_setting('emergency_stop_active', 'false').lower() == 'true'
+# 
+# 
+# def are_new_accounts_enabled():
+#     """Check if new account creation is enabled"""
+#     return get_system_setting('new_accounts_enabled', 'true').lower() == 'true'
 
 # Function to ensure database tables exist (called on first request if needed)
 def ensure_tables_exist():
@@ -102,8 +286,14 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20), nullable=True)  # Phone number field
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)  # Account status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Notification preferences
+    email_notifications = db.Column(db.Boolean, default=True)
+    sms_notifications = db.Column(db.Boolean, default=False)
+    push_notifications = db.Column(db.Boolean, default=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -118,28 +308,6 @@ class UserProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(100), nullable=True)
-    date_of_birth = db.Column(db.Date, nullable=True)
-    age = db.Column(db.Integer, nullable=True)
-    weight = db.Column(db.Float, nullable=True)
-    height = db.Column(db.Float, nullable=True)
-    goals = db.Column(db.Text, nullable=True)
-    goal = db.Column(db.String(200), nullable=True)  # Primary wellness goal
-    ailments = db.Column(db.Text, nullable=True)
-    daily_activities = db.Column(db.Text, nullable=True)
-    day_notes = db.Column(db.Text, nullable=True)
-    sleep_schedule = db.Column(db.String(50), nullable=True)
-    night_notes = db.Column(db.Text, nullable=True)
-    dietary_preferences = db.Column(db.Text, nullable=True)
-    exercise_routine = db.Column(db.Text, nullable=True)
-    spiritual_religion = db.Column(db.Text, nullable=True)
-    self_connection = db.Column(db.Text, nullable=True)
-    surroundings_connection = db.Column(db.Text, nullable=True)
-    providing_others = db.Column(db.Text, nullable=True)
-    safe_groups = db.Column(db.Text, nullable=True)
-    awe_things = db.Column(db.Text, nullable=True)
-    creative_expression = db.Column(db.Text, nullable=True)
-    upsetting_situations = db.Column(db.Text, nullable=True)
-    spirit_notes = db.Column(db.Text, nullable=True)
     avatar = db.Column(db.String(100), nullable=True, default='default-avatar.png')
     weight_unit = db.Column(db.String(10), nullable=True, default='kg')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -172,28 +340,166 @@ def create_admin_account():
             db.session.add(admin_user)
             db.session.commit()
             
-            # Create admin user profile
-            admin_profile = UserProfile(
-                user_id=admin_user.id,
-                name=admin_name,
-                avatar='default-avatar.png',
-                weight_unit='kg'
-            )
-            
-            db.session.add(admin_profile)
-            db.session.commit()
+            # Try to create admin user profile, but handle gracefully if table doesn't exist
+            try:
+                admin_profile = UserProfile(
+                    user_id=admin_user.id,
+                    name=admin_name,
+                    avatar='default-avatar.png',
+                    weight_unit='kg'
+                )
+                
+                db.session.add(admin_profile)
+                db.session.commit()
+                print("✅ Admin profile created successfully!")
+            except Exception as e:
+                print(f"⚠️  Warning: Could not create admin profile: {e}")
+                # Continue without profile - not critical for admin functionality
             
             print("✅ Admin account created successfully!")
             print(f"   Username: {admin_username}")
             print(f"   Email: {admin_email}")
             print(f"   Name: {admin_name}")
-            print("   Password: [SECURE - Set via environment variable]")
         else:
-            print("✅ Admin account already exists")
+            print("ℹ️  Admin account already exists")
+            
+        # Initialize system settings
+        initialize_system_settings(admin_user.id)
+        
+    except Exception as e:
+        print(f"❌ Error creating admin account: {e}")
+        db.session.rollback()
+
+
+def initialize_system_settings(admin_user_id):
+    """Initialize default system settings"""
+    try:
+        # Check if settings already exist
+        if SystemSettings.query.count() == 0:
+            print("🔄 Initializing system settings...")
+            
+            default_settings = [
+                {
+                    'key': 'new_accounts_enabled',
+                    'value': 'true',
+                    'description': 'Allow new user registrations'
+                },
+                {
+                    'key': 'openai_api_enabled',
+                    'value': 'true',
+                    'description': 'Enable OpenAI API calls'
+                },
+                {
+                    'key': 'emergency_stop_active',
+                    'value': 'false',
+                    'description': 'Emergency stop for OpenAI API'
+                },
+                {
+                    'key': 'monthly_token_limit',
+                    'value': '1000000',
+                    'description': 'Monthly token usage limit'
+                }
+            ]
+            
+            for setting in default_settings:
+                system_setting = SystemSettings(
+                    key=setting['key'],
+                    value=setting['value'],
+                    description=setting['description'],
+                    updated_by=admin_user_id
+                )
+                db.session.add(system_setting)
+            
+            # Initialize default API costs
+            default_api_costs = [
+                {
+                    'model_name': 'gpt-4',
+                    'input_cost_per_1k': 0.03,
+                    'output_cost_per_1k': 0.06
+                },
+                {
+                    'model_name': 'gpt-4-turbo',
+                    'input_cost_per_1k': 0.01,
+                    'output_cost_per_1k': 0.03
+                },
+                {
+                    'model_name': 'gpt-3.5-turbo',
+                    'input_cost_per_1k': 0.0015,
+                    'output_cost_per_1k': 0.002
+                }
+            ]
+            
+            for cost in default_api_costs:
+                api_cost = APICosts(
+                    model_name=cost['model_name'],
+                    input_cost_per_1k=cost['input_cost_per_1k'],
+                    output_cost_per_1k=cost['output_cost_per_1k'],
+                    updated_by=admin_user_id
+                )
+                db.session.add(api_cost)
+            
+            db.session.commit()
+            print("✅ System settings initialized successfully!")
+        else:
+            print("ℹ️  System settings already exist")
             
     except Exception as e:
-        print(f"⚠️ Warning: Could not create admin account: {e}")
+        print(f"❌ Error initializing system settings: {e}")
         db.session.rollback()
+
+
+def get_system_setting(key, default=None):
+    """Get a system setting value"""
+    try:
+        setting = SystemSettings.query.filter_by(key=key).first()
+        if setting:
+            if isinstance(setting.value, str) and setting.value.lower() in ['true', 'false']:
+                return setting.value.lower() == 'true'
+            return setting.value
+        return default
+    except Exception as e:
+        print(f"Error getting system setting {key}: {e}")
+        return default
+
+
+def set_system_setting(key, value, description=None, user_id=None):
+    """Set a system setting value"""
+    try:
+        setting = SystemSettings.query.filter_by(key=key).first()
+        if setting:
+            setting.value = str(value)
+            setting.updated_at = datetime.utcnow()
+            setting.updated_by = user_id
+        else:
+            setting = SystemSettings(
+                key=key,
+                value=str(value),
+                description=description,
+                updated_by=user_id
+            )
+            db.session.add(setting)
+        
+        db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Error setting system setting {key}: {e}")
+        db.session.rollback()
+        return False
+
+
+def is_openai_enabled():
+    """Check if OpenAI API is enabled"""
+    return get_system_setting('openai_api_enabled', True) and not get_system_setting('emergency_stop_active', False)
+
+
+def is_emergency_stop_active():
+    """Check if emergency stop is active"""
+    return get_system_setting('emergency_stop_active', False)
+
+
+def are_new_accounts_enabled():
+    """Check if new account creation is enabled"""
+    return get_system_setting('new_accounts_enabled', True)
 
 # Authentication decorator with session timeout
 def login_required(f):
@@ -272,7 +578,9 @@ def inject_functions():
         'ADMIN_EMAIL': os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org'),
         'TURNSTILE_SITE_KEY': app.config.get('TURNSTILE_SITE_KEY'),
         'TURNSTILE_ENABLED': should_enable_turnstile(),
-        'IS_LOCALHOST': is_localhost_environment()
+        'IS_LOCALHOST': is_localhost_environment(),
+        'datetime': datetime,
+        'utcnow': datetime.utcnow
     }
 
 def verify_user_data_access(user_profile, data_type="unknown"):
@@ -431,6 +739,57 @@ class UserAgreement(db.Model):
     user_agent = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref='agreements')
+
+class Reminder(db.Model):
+    __tablename__ = 'reminders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    reminder_type = db.Column(db.String(50), nullable=False)  # water, macronutrients, mood
+    frequency = db.Column(db.String(50), nullable=False)  # daily, hourly, custom
+    time_of_day = db.Column(db.Time, nullable=False)
+    days_of_week = db.Column(db.String(100))  # JSON string for custom days
+    is_active = db.Column(db.Boolean, default=True)
+    last_triggered = db.Column(db.DateTime)
+    next_trigger = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='reminders')
+
+class ReminderLog(db.Model):
+    __tablename__ = 'reminder_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    triggered_at = db.Column(db.DateTime, default=datetime.utcnow)
+    action_taken = db.Column(db.String(50))  # completed, snoozed, dismissed
+    response_time = db.Column(db.Integer)  # seconds from trigger to response
+    
+    reminder = db.relationship('Reminder', backref='logs')
+    user = db.relationship('User', backref='reminder_logs')
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    reminder_id = db.Column(db.Integer, db.ForeignKey('reminders.id'), nullable=True)
+    notification_type = db.Column(db.String(50), nullable=False)  # email, sms, push
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(50), default='pending')  # pending, sent, failed
+    sent_at = db.Column(db.DateTime)
+    error_message = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='notifications')
+    reminder = db.relationship('Reminder', backref='notifications')
 
 # Timezone helper function
 def get_browser_timezone_datetime(browser_timezone=None):
@@ -1175,16 +1534,76 @@ def admin_dashboard():
     """Admin dashboard - only accessible by admin users"""
     # Get all users
     users = User.query.all()
+    
+    # Try to get user profiles, but handle gracefully if table doesn't exist
+    try:
+        user_profiles = UserProfile.query.all()
+        users_with_profiles = len(user_profiles)
+        users_without_profiles = len(users) - len(user_profiles)
+    except Exception:
+        # If UserProfile table doesn't exist or has issues, default to 0
+        user_profiles = []
+        users_with_profiles = 0
+        users_without_profiles = len(users)
+    
+    # Enhanced user statistics
     user_stats = {
         'total_users': len(users),
         'admin_users': len([u for u in users if u.is_admin]),
-        'regular_users': len([u for u in users if not u.is_admin])
+        'regular_users': len([u for u in users if not u.is_admin]),
+        'users_with_profiles': users_with_profiles,
+        'users_without_profiles': users_without_profiles,
+        'recent_signups': len([u for u in users if (datetime.utcnow() - u.created_at).days <= 7])
+    }
+    
+    # System statistics
+    system_stats = {
+        'total_food_entries': FoodJournal.query.count(),
+        'total_mood_entries': MoodEntry.query.count(),
+        'total_reminders': Reminder.query.count(),
+        'active_reminders': Reminder.query.filter_by(is_active=True).count(),
+        'total_reviews': Review.query.count(),
+        'pending_reviews': Review.query.filter_by(is_approved=False).count(),
+        'approved_reviews': Review.query.filter_by(is_approved=True).count()
     }
     
     # Get pending reviews
     pending_reviews = Review.query.filter_by(is_approved=False).order_by(Review.created_at.desc()).all()
     
-    return render_template('admin_dashboard.html', users=users, stats=user_stats, pending_reviews=pending_reviews)
+    # Get recent user activity
+    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    
+    # Get system health data
+    system_health = {
+        'database_size': 'Healthy',  # Placeholder for actual DB size calculation
+        'last_backup': 'Today',  # Placeholder for backup tracking
+        'error_rate': '0.1%',  # Placeholder for error monitoring
+        'uptime': '99.9%'  # Placeholder for uptime tracking
+    }
+    
+    # Get current month token usage
+    current_month = datetime.utcnow().strftime('%Y-%m')
+    monthly_token_usage = TokenUsage.query.filter_by(month=current_month).all()
+    total_monthly_tokens = sum(usage.tokens_used for usage in monthly_token_usage)
+    total_monthly_cost = sum(usage.cost_usd for usage in monthly_token_usage)
+    
+    # Get API costs for display
+    api_costs = APICosts.query.filter_by(is_active=True).all()
+    
+    return render_template('admin_dashboard.html', 
+                         users=users, 
+                         stats=user_stats, 
+                         system_stats=system_stats,
+                         pending_reviews=pending_reviews,
+                         recent_users=recent_users,
+                         system_health=system_health,
+                         new_accounts_enabled=are_new_accounts_enabled(),
+                         openai_enabled=is_openai_enabled(),
+                         emergency_stop_active=get_system_setting('emergency_stop_active', False),
+                         monthly_token_usage=monthly_token_usage,
+                         total_monthly_tokens=total_monthly_tokens,
+                         total_monthly_cost=total_monthly_cost,
+                         api_costs=api_costs)
 
 
 @app.route('/admin/reviews/<int:review_id>/approve', methods=['POST'])
@@ -2499,6 +2918,1025 @@ def verify_turnstile(response):
         if app.config.get('DEBUG', False):
             return True
         return False
+
+# Reminder Management Routes
+@app.route('/reminders')
+@login_required
+def reminders():
+    user_id = session.get('user_id')
+    user_reminders = Reminder.query.filter_by(user_id=user_id, is_active=True).order_by(Reminder.next_trigger).all()
+    return render_template('reminders.html', reminders=user_reminders)
+
+@app.route('/api/reminders', methods=['GET'])
+@login_required
+def get_reminders():
+    user_id = session.get('user_id')
+    reminders = Reminder.query.filter_by(user_id=user_id, is_active=True).all()
+    
+    reminder_list = []
+    for reminder in reminders:
+        reminder_data = {
+            'id': reminder.id,
+            'title': reminder.title,
+            'description': reminder.description,
+            'type': reminder.reminder_type,
+            'frequency': reminder.frequency,
+            'time_of_day': reminder.time_of_day.strftime('%H:%M') if reminder.time_of_day else None,
+            'days_of_week': json.loads(reminder.days_of_week) if reminder.days_of_week else [],
+            'is_active': reminder.is_active,
+            'next_trigger': reminder.next_trigger.isoformat() if reminder.next_trigger else None
+        }
+        reminder_list.append(reminder_data)
+    
+    return jsonify(reminder_list)
+
+@app.route('/api/reminders', methods=['POST'])
+@login_required
+def create_reminder():
+    user_id = session.get('user_id')
+    data = request.get_json()
+    
+    try:
+        # Parse time
+        time_parts = data['time_of_day'].split(':')
+        time_of_day = time(int(time_parts[0]), int(time_parts[1]))
+        
+        # Handle days of week
+        days_of_week = json.dumps(data.get('days_of_week', [])) if data.get('days_of_week') else None
+        
+        # Calculate next trigger
+        next_trigger = calculate_next_trigger(
+            time_of_day, 
+            data['frequency'], 
+            data.get('days_of_week', [])
+        )
+        
+        reminder = Reminder(
+            user_id=user_id,
+            title=data['title'],
+            description=data.get('description', ''),
+            reminder_type=data['type'],
+            frequency=data['frequency'],
+            time_of_day=time_of_day,
+            days_of_week=days_of_week,
+            next_trigger=next_trigger
+        )
+        
+        db.session.add(reminder)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'id': reminder.id}), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/reminders/<int:reminder_id>', methods=['PUT'])
+@login_required
+def update_reminder(reminder_id):
+    user_id = session.get('user_id')
+    reminder = Reminder.query.filter_by(id=reminder_id, user_id=user_id).first()
+    
+    if not reminder:
+        return jsonify({'success': False, 'error': 'Reminder not found'}), 404
+    
+    try:
+        data = request.get_json()
+        
+        if 'title' in data:
+            reminder.title = data['title']
+        if 'description' in data:
+            reminder.description = data['description']
+        if 'time_of_day' in data:
+            time_parts = data['time_of_day'].split(':')
+            reminder.time_of_day = time(int(time_parts[0]), int(time_parts[1]))
+        if 'frequency' in data:
+            reminder.frequency = data['frequency']
+        if 'days_of_week' in data:
+            reminder.days_of_week = json.dumps(data['days_of_week']) if data['days_of_week'] else None
+        if 'is_active' in data:
+            reminder.is_active = data['is_active']
+        
+        # Recalculate next trigger
+        reminder.next_trigger = calculate_next_trigger(
+            reminder.time_of_day,
+            reminder.frequency,
+            json.loads(reminder.days_of_week) if reminder.days_of_week else []
+        )
+        
+        reminder.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/reminders/<int:reminder_id>', methods=['DELETE'])
+@login_required
+def delete_reminder(reminder_id):
+    user_id = session.get('user_id')
+    reminder = Reminder.query.filter_by(id=reminder_id, user_id=user_id).first()
+    
+    if not reminder:
+        return jsonify({'success': False, 'error': 'Reminder not found'}), 404
+    
+    try:
+        db.session.delete(reminder)
+        db.session.commit()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/reminders/<int:reminder_id>/trigger', methods=['POST'])
+@login_required
+def trigger_reminder(reminder_id):
+    user_id = session.get('user_id')
+    reminder = Reminder.query.filter_by(id=reminder_id, user_id=user_id).first()
+    
+    if not reminder:
+        return jsonify({'success': False, 'error': 'Reminder not found'}), 404
+    
+    try:
+        data = request.get_json()
+        action = data.get('action', 'completed')
+        
+        # Log the reminder trigger
+        log = ReminderLog(
+            reminder_id=reminder.id,
+            user_id=user_id,
+            action_taken=action,
+            response_time=data.get('response_time')
+        )
+        db.session.add(log)
+        
+        # Update reminder
+        reminder.last_triggered = datetime.utcnow()
+        reminder.next_trigger = calculate_next_trigger(
+            reminder.time_of_day,
+            reminder.frequency,
+            json.loads(reminder.days_of_week) if reminder.days_of_week else []
+        )
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'next_trigger': reminder.next_trigger.isoformat()})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/notification-preferences', methods=['GET'])
+@login_required
+def get_notification_preferences():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    
+    return jsonify({
+        'success': True,
+        'preferences': {
+            'email_notifications': user.email_notifications,
+            'sms_notifications': user.sms_notifications,
+            'push_notifications': user.push_notifications
+        }
+    })
+
+@app.route('/api/notification-preferences', methods=['PUT'])
+@login_required
+def update_notification_preferences():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    
+    try:
+        data = request.get_json()
+        
+        if 'email_notifications' in data:
+            user.email_notifications = data['email_notifications']
+        if 'sms_notifications' in data:
+            user.sms_notifications = data['sms_notifications']
+        if 'push_notifications' in data:
+            user.push_notifications = data['push_notifications']
+        
+        db.session.commit()
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/reminders/check', methods=['POST'])
+@login_required
+def check_reminders():
+    """Check for due reminders and send notifications"""
+    user_id = session.get('user_id')
+    
+    try:
+        # Get all active reminders for the user
+        reminders = Reminder.query.filter_by(
+            user_id=user_id, 
+            is_active=True
+        ).filter(
+            Reminder.next_trigger <= datetime.utcnow()
+        ).all()
+        
+        triggered_count = 0
+        
+        for reminder in reminders:
+            # Send notifications
+            if send_reminder_notifications(reminder):
+                triggered_count += 1
+                
+                # Update reminder
+                reminder.last_triggered = datetime.utcnow()
+                reminder.next_trigger = calculate_next_trigger(
+                    reminder.time_of_day,
+                    reminder.frequency,
+                    json.loads(reminder.days_of_week) if reminder.days_of_week else []
+                )
+        
+        if triggered_count > 0:
+            db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'triggered_count': triggered_count,
+            'message': f'Processed {triggered_count} reminders'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/reminders/export-calendar', methods=['POST'])
+@login_required
+def export_reminders_to_calendar():
+    """Export reminders to calendar format (ICS)"""
+    user_id = session.get('user_id')
+    data = request.get_json()
+    reminder_ids = data.get('reminder_ids', [])
+    
+    try:
+        if not reminder_ids:
+            reminders = Reminder.query.filter_by(user_id=user_id, is_active=True).all()
+        else:
+            reminders = Reminder.query.filter(
+                Reminder.id.in_(reminder_ids),
+                Reminder.user_id == user_id
+            ).all()
+        
+        # Generate ICS content
+        ics_content = generate_ics_calendar(reminders)
+        
+        # Return as downloadable file
+        response = make_response(ics_content)
+        response.headers['Content-Type'] = 'text/calendar'
+        response.headers['Content-Disposition'] = 'attachment; filename=ki_wellness_reminders.ics'
+        
+        return response
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+def generate_ics_calendar(reminders):
+    """Generate ICS calendar content for reminders"""
+    ics_content = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Ki Wellness//Reminders//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+    ]
+    
+    for reminder in reminders:
+        # Calculate next few occurrences
+        occurrences = calculate_reminder_occurrences(reminder, count=10)
+        
+        for i, occurrence in enumerate(occurrences):
+            event_id = f"reminder_{reminder.id}_{i}"
+            start_time = occurrence.strftime('%Y%m%dT%H%M%SZ')
+            end_time = (occurrence + timedelta(minutes=15)).strftime('%Y%m%dT%H%M%SZ')
+            
+            ics_content.extend([
+                'BEGIN:VEVENT',
+                f'UID:{event_id}',
+                f'DTSTART:{start_time}',
+                f'DTEND:{end_time}',
+                f'SUMMARY:{reminder.title}',
+                f'DESCRIPTION:{reminder.description or "Wellness reminder"}',
+                f'CATEGORIES:{reminder.reminder_type}',
+                'END:VEVENT'
+            ])
+    
+    ics_content.append('END:VCALENDAR')
+    return '\r\n'.join(ics_content)
+
+def calculate_reminder_occurrences(reminder, count=10):
+    """Calculate next N occurrences of a reminder"""
+    occurrences = []
+    current_time = datetime.utcnow()
+    
+    for i in range(count):
+        if i == 0:
+            # First occurrence
+            occurrence = calculate_next_trigger(
+                reminder.time_of_day,
+                reminder.frequency,
+                json.loads(reminder.days_of_week) if reminder.days_of_week else []
+            )
+        else:
+            # Subsequent occurrences
+            if reminder.frequency == 'daily':
+                occurrence = occurrence + timedelta(days=1)
+            elif reminder.frequency == 'hourly':
+                occurrence = occurrence + timedelta(hours=1)
+            elif reminder.frequency == 'custom':
+                # Find next occurrence in custom schedule
+                occurrence = calculate_next_trigger(
+                    reminder.time_of_day,
+                    reminder.frequency,
+                    json.loads(reminder.days_of_week) if reminder.days_of_week else []
+                )
+                # Move forward by weeks
+                occurrence += timedelta(weeks=i)
+        
+        occurrences.append(occurrence)
+    
+    return occurrences
+
+# Notification Configuration
+EMAIL_CONFIG = {
+    'smtp_server': os.getenv('SMTP_SERVER', 'smtp.gmail.com'),
+    'smtp_port': int(os.getenv('SMTP_PORT', 587)),
+    'smtp_username': os.getenv('SMTP_USERNAME', ''),
+    'smtp_password': os.getenv('SMTP_PASSWORD', ''),
+    'from_email': os.getenv('FROM_EMAIL', 'noreply@kiwellness.org')
+}
+
+SMS_CONFIG = {
+    'twilio_account_sid': os.getenv('TWILIO_ACCOUNT_SID', ''),
+    'twilio_auth_token': os.getenv('TWILIO_AUTH_TOKEN', ''),
+    'twilio_phone_number': os.getenv('TWILIO_PHONE_NUMBER', '')
+}
+
+# Notification Functions
+def send_email_notification(user_email, subject, message):
+    """Send email notification"""
+    try:
+        if not EMAIL_CONFIG['smtp_username'] or not EMAIL_CONFIG['smtp_password']:
+            print("⚠️ Email configuration not set up")
+            return False
+            
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG['from_email']
+        msg['To'] = user_email
+        msg['Subject'] = subject
+        
+        body = f"""
+        <html>
+        <body>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #10B981, #059669); padding: 20px; text-align: center;">
+                    <h1 style="color: white; margin: 0;">Ki Wellness</h1>
+                </div>
+                <div style="padding: 20px; background-color: #f9fafb;">
+                    {message}
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+                    <p style="color: #6b7280; font-size: 12px;">
+                        This is an automated reminder from Ki Wellness. 
+                        You can manage your notification preferences in your profile settings.
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(body, 'html'))
+        
+        server = smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port'])
+        server.starttls()
+        server.login(EMAIL_CONFIG['smtp_username'], EMAIL_CONFIG['smtp_password'])
+        text = msg.as_string()
+        server.sendmail(EMAIL_CONFIG['from_email'], user_email, text)
+        server.quit()
+        
+        print(f"✅ Email sent to {user_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Email sending failed: {e}")
+        return False
+
+def send_sms_notification(phone_number, message):
+    """Send SMS notification using Twilio"""
+    try:
+        if not SMS_CONFIG['twilio_account_sid'] or not SMS_CONFIG['twilio_auth_token']:
+            print("⚠️ SMS configuration not set up")
+            return False
+            
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{SMS_CONFIG['twilio_account_sid']}/Messages.json"
+        
+        data = {
+            'From': SMS_CONFIG['twilio_phone_number'],
+            'To': phone_number,
+            'Body': message
+        }
+        
+        response = requests.post(
+            url,
+            data=data,
+            auth=(SMS_CONFIG['twilio_account_sid'], SMS_CONFIG['twilio_auth_token'])
+        )
+        
+        if response.status_code == 201:
+            print(f"✅ SMS sent to {phone_number}")
+            return True
+        else:
+            print(f"❌ SMS sending failed: {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ SMS sending failed: {e}")
+        return False
+
+def send_push_notification(user_id, title, message):
+    """Send push notification (placeholder for future implementation)"""
+    try:
+        # This would integrate with a push notification service like Firebase
+        # For now, we'll just log it
+        print(f"📱 Push notification for user {user_id}: {title} - {message}")
+        return True
+    except Exception as e:
+        print(f"❌ Push notification failed: {e}")
+        return False
+
+def send_reminder_notifications(reminder):
+    """Send notifications for a reminder based on user preferences"""
+    try:
+        user = User.query.get(reminder.user_id)
+        if not user:
+            return False
+            
+        # Create notification record
+        notification = Notification(
+            user_id=user.id,
+            reminder_id=reminder.id,
+            notification_type='email',  # Will be updated based on what's sent
+            title=reminder.title,
+            message=reminder.description or f"Time for your {reminder.reminder_type} reminder!"
+        )
+        
+        success = False
+        
+        # Send email notification if enabled
+        if user.email_notifications and user.email:
+            if send_email_notification(user.email, reminder.title, 
+                                    f"<h2>{reminder.title}</h2><p>{reminder.description or 'Time for your wellness reminder!'}</p>"):
+                notification.notification_type = 'email'
+                notification.status = 'sent'
+                notification.sent_at = datetime.utcnow()
+                success = True
+        
+        # Send SMS notification if enabled
+        if user.sms_notifications and user.phone:
+            sms_message = f"Ki Wellness: {reminder.title}\n{reminder.description or 'Time for your wellness reminder!'}"
+            if send_sms_notification(user.phone, sms_message):
+                # Create separate notification record for SMS
+                sms_notification = Notification(
+                    user_id=user.id,
+                    reminder_id=reminder.id,
+                    notification_type='sms',
+                    title=reminder.title,
+                    message=sms_message,
+                    status='sent',
+                    sent_at=datetime.utcnow()
+                )
+                db.session.add(sms_notification)
+                success = True
+        
+        # Send push notification if enabled
+        if user.push_notifications:
+            if send_push_notification(user.id, reminder.title, 
+                                   reminder.description or f"Time for your {reminder.reminder_type} reminder!"):
+                # Create separate notification record for push
+                push_notification = Notification(
+                    user_id=user.id,
+                    reminder_id=reminder.id,
+                    notification_type='push',
+                    title=reminder.title,
+                    message=reminder.description or f"Time for your {reminder.reminder_type} reminder!",
+                    status='sent',
+                    sent_at=datetime.utcnow()
+                )
+                db.session.add(push_notification)
+                success = True
+        
+        # Save notification records
+        if success:
+            db.session.add(notification)
+            db.session.commit()
+        
+        return success
+        
+    except Exception as e:
+        print(f"❌ Error sending reminder notifications: {e}")
+        db.session.rollback()
+        return False
+
+# Helper function to calculate next trigger time
+def calculate_next_trigger(time_of_day, frequency, days_of_week=None):
+    now = datetime.utcnow()
+    today = now.date()
+    
+    if frequency == 'daily':
+        # Set to today at the specified time
+        next_trigger = datetime.combine(today, time_of_day)
+        # If time has passed today, set to tomorrow
+        if next_trigger <= now:
+            next_trigger += timedelta(days=1)
+        return next_trigger
+    
+    elif frequency == 'hourly':
+        # Set to next hour at the specified minute
+        next_trigger = now.replace(minute=time_of_day.minute, second=0, microsecond=0)
+        if next_trigger <= now:
+            next_trigger += timedelta(hours=1)
+        return next_trigger
+    
+    elif frequency == 'custom' and days_of_week:
+        # Find next occurrence on specified days
+        current_weekday = now.weekday()
+        days_ahead = 0
+        
+        for i in range(7):
+            check_day = (current_weekday + i) % 7
+            if check_day in days_of_week:
+                days_ahead = i
+                break
+        
+        next_trigger = datetime.combine(today + timedelta(days=days_ahead), time_of_day)
+        if next_trigger <= now:
+            # Move to next week
+            next_trigger += timedelta(days=7)
+        return next_trigger
+    
+    # Default to daily
+    next_trigger = datetime.combine(today, time_of_day)
+    if next_trigger <= now:
+        next_trigger += timedelta(days=1)
+    return next_trigger
+
+@app.route('/admin/users/<int:user_id>/suspend', methods=['POST'])
+@admin_required
+def suspend_user(user_id):
+    """Suspend a user account"""
+    try:
+        user = User.query.get_or_404(user_id)
+        if user.is_admin:
+            return jsonify({'success': False, 'error': 'Cannot suspend admin users'})
+        
+        # Add suspended field if it doesn't exist (you may need to add this to your User model)
+        # For now, we'll use a simple approach
+        user.is_active = False  # Assuming you have an is_active field
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User {user.username} suspended successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error suspending user: {str(e)}'})
+
+
+@app.route('/admin/users/<int:user_id>/activate', methods=['POST'])
+@admin_required
+def activate_user(user_id):
+    """Activate a suspended user account"""
+    try:
+        user = User.query.get_or_404(user_id)
+        user.is_active = True  # Assuming you have an is_active field
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User {user.username} activated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error activating user: {str(e)}'})
+
+
+@app.route('/admin/users/<int:user_id>/promote', methods=['POST'])
+@admin_required
+def promote_to_admin(user_id):
+    """Promote a user to admin"""
+    try:
+        user = User.query.get_or_404(user_id)
+        if user.is_admin:
+            return jsonify({'success': False, 'error': 'User is already an admin'})
+        
+        user.is_admin = True
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User {user.username} promoted to admin successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error promoting user: {str(e)}'})
+
+
+@app.route('/admin/users/<int:user_id>/demote', methods=['POST'])
+@admin_required
+def demote_admin(user_id):
+    """Demote an admin to regular user"""
+    try:
+        user = User.query.get_or_404(user_id)
+        if not user.is_admin:
+            return jsonify({'success': False, 'error': 'User is not an admin'})
+        
+        # Prevent demoting the last admin
+        admin_count = User.query.filter_by(is_admin=True).count()
+        if admin_count <= 1:
+            return jsonify({'success': False, 'error': 'Cannot demote the last admin user'})
+        
+        user.is_admin = False
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User {user.username} demoted from admin successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error demoting user: {str(e)}'})
+
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def delete_user(user_id):
+    """Delete a user account and all associated data"""
+    try:
+        user = User.query.get_or_404(user_id)
+        if user.is_admin:
+            return jsonify({'success': False, 'error': 'Cannot delete admin users'})
+        
+        # Delete associated data (cascade should handle most of this)
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'User {user.username} deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error deleting user: {str(e)}'})
+
+
+@app.route('/admin/system/health')
+@admin_required
+def system_health():
+    """Get system health information"""
+    try:
+        # Basic system health checks
+        health_data = {
+            'database': 'Connected',
+            'timestamp': datetime.utcnow().isoformat(),
+            'user_count': User.query.count(),
+            'active_sessions': 0,  # Placeholder for session tracking
+            'memory_usage': 'Normal',  # Placeholder for memory monitoring
+            'disk_space': 'Adequate'  # Placeholder for disk monitoring
+        }
+        return jsonify(health_data)
+    except Exception as e:
+        return jsonify({'error': f'Error checking system health: {str(e)}'}), 500
+
+
+@app.route('/admin/system/settings', methods=['GET', 'POST'])
+@admin_required
+def system_settings():
+    """Manage system settings"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            setting_key = data.get('key')
+            setting_value = data.get('value')
+            description = data.get('description')
+            
+            if set_system_setting(setting_key, setting_value, description, get_current_user().id):
+                return jsonify({'success': True, 'message': f'Setting {setting_key} updated successfully'})
+            else:
+                return jsonify({'success': False, 'error': 'Failed to update setting'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Error updating setting: {str(e)}'})
+    
+    # GET request - return all settings
+    try:
+        settings = SystemSettings.query.all()
+        settings_data = []
+        for setting in settings:
+            settings_data.append({
+                'key': setting.key,
+                'value': setting.value,
+                'description': setting.description,
+                'updated_at': setting.updated_at.isoformat() if setting.updated_at else None
+            })
+        return jsonify({'success': True, 'settings': settings_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error retrieving settings: {str(e)}'})
+
+
+@app.route('/admin/system/emergency-stop', methods=['POST'])
+@admin_required
+def emergency_stop():
+    """Emergency stop for OpenAI API"""
+    try:
+        data = request.get_json()
+        action = data.get('action')  # 'enable' or 'disable'
+        
+        if action == 'enable':
+            set_system_setting('emergency_stop_active', 'true', 'Emergency stop activated', get_current_user().id)
+            return jsonify({'success': True, 'message': 'Emergency stop ACTIVATED - OpenAI API calls are now disabled'})
+        elif action == 'disable':
+            set_system_setting('emergency_stop_active', 'false', 'Emergency stop deactivated', get_current_user().id)
+            return jsonify({'success': True, 'message': 'Emergency stop DEACTIVATED - OpenAI API calls are now enabled'})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid action. Use "enable" or "disable"'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error updating emergency stop: {str(e)}'})
+
+
+@app.route('/admin/users/search')
+@admin_required
+def search_users():
+    """Search users by email or phone number with pagination"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = 5  # Max 5 users per page
+        search_query = request.args.get('search', '').strip()
+        
+        # Build query
+        query = User.query
+        
+        if search_query:
+            # Search by email or phone
+            query = query.filter(
+                db.or_(
+                    User.email.ilike(f'%{search_query}%'),
+                    User.phone.ilike(f'%{search_query}%')
+                )
+            )
+        
+        # Paginate results
+        pagination = query.paginate(
+            page=page, 
+            per_page=per_page, 
+            error_out=False
+        )
+        
+        users_data = []
+        for user in pagination.items:
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'is_admin': user.is_admin,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            }
+            users_data.append(user_data)
+        
+        return jsonify({
+            'success': True,
+            'users': users_data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'has_next': pagination.has_next,
+                'has_prev': pagination.has_prev
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error searching users: {str(e)}'})
+
+
+@app.route('/admin/accounting/token-usage')
+@admin_required
+def token_usage_analytics():
+    """Get token usage analytics by month"""
+    try:
+        month = request.args.get('month', datetime.utcnow().strftime('%Y-%m'))
+        
+        # Get token usage for the month
+        token_usage = TokenUsage.query.filter_by(month=month).all()
+        
+        # Calculate totals
+        total_tokens = sum(usage.tokens_used for usage in token_usage)
+        total_cost = sum(usage.cost_usd for usage in token_usage)
+        
+        # Get user breakdown
+        user_breakdown = []
+        for usage in token_usage:
+            user = User.query.get(usage.user_id)
+            if user:
+                user_breakdown.append({
+                    'user_id': usage.user_id,
+                    'username': user.username,
+                    'email': user.email,
+                    'tokens_used': usage.tokens_used,
+                    'cost_usd': usage.cost_usd,
+                    'model_used': usage.model_used
+                })
+        
+        return jsonify({
+            'success': True,
+            'month': month,
+            'total_tokens': total_tokens,
+            'total_cost': total_cost,
+            'user_breakdown': user_breakdown
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error retrieving token usage: {str(e)}'})
+
+
+@app.route('/admin/accounting/profit-loss')
+@admin_required
+def profit_loss_analytics():
+    """Get profit and loss analytics"""
+    try:
+        month = request.args.get('month', datetime.utcnow().strftime('%Y-%m'))
+        
+        # Get token usage costs
+        token_usage = TokenUsage.query.filter_by(month=month).all()
+        total_api_costs = sum(usage.cost_usd for usage in token_usage)
+        
+        # Get payment data (placeholder - you'll need to implement this based on your payment system)
+        # For now, we'll use a placeholder value
+        total_payments = 0  # This should come from your payment processing system
+        
+        # Calculate profit/loss
+        profit_loss = total_payments - total_api_costs
+        
+        # Get user-level breakdown
+        user_breakdown = []
+        for usage in token_usage:
+            user = User.query.get(usage.user_id)
+            if user:
+                user_breakdown.append({
+                    'user_id': usage.user_id,
+                    'username': user.username,
+                    'email': user.email,
+                    'tokens_used': usage.tokens_used,
+                    'api_cost': usage.cost_usd,
+                    'user_payment': 0,  # This should come from your payment system
+                    'user_profit_loss': 0 - usage.cost_usd  # Negative because it's a cost
+                })
+        
+        return jsonify({
+            'success': True,
+            'month': month,
+            'total_api_costs': total_api_costs,
+            'total_payments': total_payments,
+            'profit_loss': profit_loss,
+            'user_breakdown': user_breakdown
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error retrieving profit/loss data: {str(e)}'})
+
+
+@app.route('/admin/accounting/api-costs', methods=['GET', 'POST'])
+@admin_required
+def manage_api_costs():
+    """Manage API costs for different models"""
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            model_name = data.get('model_name')
+            input_cost = data.get('input_cost_per_1k')
+            output_cost = data.get('output_cost_per_1k')
+            
+            # Update or create API cost
+            api_cost = APICosts.query.filter_by(model_name=model_name).first()
+            if api_cost:
+                api_cost.input_cost_per_1k = input_cost
+                api_cost.output_cost_per_1k = output_cost
+                api_cost.updated_at = datetime.utcnow()
+                api_cost.updated_by = get_current_user().id
+            else:
+                api_cost = APICosts(
+                    model_name=model_name,
+                    input_cost_per_1k=input_cost,
+                    output_cost_per_1k=output_cost,
+                    updated_by=get_current_user().id
+                )
+                db.session.add(api_cost)
+            
+            db.session.commit()
+            return jsonify({'success': True, 'message': f'API costs for {model_name} updated successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': f'Error updating API costs: {str(e)}'})
+    
+    # GET request - return all API costs
+    try:
+        api_costs = APICosts.query.filter_by(is_active=True).all()
+        costs_data = []
+        for cost in api_costs:
+            costs_data.append({
+                'id': cost.id,
+                'model_name': cost.model_name,
+                'input_cost_per_1k': cost.input_cost_per_1k,
+                'output_cost_per_1k': cost.output_cost_per_1k,
+                'updated_at': cost.updated_at.isoformat() if cost.updated_at else None
+            })
+        return jsonify({'success': True, 'api_costs': costs_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error retrieving API costs: {str(e)}'})
+
+
+@app.route('/admin/accounting/update-token-usage', methods=['POST'])
+@admin_required
+def update_token_usage():
+    """Update token usage for a user (for manual tracking)"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        month = data.get('month', datetime.utcnow().strftime('%Y-%m'))
+        tokens_used = data.get('tokens_used', 0)
+        model_used = data.get('model_used', 'gpt-4')
+        
+        # Get or create token usage record
+        token_usage = TokenUsage.query.filter_by(
+            user_id=user_id, 
+            month=month
+        ).first()
+        
+        if token_usage:
+            token_usage.tokens_used = tokens_used
+            token_usage.model_used = model_used
+        else:
+            token_usage = TokenUsage(
+                user_id=user_id,
+                month=month,
+                tokens_used=tokens_used,
+                model_used=model_used
+            )
+            db.session.add(token_usage)
+        
+        # Calculate cost based on current API costs
+        api_cost = APICosts.query.filter_by(model_name=model_used, is_active=True).first()
+        if api_cost:
+            # Estimate cost (assuming 80% input, 20% output tokens)
+            estimated_input_tokens = int(tokens_used * 0.8)
+            estimated_output_tokens = int(tokens_used * 0.2)
+            cost = (estimated_input_tokens / 1000 * api_cost.input_cost_per_1k + 
+                   estimated_output_tokens / 1000 * api_cost.output_cost_per_1k)
+            token_usage.cost_usd = round(cost, 4)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Token usage updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error updating token usage: {str(e)}'})
+
+
+
+
+
+class SystemSettings(db.Model):
+    __tablename__ = 'system_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', backref='system_settings')
+
+
+class TokenUsage(db.Model):
+    __tablename__ = 'token_usage'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    month = db.Column(db.String(7), nullable=False)  # YYYY-MM format
+    tokens_used = db.Column(db.Integer, default=0)
+    cost_usd = db.Column(db.Float, default=0.0)
+    model_used = db.Column(db.String(50), nullable=True)  # gpt-4, gpt-3.5-turbo, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='token_usage')
+
+
+class APICosts(db.Model):
+    __tablename__ = 'api_costs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    model_name = db.Column(db.String(50), nullable=False)
+    input_cost_per_1k = db.Column(db.Float, nullable=False)  # Cost per 1K input tokens
+    output_cost_per_1k = db.Column(db.Float, nullable=False)  # Cost per 1K output tokens
+    is_active = db.Column(db.Boolean, default=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    user = db.relationship('User', backref='api_costs')
 
 if __name__ == '__main__':
     app.run(debug=True)
