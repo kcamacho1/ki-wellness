@@ -45,9 +45,6 @@ def init_database():
     """Initialize database tables"""
     with app.app_context():
         try:
-            # Check if we can connect to the database
-            db.engine.connect()
-            
             # Check if tables exist by trying to query one
             inspector = inspect(db.engine)
             existing_tables = inspector.get_table_names()
@@ -227,6 +224,44 @@ def get_current_user():
     return None
 
 # Make functions available to templates
+def is_localhost_environment():
+    """Check if running on localhost"""
+    try:
+        if request:
+            host = request.host
+            is_local = host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
+            print(f"🔧 Host check: {host} -> localhost: {is_local}")
+            return is_local
+    except RuntimeError as e:
+        print(f"🔧 RuntimeError in host check: {e}")
+        pass
+    print("🔧 No request context, assuming not localhost")
+    return False
+
+def should_enable_turnstile():
+    """Determine if Turnstile should be enabled"""
+    # Check if explicitly disabled via environment variable
+    if os.getenv('TURNSTILE_ENABLED', '').lower() == 'false':
+        print("🔧 Turnstile explicitly disabled via environment variable")
+        return False
+    
+    # Check if running on localhost
+    if is_localhost_environment():
+        print("🔧 Localhost detected, disabling Turnstile")
+        return False
+    
+    # Check if running on kiwellness.org domain
+    try:
+        if request and 'kiwellness.org' in request.host:
+            print("🌐 kiwellness.org domain detected, enabling Turnstile")
+            return True
+    except RuntimeError:
+        pass
+    
+    # Default to enabled for production safety
+    print("🌐 Default production mode, enabling Turnstile")
+    return True
+
 @app.context_processor
 def inject_functions():
     return {
@@ -234,7 +269,8 @@ def inject_functions():
         'is_admin_user': is_admin_user,
         'ADMIN_EMAIL': os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org'),
         'TURNSTILE_SITE_KEY': app.config.get('TURNSTILE_SITE_KEY'),
-        'TURNSTILE_ENABLED': app.config.get('TURNSTILE_ENABLED', True)
+        'TURNSTILE_ENABLED': should_enable_turnstile(),
+        'IS_LOCALHOST': is_localhost_environment()
     }
 
 def verify_user_data_access(user_profile, data_type="unknown"):
@@ -509,6 +545,66 @@ def index():
 def coaching():
     return render_template('coaching.html')
 
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/disclaimer')
+def disclaimer():
+    return render_template('disclaimer.html')
+
+@app.route('/api/turnstile-status')
+def turnstile_status():
+    """API endpoint to check Turnstile status"""
+    # Check if running on localhost
+    is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
+    
+    # Determine if Turnstile should be enabled
+    turnstile_enabled = not is_localhost
+    
+    return jsonify({
+        'enabled': turnstile_enabled,
+        'is_localhost': is_localhost,
+        'host': request.host
+    })
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        # Get form data
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        
+        # Basic validation
+        if not all([name, email, subject, message]):
+            flash('Please fill in all required fields.', 'error')
+            return render_template('contact.html', form_data=request.form)
+        
+        if len(name) < 2:
+            flash('Name must be at least 2 characters long.', 'error')
+            return render_template('contact.html', form_data=request.form)
+        
+        if len(message) < 10:
+            flash('Message must be at least 10 characters long.', 'error')
+            return render_template('contact.html', form_data=request.form)
+        
+        try:
+            # For now, we'll just show a success message
+            # In production, you would send an actual email here
+            flash('Thank you for your message! We will get back to you within 24-48 hours.', 'success')
+            return render_template('contact.html')
+        except Exception as e:
+            flash('Sorry, there was an error sending your message. Please try again or email us directly at hello@kiwellness.org', 'error')
+            return render_template('contact.html', form_data=request.form)
+    
+    return render_template('contact.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -520,15 +616,20 @@ def login():
             flash('Username and password are required', 'error')
             return render_template('login.html')
         
-        # Turnstile validation
-        if not turnstile_response:
-            flash('Please complete the security verification', 'error')
-            return render_template('login.html')
+        # Turnstile validation (only if enabled)
+        # Check if running on localhost
+        is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
+        turnstile_enabled = not is_localhost
         
-        # Verify Turnstile
-        if not verify_turnstile(turnstile_response):
-            flash('Security verification failed. Please try again.', 'error')
-            return render_template('login.html')
+        if turnstile_enabled:
+            if not turnstile_response:
+                flash('Please complete the security verification', 'error')
+                return render_template('login.html')
+            
+            # Verify Turnstile
+            if not verify_turnstile(turnstile_response):
+                flash('Security verification failed. Please try again.', 'error')
+                return render_template('login.html')
         
         # Ensure database tables exist before querying
         ensure_tables_exist()
@@ -622,15 +723,20 @@ def register():
             flash('All fields are required', 'error')
             return render_template('register.html')
         
-        # Turnstile validation
-        if not turnstile_response:
-            flash('Please complete the security verification', 'error')
-            return render_template('register.html')
+        # Turnstile validation (only if enabled)
+        # Check if running on localhost
+        is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
+        turnstile_enabled = not is_localhost
         
-        # Verify Turnstile
-        if not verify_turnstile(turnstile_response):
-            flash('Security verification failed. Please try again.', 'error')
-            return render_template('register.html')
+        if turnstile_enabled:
+            if not turnstile_response:
+                flash('Please complete the security verification', 'error')
+                return render_template('register.html')
+            
+            # Verify Turnstile
+            if not verify_turnstile(turnstile_response):
+                flash('Security verification failed. Please try again.', 'error')
+                return render_template('register.html')
         
         # Username validation
         username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
@@ -2017,8 +2123,15 @@ def verify_turnstile(response):
     """
     Verify Cloudflare Turnstile response
     """
-    # If Turnstile is disabled, return True for development
-    if not app.config.get('TURNSTILE_ENABLED', True):
+    # Check if running on localhost
+    is_localhost = False
+    if request:
+        is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
+    
+    # If Turnstile is disabled or running on localhost, return True
+    if not app.config.get('TURNSTILE_ENABLED', True) or is_localhost:
+        if is_localhost:
+            print("🔧 Localhost detected: Bypassing Turnstile verification")
         return True
     
     # If no response provided, return False

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disclaimer - Ki Wellness</title>
+    <meta name="description" content="Important disclaimers for Ki Wellness platform. Read about health, medical, and service limitations.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Quicksand', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                    },
+                    colors: {
+                        'forest-green': '#2d5016',
+                        'sage-green': '#9ca3af',
+                        'mint-green': '#10b981',
+                        'soft-green': '#f0f9ff',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#8b4513'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-nature-gray font-sans">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-soft-green sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-8 w-auto mr-3">
+                    <a href="/" class="text-xl font-semibold text-forest-green hover:text-mint-green transition-colors duration-200">Ki Wellness</a>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Home</a>
+                    <a href="/coaching" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Coaching</a>
+                    {% if session.get('user_id') %}
+                        <a href="/dashboard" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Dashboard</a>
+                        <a href="/logout" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Logout</a>
+                    {% else %}
+                        <a href="/login" class="text-gray-700 hover:text-mint-green transition-colors duration-200">Login</a>
+                        <a href="/register" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 font-medium">
+                            Get Started
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700 focus:outline-none" aria-label="Open menu">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                    <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Home</a>
+                    <a href="/coaching" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Coaching</a>
+                    {% if session.get('user_id') %}
+                        <a href="/dashboard" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Dashboard</a>
+                        <a href="/logout" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Logout</a>
+                    {% else %}
+                        <a href="/login" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Login</a>
+                        <a href="/register" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-12">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-forest-green mb-4">Important Disclaimers</h1>
+                <p class="text-xl text-gray-600">Please read carefully before using our services</p>
+            </div>
+
+            <!-- Disclaimer Content -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 space-y-8">
+                <!-- Health and Medical Disclaimer -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">1. Health and Medical Disclaimer</h2>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                        <p class="text-red-800 font-semibold mb-3 text-lg">⚠️ CRITICAL HEALTH NOTICE</p>
+                        <p class="text-red-700 leading-relaxed mb-4">
+                            <strong>The information provided through Ki Wellness is for educational and informational purposes only.</strong>
+                        </p>
+                        <ul class="list-disc list-inside text-red-700 space-y-2 ml-4">
+                            <li>It is NOT intended as medical advice, diagnosis, or treatment</li>
+                            <li>It is NOT a substitute for professional medical care</li>
+                            <li>Always consult with qualified healthcare professionals before making health changes</li>
+                            <li>Never disregard professional medical advice or delay seeking it</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Coaching Services Disclaimer -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">2. Coaching Services Disclaimer</h2>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <p class="text-yellow-800 font-semibold mb-3">📋 Coaching Limitations</p>
+                        <p class="text-yellow-700 leading-relaxed mb-4">
+                            Our coaching services are designed to provide general wellness guidance and support:
+                        </p>
+                        <ul class="list-disc list-inside text-yellow-700 space-y-2 ml-4">
+                            <li>Coaching is NOT medical treatment or therapy</li>
+                            <li>Coaches are NOT medical doctors, therapists, or licensed healthcare providers</li>
+                            <li>Coaching focuses on lifestyle, nutrition, and wellness education</li>
+                            <li>For medical issues, always consult licensed healthcare professionals</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Platform Information Disclaimer -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">3. Platform Information Disclaimer</h2>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        While we strive to provide accurate and up-to-date information:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                        <li>Information may not be complete, accurate, or current</li>
+                        <li>Nutritional data and recommendations are general guidelines</li>
+                        <li>Individual results may vary significantly</li>
+                        <li>We are not responsible for decisions made based on platform information</li>
+                    </ul>
+                </section>
+
+                <!-- AI and Technology Disclaimer -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">4. AI and Technology Disclaimer</h2>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        Our platform uses artificial intelligence and technology to provide insights:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                        <li>AI-generated content is for informational purposes only</li>
+                        <li>Technology may have limitations and occasional errors</li>
+                        <li>Always verify important information independently</li>
+                        <li>We are not liable for technology-related issues or data loss</li>
+                    </ul>
+                </section>
+
+                <!-- Third-Party Services Disclaimer -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">5. Third-Party Services Disclaimer</h2>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        Our platform may integrate with third-party services:
+                    </p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                        <li>Calendly for coaching session scheduling</li>
+                        <li>Stripe for donation processing</li>
+                        <li>External nutrition databases and APIs</li>
+                        <li>We are not responsible for third-party service issues or policies</li>
+                    </ul>
+                </section>
+
+                <!-- User Responsibility -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">6. User Responsibility and Assumption of Risk</h2>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <p class="text-blue-800 font-semibold mb-3">🔒 Your Responsibility</p>
+                        <p class="text-blue-700 leading-relaxed mb-4">
+                            By using our services, you acknowledge and agree that:
+                        </p>
+                        <ul class="list-disc list-inside text-blue-700 space-y-2 ml-4">
+                            <li>You use the platform at your own risk</li>
+                            <li>You are responsible for your own health decisions</li>
+                            <li>You will consult healthcare professionals for medical concerns</li>
+                            <li>You will not rely solely on platform information for medical decisions</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Emergency Situations -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">7. Emergency Situations</h2>
+                    <div class="bg-red-100 border border-red-300 rounded-lg p-6">
+                        <p class="text-red-800 font-bold mb-3 text-lg">🚨 EMERGENCY NOTICE</p>
+                        <p class="text-red-700 leading-relaxed">
+                            <strong>If you are experiencing a medical emergency:</strong>
+                        </p>
+                        <ul class="list-disc list-inside text-red-700 space-y-2 ml-4 mt-3">
+                            <li>Call 911 or your local emergency number immediately</li>
+                            <li>Do NOT rely on this platform for emergency medical assistance</li>
+                            <li>Seek immediate professional medical attention</li>
+                            <li>This platform is NOT equipped for emergency situations</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Limitation of Liability -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">8. Limitation of Liability</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Ki Wellness, its owners, employees, and affiliates shall not be liable for any direct, indirect, 
+                        incidental, special, consequential, or punitive damages arising from your use of our services, 
+                        including but not limited to health-related decisions, data loss, or service interruptions.
+                    </p>
+                </section>
+
+                <!-- Indemnification -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">9. Indemnification</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        You agree to indemnify and hold harmless Ki Wellness from any claims, damages, or expenses 
+                        arising from your use of our services or violation of our terms.
+                    </p>
+                </section>
+
+                <!-- Changes to Disclaimers -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">10. Changes to Disclaimers</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        We reserve the right to modify these disclaimers at any time. Continued use of our services 
+                        after changes constitutes acceptance of the updated disclaimers.
+                    </p>
+                </section>
+
+                <!-- Contact for Questions -->
+                <section>
+                    <h2 class="text-2xl font-bold text-forest-green mb-4">11. Questions About Disclaimers</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        If you have questions about these disclaimers or need clarification on any points, 
+                        please contact us through our <a href="/contact" class="text-mint-green hover:text-forest-green transition-colors duration-200 font-medium">contact form</a> before using our services.
+                    </p>
+                </section>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="mt-8 text-center">
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="/terms" class="text-mint-green hover:text-forest-green transition-colors duration-200 font-medium">
+                        Terms of Service
+                    </a>
+                    <a href="/privacy" class="text-mint-green hover:text-forest-green transition-colors duration-200 font-medium">
+                        Privacy Policy
+                    </a>
+                    <a href="/" class="text-mint-green hover:text-forest-green transition-colors duration-200 font-medium">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Include Footer -->
+    {% include 'includes/footer.html' %}
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenuButton?.contains(e.target) && !mobileMenu?.contains(e.target)) {
+                mobileMenu?.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

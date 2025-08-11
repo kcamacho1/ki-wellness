@@ -34,7 +34,26 @@ class Config:
     # Cloudflare Turnstile Configuration
     TURNSTILE_SITE_KEY = os.getenv('SITE_KEY')
     TURNSTILE_SECRET_KEY = os.getenv('SECRET_KEY')
-    TURNSTILE_ENABLED = os.getenv('TURNSTILE_ENABLED', 'true').lower() == 'true'
+    
+    # Auto-detect environment and configure Turnstile
+    @property
+    def TURNSTILE_ENABLED(self):
+        # Check if explicitly disabled via environment variable
+        if os.getenv('TURNSTILE_ENABLED', '').lower() == 'false':
+            return False
+        
+        # Check if running on localhost (development)
+        # This will be overridden by Flask context in main.py
+        host = os.getenv('HOST', '127.0.0.1')
+        if host in ['127.0.0.1', 'localhost', '0.0.0.0']:
+            return False
+        
+        # Check if running on kiwellness.org domain (production)
+        if 'kiwellness.org' in os.getenv('SERVER_NAME', ''):
+            return True
+        
+        # Default to enabled for production safety
+        return True
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -49,9 +68,9 @@ class DevelopmentConfig(Config):
         else:
             print("🔧 Development mode: Using PostgreSQL database (FORCE_POSTGRES_DEV set)")
         
-        # Disable Turnstile captcha in development for easier testing
-        self.TURNSTILE_ENABLED = False
-        print("🔧 Development mode: Turnstile captcha disabled")
+        # Turnstile status will be auto-detected based on host
+        turnstile_status = "disabled" if not self.TURNSTILE_ENABLED else "enabled"
+        print(f"🔧 Development mode: Turnstile captcha {turnstile_status}")
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -62,6 +81,12 @@ class ProductionConfig(Config):
         # Ensure Turnstile is enabled in production
         if not self.TURNSTILE_ENABLED:
             print("⚠️  Warning: Turnstile captcha is disabled in production!")
+        else:
+            print("✅ Production mode: Turnstile captcha enabled")
+        
+        # Force enable Turnstile for kiwellness.org domain
+        if 'kiwellness.org' in os.getenv('SERVER_NAME', ''):
+            print("🌐 kiwellness.org domain detected: Turnstile captcha enforced")
 
 # Configuration dictionary
 config = {

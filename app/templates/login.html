@@ -6,7 +6,37 @@
     <title>Login - KI Wellness</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+        // Dynamically load Turnstile modules based on environment
+        fetch('/api/turnstile-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.enabled) {
+                    // Load production Turnstile
+                    const turnstileScript = document.createElement('script');
+                    turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+                    turnstileScript.async = true;
+                    turnstileScript.defer = true;
+                    document.head.appendChild(turnstileScript);
+                    
+                    const moduleScript = document.createElement('script');
+                    moduleScript.src = '{{ url_for("static", filename="js/turnstile_module.js") }}';
+                    document.head.appendChild(moduleScript);
+                } else {
+                    // Load development bypass
+                    const bypassScript = document.createElement('script');
+                    bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+                    document.head.appendChild(bypassScript);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Turnstile status:', error);
+                // Fallback to development bypass
+                const bypassScript = document.createElement('script');
+                bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+                document.head.appendChild(bypassScript);
+            });
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .hero-gradient {
@@ -17,105 +47,131 @@
         .soft-green { color: #dcfce7; }
         .sage-green { color: #86efac; }
         .calm-blue { color: #3b82f6; }
+        
+        /* Button styling with proper background colors */
+        .bg-mint-green { background-color: #4ade80 !important; }
+        .bg-forest-green { background-color: #166534 !important; }
+        .bg-soft-green { background-color: #dcfce7 !important; }
+        .bg-sage-green { background-color: #86efac !important; }
+        .bg-calm-blue { background-color: #3b82f6 !important; }
+        
+        /* Enhanced button visibility with site theme colors */
+        .btn-primary {
+            background-color: #4ade80 !important;
+            color: white !important;
+            border: 2px solid #166534 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #166534 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="flex justify-center">
-                <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="KI Wellness" class="h-12 w-auto">
+    <div class="min-h-screen flex flex-col">
+        <!-- Main Content Container -->
+        <div class="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="sm:mx-auto sm:w-full sm:max-w-md">
+                <div class="flex justify-center">
+                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="KI Wellness" class="h-12 w-auto">
+                </div>
+                <h2 class="mt-6 text-center text-3xl font-bold text-gray-900" style="font-family: 'Quicksand', sans-serif;">
+                    Welcome Back
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Sign in to your Ki  Wellness account
+                </p>
             </div>
-            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900" style="font-family: 'Quicksand', sans-serif;">
-                Welcome Back
-            </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                Sign in to your KI Wellness account
-            </p>
-        </div>
 
-        <!-- Login Form -->
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="bg-white py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-soft-green">
-                <form class="space-y-6" method="POST">
-                    <!-- Username Field -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <div class="mt-1">
-                            <input id="username" name="username" type="text" required 
-                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-colors duration-200"
-                                   placeholder="Enter your username"
-                                   autocomplete="username">
+            <!-- Login Form -->
+            <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                <div class="bg-white py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-soft-green">
+                    <form class="space-y-6" method="POST">
+                        <!-- Username Field -->
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <div class="mt-1">
+                                <input id="username" name="username" type="text" required 
+                                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-colors duration-200"
+                                       placeholder="Enter your username"
+                                       autocomplete="username">
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Password Field -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <div class="mt-1 relative">
-                            <input id="password" name="password" type="password" required 
-                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-colors duration-200 pr-10"
-                                   placeholder="Enter your password"
-                                   autocomplete="current-password">
-                            <button type="button" id="togglePassword" 
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                            </button>
+                        <!-- Password Field -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <div class="mt-1 relative">
+                                <input id="password" name="password" type="password" required 
+                                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-colors duration-200 pr-10"
+                                       placeholder="Enter your password"
+                                       autocomplete="current-password">
+                                <button type="button" id="togglePassword" 
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Remember Me and Forgot Password -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember_me" name="remember_me" type="checkbox" 
-                                   class="h-4 w-4 text-mint-green focus:ring-mint-green border-gray-300 rounded">
-                            <label for="remember_me" class="ml-2 block text-sm text-gray-900">
-                                Remember me
-                            </label>
+                        <!-- Remember Me and Forgot Password -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="remember_me" name="remember_me" type="checkbox" 
+                                       class="h-4 w-4 text-mint-green focus:ring-mint-green border-gray-300 rounded">
+                                <label for="remember_me" class="ml-2 block text-sm text-gray-900">
+                                    Remember me
+                                </label>
+                            </div>
+                            <div class="text-sm">
+                                <a href="{{ url_for('forgot_password') }}" class="font-medium text-mint-green hover:text-forest-green transition-colors duration-200">
+                                    Forgot password?
+                                </a>
+                            </div>
                         </div>
-                        <div class="text-sm">
-                            <a href="{{ url_for('forgot_password') }}" class="font-medium text-mint-green hover:text-forest-green transition-colors duration-200">
-                                Forgot password?
-                            </a>
-                        </div>
-                    </div>
 
-                    <!-- Cloudflare Turnstile -->
-                    {% if config.TURNSTILE_ENABLED %}
-                        <div class="flex justify-center">
-                            <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
-                        </div>
-                    {% else %}
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <p class="text-xs text-yellow-800 text-center">
-                                <strong>Development Mode:</strong> Security verification is disabled for testing.
-                            </p>
-                        </div>
-                    {% endif %}
+                        <!-- Cloudflare Turnstile -->
+                        {% if config.TURNSTILE_ENABLED %}
+                            <div class="flex justify-center">
+                                <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
+                            </div>
+                        {% else %}
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p class="text-xs text-yellow-800 text-center">
+                                    {% if IS_LOCALHOST %}
+                                        <strong>Localhost Detected:</strong> Security verification is disabled for local development.
+                                    {% else %}
+                                        <strong>Development Mode:</strong> Security verification is disabled for testing.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        {% endif %}
+                        
+                        <button type="submit" 
+                                class="w-full btn-primary py-3 px-4 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 text-lg">
+                            Sign In
+                        </button>
+                    </form>
                     
-                    <button type="submit" 
-                            class="w-full bg-mint-green text-white py-3 px-4 rounded-lg font-semibold hover:bg-forest-green transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2">
-                        Sign In
-                    </button>
-                </form>
-                
-                <div class="mt-6 text-center">
-                    <p class="text-gray-600">Don't have an account? 
-                        <a href="{{ url_for('register') }}" class="text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
-                            Create one here
-                        </a>
-                    </p>
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-600">Don't have an account? 
+                            <a href="{{ url_for('register') }}" class="text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
+                                Create one here
+                            </a>
+                        </p>
+                    </div>
                 </div>
             </div>
-
-            <!-- Footer -->
-            <div class="text-center mt-8">
-                <p class="text-sm text-gray-500">KI Wellness - Self Health Simplified</p>
-            </div>
         </div>
+
+        <!-- Footer - Full Width -->
+        {% include 'includes/footer.html' %}
     </div>
 
     <!-- Security Features JavaScript -->
@@ -143,11 +199,6 @@
         document.querySelector('form').addEventListener('submit', function(e) {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            {% if config.TURNSTILE_ENABLED %}
-            const turnstileResponse = document.querySelector('input[name="cf-turnstile-response"]')?.value || '';
-            {% else %}
-            const turnstileResponse = 'disabled';
-            {% endif %}
             
             // Basic validation
             if (username.length < 3) {
@@ -162,9 +213,9 @@
                 return;
             }
             
-            // Turnstile validation (only if enabled)
+            // Turnstile validation (only if enabled and module is available)
             {% if config.TURNSTILE_ENABLED %}
-            if (!turnstileResponse) {
+            if (window.TurnstileModule && !window.TurnstileModule.getToken()) {
                 e.preventDefault();
                 alert('Please complete the security verification.');
                 return;

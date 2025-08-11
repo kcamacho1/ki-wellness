@@ -6,8 +6,38 @@
     <title>Register - KI Wellness</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Dynamically load Turnstile modules based on environment
+        fetch('/api/turnstile-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.enabled) {
+                    // Load production Turnstile
+                    const turnstileScript = document.createElement('script');
+                    turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+                    turnstileScript.async = true;
+                    turnstileScript.defer = true;
+                    document.head.appendChild(turnstileScript);
+                    
+                    const moduleScript = document.createElement('script');
+                    moduleScript.src = '{{ url_for("static", filename="js/turnstile_module.js") }}';
+                    document.head.appendChild(moduleScript);
+                } else {
+                    // Load development bypass
+                    const bypassScript = document.createElement('script');
+                    bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+                    document.head.appendChild(bypassScript);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Turnstile status:', error);
+                // Fallback to development bypass
+                const bypassScript = document.createElement('script');
+                bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+                document.head.appendChild(bypassScript);
+            });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins/wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .hero-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -17,6 +47,27 @@
         .soft-green { color: #dcfce7; }
         .sage-green { color: #86efac; }
         .calm-blue { color: #3b82f6; }
+        
+        /* Button styling with proper background colors */
+        .bg-mint-green { background-color: #4ade80 !important; }
+        .bg-forest-green { background-color: #166534 !important; }
+        .bg-soft-green { background-color: #dcfce7 !important; }
+        .bg-sage-green { background-color: #86efac !important; }
+        .bg-calm-blue { background-color: #3b82f6 !important; }
+        
+        /* Enhanced button visibility with site theme colors */
+        .btn-primary {
+            background-color: #4ade80 !important;
+            color: white !important;
+            border: 2px solid #166534 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #166534 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -107,13 +158,17 @@
                     {% else %}
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                             <p class="text-xs text-yellow-800 text-center">
-                                <strong>Development Mode:</strong> Security verification is disabled for testing.
+                                {% if IS_LOCALHOST %}
+                                    <strong>Localhost Detected:</strong> Security verification is disabled for local development.
+                                {% else %}
+                                    <strong>Development Mode:</strong> Security verification is disabled for testing.
+                                {% endif %}
                             </p>
                         </div>
                     {% endif %}
                     
                     <button type="submit" 
-                            class="w-full bg-mint-green text-white py-3 px-4 rounded-lg font-semibold hover:bg-forest-green transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2">
+                            class="w-full btn-primary py-3 px-4 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 text-lg">
                         Create Account
                     </button>
                 </form>
@@ -166,10 +221,8 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="text-center mt-8">
-                <p class="text-sm text-gray-500">KI Wellness - Self Health Simplified</p>
-            </div>
+            <!-- Include Footer -->
+            {% include 'includes/footer.html' %}
         </div>
     </div>
 
@@ -219,11 +272,6 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
-            {% if config.TURNSTILE_ENABLED %}
-            const turnstileResponse = document.querySelector('input[name="cf-turnstile-response"]')?.value || '';
-            {% else %}
-            const turnstileResponse = 'disabled';
-            {% endif %}
             
             // Username validation
             const usernameRegex = /^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/;
@@ -260,9 +308,9 @@
                 return;
             }
             
-            // Turnstile validation (only if enabled)
+            // Turnstile validation (only if enabled and module is available)
             {% if config.TURNSTILE_ENABLED %}
-            if (!turnstileResponse) {
+            if (window.TurnstileModule && !window.TurnstileModule.getToken()) {
                 e.preventDefault();
                 alert('Please complete the security verification.');
                 return;
