@@ -1477,11 +1477,14 @@ def import_food_journal():
             except Exception as e:
                 errors.append(f"Row {imported_count + 1}: {str(e)}")
         
-        db.session.commit()
+        # Clear patterns cache to force dashboard refresh with new data
+        if imported_count > 0:
+            PatternsCache.query.filter_by(user_id=user_profile.id).delete()
+            db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': f'Imported {imported_count} entries successfully',
+            'message': f'Imported {imported_count} entries successfully. Dashboard will refresh with new data.',
             'imported_count': imported_count,
             'errors': errors
         })
