@@ -396,6 +396,19 @@ class PatternsCache(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
+    title = db.Column(db.String(200), nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    is_approved = db.Column(db.Boolean, default=False)  # Admin approval for public display
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 # Timezone helper function
 def get_browser_timezone_datetime(browser_timezone=None):
     """Get current datetime in browser timezone"""
@@ -556,6 +569,47 @@ def privacy():
 @app.route('/disclaimer')
 def disclaimer():
     return render_template('disclaimer.html')
+
+
+@app.route('/reviews')
+def reviews():
+    """Display all approved reviews and allow users to submit new ones"""
+    # Get all approved reviews, ordered by most recent first
+    approved_reviews = Review.query.filter_by(is_approved=True).order_by(Review.created_at.desc()).all()
+    return render_template('reviews.html', reviews=approved_reviews)
+
+
+@app.route('/reviews/submit', methods=['POST'])
+def submit_review():
+    """Submit a new review"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('name') or not data.get('rating') or not data.get('content'):
+            return jsonify({'success': False, 'error': 'Name, rating, and content are required'})
+        
+        # Validate rating (1-5)
+        rating = int(data['rating'])
+        if rating < 1 or rating > 5:
+            return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'})
+        
+        # Create new review
+        new_review = Review(
+            name=data['name'],
+            rating=rating,
+            title=data.get('title', ''),
+            content=data['content']
+        )
+        
+        db.session.add(new_review)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Review submitted successfully! It will be visible after approval.'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error submitting review: {str(e)}'})
 
 @app.route('/api/turnstile-status')
 def turnstile_status():
@@ -912,7 +966,38 @@ def admin_dashboard():
         'regular_users': len([u for u in users if not u.is_admin])
     }
     
-    return render_template('admin_dashboard.html', users=users, stats=user_stats)
+    # Get pending reviews
+    pending_reviews = Review.query.filter_by(is_approved=False).order_by(Review.created_at.desc()).all()
+    
+    return render_template('admin_dashboard.html', users=users, stats=user_stats, pending_reviews=pending_reviews)
+
+
+@app.route('/admin/reviews/<int:review_id>/approve', methods=['POST'])
+@admin_required
+def approve_review(review_id):
+    """Approve a review for public display"""
+    try:
+        review = Review.query.get_or_404(review_id)
+        review.is_approved = True
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Review approved successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error approving review: {str(e)}'})
+
+
+@app.route('/admin/reviews/<int:review_id>/reject', methods=['POST'])
+@admin_required
+def reject_review(review_id):
+    """Reject and delete a review"""
+    try:
+        review = Review.query.get_or_404(review_id)
+        db.session.delete(review)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Review rejected and deleted'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Error rejecting review: {str(e)}'})
 
 @app.route('/profile/save', methods=['POST'])
 @login_required
