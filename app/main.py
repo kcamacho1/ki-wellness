@@ -1432,6 +1432,33 @@ def import_food_journal():
         if not user_profile:
             return jsonify({'success': False, 'error': 'User profile not found'})
         
+        # Get field mappings if provided
+        field_mappings = request.form.get('field_mappings')
+        if field_mappings:
+            try:
+                field_mappings = json.loads(field_mappings)
+            except json.JSONDecodeError:
+                return jsonify({'success': False, 'error': 'Invalid field mappings format'})
+        else:
+            # Default field mappings for backward compatibility
+            field_mappings = {
+                'food_name': 'Food Name',
+                'brand': 'Brand',
+                'serving_size': 'Serving Size',
+                'serving_unit': 'Serving Unit',
+                'calories': 'Calories',
+                'protein': 'Protein (g)',
+                'carbs': 'Carbs (g)',
+                'fat': 'Fat (g)',
+                'fiber': 'Fiber (g)',
+                'sugar': 'Sugar (g)',
+                'sodium': 'Sodium (mg)',
+                'mood': 'Mood',
+                'notes': 'Notes',
+                'date': 'Date',
+                'time': 'Time'
+            }
+        
         # Read CSV file
         content = file.read().decode('utf-8')
         csv_data = csv.DictReader(io.StringIO(content))
@@ -1441,33 +1468,37 @@ def import_food_journal():
         
         for row in csv_data:
             try:
-                # Parse date and time (assume local timezone)
-                date_str = row.get('Date', '')
-                time_str = row.get('Time', '')
+                # Parse date and time using field mappings
+                date_str = row.get(field_mappings.get('date', 'Date'), '')
+                time_str = row.get(field_mappings.get('time', 'Time'), '')
                 
                 if date_str and time_str:
                     # Parse as local time and convert to UTC for storage
                     local_dt = datetime.strptime(f"{date_str} {time_str}", '%Y-%m-%d %H:%M')
                     consumed_at = local_dt
+                elif date_str:
+                    # If only date is provided, assume midnight
+                    local_dt = datetime.strptime(date_str, '%Y-%m-%d')
+                    consumed_at = local_dt
                 else:
                     consumed_at = datetime.utcnow()
                 
-                # Create food entry
+                # Create food entry using field mappings
                 food_entry = FoodJournal(
                     user_id=user_profile.id,
-                    food_name=row.get('Food Name', ''),
-                    brand=row.get('Brand', ''),
-                    serving_size=float(row.get('Serving Size', 0)),
-                    serving_unit=row.get('Serving Unit', 'g'),
-                    calories=float(row.get('Calories', 0)) if row.get('Calories') else None,
-                    protein=float(row.get('Protein (g)', 0)) if row.get('Protein (g)') else None,
-                    carbs=float(row.get('Carbs (g)', 0)) if row.get('Carbs (g)') else None,
-                    fat=float(row.get('Fat (g)', 0)) if row.get('Fat (g)') else None,
-                    fiber=float(row.get('Fiber (g)', 0)) if row.get('Fiber (g)') else None,
-                    sugar=float(row.get('Sugar (g)', 0)) if row.get('Sugar (g)') else None,
-                    sodium=float(row.get('Sodium (mg)', 0)) if row.get('Sodium (mg)') else None,
-                    mood=row.get('Mood', ''),
-                    notes=row.get('Notes', ''),
+                    food_name=row.get(field_mappings.get('food_name', 'Food Name'), ''),
+                    brand=row.get(field_mappings.get('brand', 'Brand'), ''),
+                    serving_size=float(row.get(field_mappings.get('serving_size', 'Serving Size'), 0)),
+                    serving_unit=row.get(field_mappings.get('serving_unit', 'Serving Unit'), 'g'),
+                    calories=float(row.get(field_mappings.get('calories', 'Calories'), 0)) if row.get(field_mappings.get('calories', 'Calories')) else None,
+                    protein=float(row.get(field_mappings.get('protein', 'Protein (g)'), 0)) if row.get(field_mappings.get('protein', 'Protein (g)')) else None,
+                    carbs=float(row.get(field_mappings.get('carbs', 'Carbs (g)'), 0)) if row.get(field_mappings.get('carbs', 'Carbs (g)')) else None,
+                    fat=float(row.get(field_mappings.get('fat', 'Fat (g)'), 0)) if row.get(field_mappings.get('fat', 'Fat (g)')) else None,
+                    fiber=float(row.get(field_mappings.get('fiber', 'Fiber (g)'), 0)) if row.get(field_mappings.get('fiber', 'Fiber (g)')) else None,
+                    sugar=float(row.get(field_mappings.get('sugar', 'Sugar (g)'), 0)) if row.get(field_mappings.get('sugar', 'Sugar (g)')) else None,
+                    sodium=float(row.get(field_mappings.get('sodium', 'Sodium (mg)'), 0)) if row.get(field_mappings.get('sodium', 'Sodium (mg)')) else None,
+                    mood=row.get(field_mappings.get('mood', 'Mood'), ''),
+                    notes=row.get(field_mappings.get('notes', 'Notes'), ''),
                     consumed_at=consumed_at
                 )
                 

@@ -271,7 +271,7 @@
                             Export CSV
                         </a>
                         <label for="importFile" 
-                               class="px-3 py-1.5 text-xs bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 cursor-pointer transition-colors duration-200">
+                               class="px-3 py-1.5 text-xs bg-mint-green text-white rounded-md hover:bg-forest-green focus:ring-2 focus:ring-mint-green focus:ring-offset-2 cursor-pointer transition-colors duration-200">
                             Import CSV
                             <input type="file" id="importFile" accept=".csv" class="hidden">
                         </label>
@@ -311,6 +311,40 @@
         </div>
     </div>
 
+    <!-- Field Mapping Modal -->
+    <div id="fieldMappingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-forest-green">Map CSV Fields</h3>
+                    <button id="closeFieldMappingModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Your CSV file contains the following columns. Please map them to the correct fields:</p>
+                    <div id="csvPreview" class="bg-gray-50 p-3 rounded text-xs font-mono max-h-32 overflow-y-auto"></div>
+                </div>
+                
+                <div class="space-y-3" id="fieldMappings">
+                    <!-- Field mappings will be generated here -->
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button id="cancelFieldMapping" class="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button id="confirmFieldMapping" class="px-4 py-2 text-sm bg-mint-green text-white rounded-md hover:bg-forest-green transition-colors duration-200">
+                        Import with Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
     <script>
@@ -321,6 +355,9 @@
             start: new Date(),
             end: new Date()
         };
+        let csvFileData = null;
+        let csvHeaders = [];
+        let fieldMappings = {};
 
         // DOM elements
         const foodEntryForm = document.getElementById('foodEntryForm');
@@ -336,6 +373,12 @@
         const showAddFormBtn = document.getElementById('showAddFormBtn');
         const hideAddFormBtn = document.getElementById('hideAddFormBtn');
         const foodEntryFormContainer = document.getElementById('foodEntryFormContainer');
+        
+        // Field mapping modal elements
+        const fieldMappingModal = document.getElementById('fieldMappingModal');
+        const closeFieldMappingModal = document.getElementById('closeFieldMappingModal');
+        const cancelFieldMapping = document.getElementById('cancelFieldMapping');
+        const confirmFieldMapping = document.getElementById('confirmFieldMapping');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -364,6 +407,11 @@
             // Date navigation buttons
             prevWeekBtn.addEventListener('click', handlePrevWeek);
             nextWeekBtn.addEventListener('click', handleNextWeek);
+            
+            // Field mapping modal
+            closeFieldMappingModal.addEventListener('click', hideFieldMappingModal);
+            cancelFieldMapping.addEventListener('click', hideFieldMappingModal);
+            confirmFieldMapping.addEventListener('click', handleConfirmFieldMapping);
         }
 
         async function handleSearchFood() {
@@ -837,8 +885,160 @@
                 return;
             }
             
+            // Store file data for field mapping
+            csvFileData = file;
+            
+            // Read CSV headers and show field mapping modal
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvContent = e.target.result;
+                const lines = csvContent.split('\n');
+                if (lines.length > 0) {
+                    csvHeaders = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+                    showFieldMappingModal();
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+        
+        function showFieldMappingModal() {
+            // Show CSV preview
+            const csvPreview = document.getElementById('csvPreview');
+            csvPreview.innerHTML = `<strong>Headers:</strong> ${csvHeaders.join(', ')}`;
+            
+            // Generate field mappings
+            generateFieldMappings();
+            
+            // Show modal
+            fieldMappingModal.classList.remove('hidden');
+        }
+        
+        function hideFieldMappingModal() {
+            fieldMappingModal.classList.add('hidden');
+            csvFileData = null;
+            csvHeaders = [];
+            fieldMappings = {};
+        }
+        
+        function generateFieldMappings() {
+            const fieldMappingsContainer = document.getElementById('fieldMappings');
+            const expectedFields = [
+                { key: 'food_name', label: 'Food Name', required: true },
+                { key: 'brand', label: 'Brand', required: false },
+                { key: 'serving_size', label: 'Serving Size', required: true },
+                { key: 'serving_unit', label: 'Serving Unit', required: true },
+                { key: 'calories', label: 'Calories', required: false },
+                { key: 'protein', label: 'Protein (g)', required: false },
+                { key: 'carbs', label: 'Carbs (g)', required: false },
+                { key: 'fat', label: 'Fat (g)', required: false },
+                { key: 'fiber', label: 'Fiber (g)', required: false },
+                { key: 'sugar', label: 'Sugar (g)', required: false },
+                { key: 'sodium', label: 'Sodium (mg)', required: false },
+                { key: 'water_amount', label: 'Water Amount', required: false },
+                { key: 'water_unit', label: 'Water Unit', required: false },
+                { key: 'mood', label: 'Mood', required: false },
+                { key: 'notes', label: 'Notes', required: false },
+                { key: 'date', label: 'Date', required: true },
+                { key: 'time', label: 'Time', required: false }
+            ];
+            
+            fieldMappingsContainer.innerHTML = '';
+            
+            expectedFields.forEach(field => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded';
+                
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'text-sm font-medium text-gray-700';
+                labelSpan.textContent = field.label;
+                if (field.required) {
+                    labelSpan.innerHTML += ' <span class="text-red-500">*</span>';
+                }
+                
+                const select = document.createElement('select');
+                select.className = 'ml-4 px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-mint-green focus:border-transparent';
+                select.dataset.fieldKey = field.key;
+                
+                // Add "Not Used" option
+                const notUsedOption = document.createElement('option');
+                notUsedOption.value = '';
+                notUsedOption.textContent = 'Not Used';
+                select.appendChild(notUsedOption);
+                
+                // Add CSV headers as options
+                csvHeaders.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    select.appendChild(option);
+                });
+                
+                // Auto-map common field names
+                const headerLower = csvHeaders.map(h => h.toLowerCase());
+                const fieldLower = field.label.toLowerCase();
+                
+                if (fieldLower.includes('food') && headerLower.some(h => h.includes('food') || h.includes('name'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('food') || h.toLowerCase().includes('name'));
+                } else if (fieldLower.includes('brand') && headerLower.some(h => h.includes('brand'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('brand'));
+                } else if (fieldLower.includes('serving') && headerLower.some(h => h.includes('serving'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('serving'));
+                } else if (fieldLower.includes('calories') && headerLower.some(h => h.includes('calorie'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('calorie'));
+                } else if (fieldLower.includes('protein') && headerLower.some(h => h.includes('protein'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('protein'));
+                } else if (fieldLower.includes('carbs') && headerLower.some(h => h.includes('carb'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('carb'));
+                } else if (fieldLower.includes('fat') && headerLower.some(h => h.includes('fat'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('fat'));
+                } else if (fieldLower.includes('date') && headerLower.some(h => h.includes('date'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('date'));
+                } else if (fieldLower.includes('time') && headerLower.some(h => h.includes('time'))) {
+                    select.value = csvHeaders.find(h => h.toLowerCase().includes('time'));
+                }
+                
+                fieldDiv.appendChild(labelSpan);
+                fieldDiv.appendChild(select);
+                fieldMappingsContainer.appendChild(fieldDiv);
+            });
+        }
+        
+        async function handleConfirmFieldMapping() {
+            // Collect field mappings
+            const mappingSelects = document.querySelectorAll('#fieldMappings select');
+            fieldMappings = {};
+            
+            mappingSelects.forEach(select => {
+                const fieldKey = select.dataset.fieldKey;
+                const csvHeader = select.value;
+                if (csvHeader) {
+                    fieldMappings[fieldKey] = csvHeader;
+                }
+            });
+            
+            // Validate required fields
+            const requiredFields = ['food_name', 'serving_size', 'serving_unit', 'date'];
+            const missingFields = requiredFields.filter(field => !fieldMappings[field]);
+            
+            if (missingFields.length > 0) {
+                alert(`Please map the following required fields: ${missingFields.join(', ')}`);
+                return;
+            }
+            
+            // Hide modal
+            hideFieldMappingModal();
+            
+            // Import with field mappings
+            await importWithFieldMappings();
+        }
+        
+        async function importWithFieldMappings() {
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', csvFileData);
+            formData.append('field_mappings', JSON.stringify(fieldMappings));
             
             try {
                 const response = await fetch('/food-journal/import', {
@@ -861,9 +1061,6 @@
                 console.error('Error importing file:', error);
                 alert('Error importing file. Please try again.');
             }
-            
-            // Reset file input
-            event.target.value = '';
         }
     </script>
 </body>
