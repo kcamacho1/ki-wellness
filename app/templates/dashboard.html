@@ -351,8 +351,22 @@
                     </svg>
                     <span class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 md:hidden">Share</span>
                 </button>
-                <div class="flex items-center justify-center mb-4">
+                <!-- Date Range Selector -->
+                <div class="flex items-center justify-center mb-4 space-x-2">
                     <h2 class="text-2xl font-semibold text-forest-green text-center">Macronutrients</h2>
+                    <div class="flex items-center space-x-2 ml-4">
+                        <button id="prevMacrosBtn" class="text-forest-green hover:text-mint-green transition-colors duration-200 p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <span class="text-sm text-gray-600" id="macrosDateRange">Today</span>
+                        <button id="nextMacrosBtn" class="text-forest-green hover:text-mint-green transition-colors duration-200 p-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="relative">
                     <canvas id="macrosChart" width="200" height="200"></canvas>
@@ -1221,6 +1235,61 @@
             }
         };
 
+        // Macronutrients date navigation
+        let currentMacrosDate = new Date();
+        
+        const loadMacrosForDate = async (targetDate) => {
+            try {
+                const dateString = targetDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                
+                // Fetch food journal entries for the specific date
+                const foodResponse = await fetch(`/food-journal/entries?start_date=${dateString}&end_date=${dateString}`);
+                const foodData = await foodResponse.json();
+                
+                if (foodData.success) {
+                    calculateStats(foodData.entries, []);
+                }
+            } catch (error) {
+                console.error('Error loading macros for date:', error);
+            }
+        };
+        
+        const updateMacrosDateRange = () => {
+            const today = new Date();
+            const isToday = currentMacrosDate.toDateString() === today.toDateString();
+            const isYesterday = currentMacrosDate.toDateString() === new Date(today.getTime() - 24 * 60 * 60 * 1000).toDateString();
+            
+            let dateText = '';
+            if (isToday) {
+                dateText = 'Today';
+            } else if (isYesterday) {
+                dateText = 'Yesterday';
+            } else {
+                dateText = currentMacrosDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+            
+            document.getElementById('macrosDateRange').textContent = dateText;
+        };
+        
+        const handlePrevMacrosDate = () => {
+            currentMacrosDate.setDate(currentMacrosDate.getDate() - 1);
+            updateMacrosDateRange();
+            loadMacrosForDate(currentMacrosDate);
+        };
+        
+        const handleNextMacrosDate = () => {
+            const today = new Date();
+            if (currentMacrosDate.toDateString() === today.toDateString()) {
+                return; // Don't go beyond today
+            }
+            currentMacrosDate.setDate(currentMacrosDate.getDate() + 1);
+            updateMacrosDateRange();
+            loadMacrosForDate(currentMacrosDate);
+        };
+        
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', () => {
             loadProfileName();
@@ -1251,6 +1320,12 @@
 
             refreshAnalysisBtn.addEventListener('click', refreshPatternsAnalysis);
             addWaterBtn.addEventListener('click', addWaterIntake);
+            
+            // Macronutrients navigation
+            const prevMacrosBtn = document.getElementById('prevMacrosBtn');
+            const nextMacrosBtn = document.getElementById('nextMacrosBtn');
+            prevMacrosBtn.addEventListener('click', handlePrevMacrosDate);
+            nextMacrosBtn.addEventListener('click', handleNextMacrosDate);
 
             // Mood modal event listeners
             const addMoodBtn = document.getElementById('addMoodBtn');
