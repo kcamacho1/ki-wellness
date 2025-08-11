@@ -166,6 +166,28 @@
                             </a>
                         </p>
                     </div>
+                    
+                    <!-- Verification Notice -->
+                    <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-medium text-blue-800 mb-1">AI Features Require Verification</h4>
+                                <p class="text-xs text-blue-700">
+                                    To access AI-powered wellness insights, you'll need to verify your email and phone number after logging in.
+                                </p>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('verify_phone') }}" class="text-xs text-blue-600 underline hover:text-blue-800">
+                                        Need help with verification? →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,16 +239,41 @@
             {% if config.TURNSTILE_ENABLED %}
             if (window.TurnstileModule) {
                 console.log('Turnstile: Module available, checking token...');
+                
+                // Wait for Turnstile to be ready if it's still initializing
+                if (!window.TurnstileModule.isReady()) {
+                    console.log('Turnstile: Module not ready, waiting...');
+                    e.preventDefault();
+                    alert('Security verification is still loading. Please wait a moment and try again.');
+                    return;
+                }
+                
                 const token = window.TurnstileModule.getToken();
                 console.log('Turnstile: Token check result:', token ? 'TOKEN_PRESENT' : 'NO_TOKEN');
                 
                 if (!token) {
                     e.preventDefault();
+                    
+                    // Get detailed status for debugging
+                    const status = window.TurnstileModule.getStatus();
+                    console.warn('Turnstile: Validation failed. Status:', status);
+                    
                     alert('Please complete the security verification.');
                     return;
                 }
+                
+                // Add the token to the form data
+                const turnstileInput = document.createElement('input');
+                turnstileInput.type = 'hidden';
+                turnstileInput.name = 'cf-turnstile-response';
+                turnstileInput.value = token;
+                this.appendChild(turnstileInput);
+                
             } else {
                 console.warn('Turnstile: Module not available');
+                e.preventDefault();
+                alert('Security verification system is not available. Please refresh the page and try again.');
+                return;
             }
             {% endif %}
             

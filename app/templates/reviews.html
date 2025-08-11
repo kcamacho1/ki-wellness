@@ -230,15 +230,64 @@
     <!-- Include Footer -->
     {% include 'includes/footer.html' %}
     
+    <!-- Verification Notice for AI Features -->
+    <div id="verificationNotice" class="fixed bottom-4 right-4 max-w-sm bg-yellow-50 border-2 border-yellow-300 rounded-lg shadow-lg p-4 hidden">
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-medium text-yellow-800">AI Features Require Verification</h4>
+                <p class="text-xs text-yellow-700 mt-1">
+                    Complete your profile and verify your contact information to unlock AI-powered insights.
+                </p>
+                <div class="mt-2">
+                    <a href="{{ url_for('profile') }}" class="text-xs text-yellow-800 underline hover:text-yellow-900">
+                        Go to Profile →
+                    </a>
+                </div>
+            </div>
+            <button onclick="document.getElementById('verificationNotice').classList.add('hidden')" class="text-xs text-yellow-400 hover:text-yellow-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <!-- AI Chat Box for logged-in users -->
     {% include 'includes/ai_chat.html' %}
 
     <!-- JavaScript -->
     <script>
+        // Check verification status and show notice if needed
+        const checkVerificationStatus = async () => {
+            try {
+                const response = await fetch('/profile/data');
+                const data = await response.json();
+                
+                if (data.success && data.profile) {
+                    const user = data.profile.user;
+                    const verificationNotice = document.getElementById('verificationNotice');
+                    
+                    if (!user.email_verified || !user.phone_verified) {
+                        verificationNotice.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking verification status:', error);
+            }
+        };
+        
+        // Check verification status on page load
+        document.addEventListener('DOMContentLoaded', checkVerificationStatus);
+        
         // Turnstile integration
         let turnstileToken = null;
         
-        // Load Turnstile based on environment
+        // Load Turnstile based on environment with enhanced error handling
         fetch('/api/turnstile-status')
             .then(response => response.json())
             .then(data => {
@@ -252,24 +301,99 @@
                     turnstileScript.async = true;
                     turnstileScript.defer = true;
                     turnstileScript.onload = function() {
-                        turnstile.render('#turnstile-container', {
-                            sitekey: '{{ config.TURNSTILE_SITE_KEY }}',
-                            callback: function(token) {
-                                turnstileToken = token;
-                                console.log('Turnstile completed:', token);
-                                // Update the instruction text
-                                document.querySelector('#turnstile-container + p').textContent = 
-                                    '✅ Security verification completed';
-                            },
-                            'expired-callback': function() {
-                                turnstileToken = null;
-                                console.log('Turnstile expired');
-                                // Update the instruction text
-                                document.querySelector('#turnstile-container + p').textContent = 
-                                    '⚠️ Security verification expired. Please complete it again.';
-                            }
-                        });
+                        try {
+                            const widgetId = turnstile.render('#turnstile-container', {
+                                sitekey: '{{ config.TURNSTILE_SITE_KEY }}',
+                                callback: function(token) {
+                                    if (token) {
+                                        turnstileToken = token;
+                                        console.log('Turnstile completed:', token ? 'TOKEN_PRESENT' : 'NO_TOKEN');
+                                        
+                                        // Store token in multiple locations for reliability
+                                        localStorage.setItem('turnstileToken', token);
+                                        window.turnstileToken = token;
+                                        
+                                        // Update the instruction text
+                                        const instructionText = document.querySelector('#turnstile-container + p');
+                                        if (instructionText) {
+                                            instructionText.textContent = '✅ Security verification completed';
+                                            instructionText.className = 'text-green-600 text-sm mt-2 text-center';
+                                        }
+                                        
+                                        // Update container status
+                                        const container = document.getElementById('turnstile-container');
+                                        if (container) {
+                                            container.setAttribute('data-completed', 'true');
+                                            container.setAttribute('data-token', token);
+                                            container.setAttribute('data-status', 'success');
+                                        }
+                                    } else {
+                                        console.warn('Turnstile: Callback received but no token provided');
+                                        turnstileToken = null;
+                                    }
+                                },
+                                'expired-callback': function() {
+                                    turnstileToken = null;
+                                    console.log('Turnstile expired');
+                                    
+                                    // Clear stored tokens
+                                    localStorage.removeItem('turnstileToken');
+                                    window.turnstileToken = null;
+                                    
+                                    // Update the instruction text
+                                    const instructionText = document.querySelector('#turnstile-container + p');
+                                    if (instructionText) {
+                                        instructionText.textContent = '⚠️ Security verification expired. Please complete it again.';
+                                        instructionText.className = 'text-orange-600 text-sm mt-2 text-center';
+                                    }
+                                    
+                                    // Update container status
+                                    const container = document.getElementById('turnstile-container');
+                                    if (container) {
+                                        container.setAttribute('data-completed', 'false');
+                                        container.removeAttribute('data-token');
+                                        container.setAttribute('data-status', 'expired');
+                                    }
+                                },
+                                'error-callback': function() {
+                                    turnstileToken = null;
+                                    console.error('Turnstile error');
+                                    
+                                    // Clear stored tokens
+                                    localStorage.removeItem('turnstileToken');
+                                    window.turnstileToken = null;
+                                    
+                                    // Update the instruction text
+                                    const instructionText = document.querySelector('#turnstile-container + p');
+                                    if (instructionText) {
+                                        instructionText.textContent = '❌ Security verification error. Please refresh and try again.';
+                                        instructionText.className = 'text-red-600 text-sm mt-2 text-center';
+                                    }
+                                    
+                                    // Update container status
+                                    const container = document.getElementById('turnstile-container');
+                                    if (container) {
+                                        container.setAttribute('data-completed', 'false');
+                                        container.removeAttribute('data-token');
+                                        container.setAttribute('data-status', 'error');
+                                    }
+                                }
+                            });
+                            
+                            console.log('Turnstile widget rendered with ID:', widgetId);
+                        } catch (error) {
+                            console.error('Error rendering Turnstile widget:', error);
+                            document.getElementById('turnstile-container').innerHTML = 
+                                '<div class="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-sm">❌ Error loading security verification</div>';
+                        }
                     };
+                    
+                    turnstileScript.onerror = function() {
+                        console.error('Failed to load Turnstile script');
+                        document.getElementById('turnstile-container').innerHTML = 
+                            '<div class="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-sm">❌ Failed to load security verification</div>';
+                    };
+                    
                     document.head.appendChild(turnstileScript);
                 } else {
                     // Development mode - show bypass message
@@ -375,10 +499,25 @@
                 return;
             }
             
-            // Validate Turnstile completion
+            // Validate Turnstile completion with enhanced fallback
             if (!turnstileToken) {
-                showMessage('Please complete the security verification', 'error');
-                return;
+                // Try to get token from multiple sources
+                const fallbackToken = window.turnstileToken || localStorage.getItem('turnstileToken');
+                if (fallbackToken) {
+                    turnstileToken = fallbackToken;
+                    console.log('Turnstile: Using fallback token');
+                } else {
+                    // Check container status for debugging
+                    const container = document.getElementById('turnstile-container');
+                    if (container) {
+                        const status = container.getAttribute('data-status');
+                        const completed = container.getAttribute('data-completed');
+                        console.warn('Turnstile: No token available. Status:', status, 'Completed:', completed);
+                    }
+                    
+                    showMessage('Please complete the security verification', 'error');
+                    return;
+                }
             }
             
             // Disable submit button

@@ -284,11 +284,18 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    phone = db.Column(db.String(20), nullable=True)  # Phone number field
+    phone = db.Column(db.String(20), nullable=True, unique=True, index=True)  # Phone number field - now unique
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # Account status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Verification fields
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    phone_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verification_token = db.Column(db.String(255), nullable=True, unique=True)
+    phone_verification_code = db.Column(db.String(6), nullable=True)  # 6-digit SMS code
+    phone_verification_expires = db.Column(db.DateTime, nullable=True)
     
     # Notification preferences
     email_notifications = db.Column(db.Boolean, default=True)
@@ -605,6 +612,200 @@ def get_top_p():
         return float(value)
     except (ValueError, TypeError):
         return 0.9
+
+def is_user_verified_for_ai(user):
+    """Check if user is verified for AI usage (both email and phone verified)"""
+    if not user:
+        return False
+    return user.email_verified and user.phone_verified
+
+def generate_verification_token():
+    """Generate a secure verification token"""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+def generate_phone_verification_code():
+    """Generate a 6-digit verification code"""
+    import random
+    return str(random.randint(100000, 999999))
+
+def send_verification_email(user_email, token):
+    """Send verification email (placeholder for actual email service)"""
+    # In production, integrate with SendGrid, Mailgun, or similar
+    verification_url = f"{request.host_url}verify-email/{token}"
+    subject = "Verify Your Email - KI Wellness"
+    message = f"""
+    Hello!
+    
+    Please verify your email address by clicking the link below:
+    {verification_url}
+    
+    If you didn't create this account, please ignore this email.
+    
+    Best regards,
+    KI Wellness Team
+    """
+    
+    try:
+        # Placeholder for actual email sending
+        print(f"📧 Verification email would be sent to {user_email}")
+        print(f"📧 Subject: {subject}")
+        print(f"📧 Message: {message}")
+        return True
+    except Exception as e:
+        print(f"❌ Error sending verification email: {e}")
+        return False
+
+def send_verification_sms(phone_number, code):
+    """Send verification SMS (placeholder for actual SMS service)"""
+    # In production, integrate with Twilio, AWS SNS, or similar
+    message = f"Your KI Wellness verification code is: {code}. Valid for 10 minutes."
+    
+    try:
+        # Placeholder for actual SMS sending
+        print(f"📱 Verification SMS would be sent to {phone_number}")
+        print(f"📱 Message: {message}")
+        return True
+    except Exception as e:
+        print(f"❌ Error sending verification SMS: {e}")
+        return False
+
+
+def get_user_subscription_info(user_id):
+    """Get user's subscription information and session usage"""
+    try:
+        # Get or create subscription record
+        subscription = UserSubscription.query.filter_by(user_id=user_id).first()
+        if not subscription:
+            # Create default subscription for new users
+            subscription = UserSubscription(
+                user_id=user_id,
+                subscription_type='subscription',
+                billing_cycle_start=datetime.utcnow()
+            )
+            db.session.add(subscription)
+            db.session.commit()
+        
+        # Check if billing cycle needs to reset
+        now = datetime.utcnow()
+        if subscription.billing_cycle_start.month != now.month or subscription.billing_cycle_start.year != now.year:
+            subscription.sessions_used_this_month = 0
+            subscription.billing_cycle_start = now
+            db.session.commit()
+        
+        # Get session credits
+        credits = SessionCredits.query.filter_by(user_id=user_id).first()
+        if not credits:
+            credits = SessionCredits(user_id=user_id)
+            db.session.add(credits)
+            db.session.commit()
+        
+        return {
+            'subscription_type': subscription.subscription_type,
+            'sessions_per_month': subscription.sessions_per_month,
+            'sessions_used_this_month': subscription.sessions_used_this_month,
+            'sessions_remaining': subscription.sessions_per_month - subscription.sessions_used_this_month,
+            'credits_remaining': credits.credits_remaining,
+            'billing_cycle_start': subscription.billing_cycle_start,
+            'monthly_fee': subscription.monthly_fee_usd
+        }
+    except Exception as e:
+        print(f"❌ Error getting subscription info: {e}")
+        return None
+
+
+def can_user_use_ai(user_id):
+    """Check if user can use AI features (has sessions or credits remaining)"""
+    try:
+        sub_info = get_user_subscription_info(user_id)
+        if not sub_info:
+            return False
+        
+        # Check if user has subscription sessions or credits remaining
+        return (sub_info['sessions_remaining'] > 0 or sub_info['credits_remaining'] > 0)
+    except Exception as e:
+        print(f"❌ Error checking AI usage permission: {e}")
+        return False
+
+
+def record_ai_session(user_id, session_type, input_tokens, output_tokens, total_tokens, cost_usd, model_used):
+    """Record an AI usage session and deduct from subscription or credits"""
+    try:
+        sub_info = get_user_subscription_info(user_id)
+        if not sub_info:
+            return False
+        
+        # Create usage session record
+        usage_session = AIUsageSession(
+            user_id=user_id,
+            session_type=session_type,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+            cost_usd=cost_usd,
+            model_used=model_used
+        )
+        
+        # Determine if using subscription or credits
+        if sub_info['sessions_remaining'] > 0:
+            # Use subscription
+            usage_session.subscription_used = True
+            subscription = UserSubscription.query.filter_by(user_id=user_id).first()
+            subscription.sessions_used_this_month += 1
+        else:
+            # Use credits
+            usage_session.subscription_used = False
+            credits = SessionCredits.query.filter_by(user_id=user_id).first()
+            if credits.credits_remaining > 0:
+                usage_session.credit_id = credits.id
+                credits.credits_used += 1
+                credits.credits_remaining -= 1
+            else:
+                # No credits remaining
+                return False
+        
+        db.session.add(usage_session)
+        db.session.commit()
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error recording AI session: {e}")
+        db.session.rollback()
+        return False
+
+
+def get_user_usage_summary(user_id):
+    """Get comprehensive usage summary for user"""
+    try:
+        sub_info = get_user_subscription_info(user_id)
+        if not sub_info:
+            return None
+        
+        # Get recent AI sessions
+        recent_sessions = AIUsageSession.query.filter_by(user_id=user_id)\
+            .order_by(AIUsageSession.created_at.desc())\
+            .limit(10).all()
+        
+        # Calculate total costs
+        total_cost = sum(session.cost_usd for session in recent_sessions)
+        
+        return {
+            'subscription_info': sub_info,
+            'recent_sessions': [
+                {
+                    'type': session.session_type,
+                    'tokens': session.total_tokens,
+                    'cost': session.cost_usd,
+                    'date': session.created_at.strftime('%Y-%m-%d %H:%M'),
+                    'used_subscription': session.subscription_used
+                } for session in recent_sessions
+            ],
+            'total_cost': total_cost,
+            'can_use_ai': can_user_use_ai(user_id)
+        }
+    except Exception as e:
+        print(f"❌ Error getting usage summary: {e}")
+        return None
 
 # Authentication decorator with session timeout
 def login_required(f):
@@ -1165,13 +1366,24 @@ def submit_review():
         
         # 8. TURNSTILE VERIFICATION (if enabled)
         turnstile_response = data.get('cf-turnstile-response')
+        print(f"🔍 Reviews: Turnstile response present: {bool(turnstile_response)}")
+        print(f"🔍 Reviews: Is localhost environment: {is_localhost_environment()}")
+        
         if not is_localhost_environment():
             if not turnstile_response:
+                print("❌ Reviews: Turnstile response missing")
                 return jsonify({'success': False, 'error': 'Please complete the security verification'})
             
             # Verify Turnstile token
-            if not verify_turnstile(turnstile_response):
+            print(f"🔍 Reviews: Verifying Turnstile response...")
+            verification_result = verify_turnstile(turnstile_response)
+            print(f"🔍 Reviews: Turnstile verification result: {verification_result}")
+            
+            if not verification_result:
+                print("❌ Reviews: Turnstile verification failed")
                 return jsonify({'success': False, 'error': 'Security verification failed. Please try again.'})
+            
+            print("✅ Reviews: Turnstile verification successful")
         
         # 9. CREATE REVIEW
         new_review = Review(
@@ -1261,15 +1473,27 @@ def login():
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
         turnstile_enabled = not is_localhost
         
+        print(f"🔍 Login: Turnstile enabled: {turnstile_enabled}")
+        print(f"🔍 Login: Is localhost: {is_localhost}")
+        print(f"🔍 Login: Turnstile response present: {bool(turnstile_response)}")
+        
         if turnstile_enabled:
             if not turnstile_response:
+                print("❌ Login: Turnstile response missing")
                 flash('Please complete the security verification', 'error')
                 return render_template('login.html')
             
             # Verify Turnstile
-            if not verify_turnstile(turnstile_response):
+            print(f"🔍 Login: Verifying Turnstile response...")
+            verification_result = verify_turnstile(turnstile_response)
+            print(f"🔍 Login: Turnstile verification result: {verification_result}")
+            
+            if not verification_result:
+                print("❌ Login: Turnstile verification failed")
                 flash('Security verification failed. Please try again.', 'error')
                 return render_template('login.html')
+            
+            print("✅ Login: Turnstile verification successful")
         
         # Ensure database tables exist before querying
         ensure_tables_exist()
@@ -1400,6 +1624,7 @@ def register():
         
         username = request.form.get('username')
         email = request.form.get('email')
+        phone = request.form.get('phone')  # Add phone number field
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         turnstile_response = request.form.get('cf-turnstile-response')
@@ -1413,15 +1638,27 @@ def register():
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
         turnstile_enabled = not is_localhost
         
+        print(f"🔍 Register: Turnstile enabled: {turnstile_enabled}")
+        print(f"🔍 Register: Is localhost: {is_localhost}")
+        print(f"🔍 Register: Turnstile response present: {bool(turnstile_response)}")
+        
         if turnstile_enabled:
             if not turnstile_response:
+                print("❌ Register: Turnstile response missing")
                 flash('🔒 Security Required: Please complete the security verification to proceed.', 'error')
                 return render_template('register.html')
             
             # Verify Turnstile
-            if not verify_turnstile(turnstile_response):
+            print(f"🔍 Register: Verifying Turnstile response...")
+            verification_result = verify_turnstile(turnstile_response)
+            print(f"🔍 Register: Turnstile verification result: {verification_result}")
+            
+            if not verification_result:
+                print("❌ Register: Turnstile verification failed")
                 flash('⚠️ Security Failed: Security verification failed. Please try again.', 'error')
                 return render_template('register.html')
+            
+            print("✅ Register: Turnstile verification successful")
         
         # Enhanced username validation with detailed feedback
         username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
@@ -1465,14 +1702,37 @@ def register():
             flash('❌ Username Taken: This username is already in use. Please choose a different username.', 'error')
             return render_template('register.html')
         
+        # Phone number validation (optional but if provided, must be unique)
+        if phone:
+            # Basic phone format validation (allows various formats)
+            phone_clean = re.sub(r'[^\d+]', '', phone)
+            if len(phone_clean) < 10:
+                flash('❌ Invalid Phone Number: Phone number must contain at least 10 digits.', 'error')
+                return render_template('register.html')
+            
+            # Check for existing phone number
+            if User.query.filter(User.phone == phone).first():
+                flash('❌ Phone Number Already Registered: This phone number is already registered. Please use a different phone number or try logging in.', 'error')
+                return render_template('register.html')
+        
         # Check for existing email
         if User.query.filter(User.email.ilike(email)).first():
             flash('❌ Email Already Registered: This email address is already registered. Please use a different email or try logging in.', 'error')
             return render_template('register.html')
         
-        # Create new user
-        user = User(username=username, email=email)
+        # Create new user with verification setup
+        user = User(
+            username=username, 
+            email=email,
+            phone=phone if phone else None
+        )
         user.set_password(password)
+        
+        # Generate verification tokens
+        user.email_verification_token = generate_verification_token()
+        if phone:
+            user.phone_verification_code = generate_phone_verification_code()
+            user.phone_verification_expires = datetime.utcnow() + timedelta(minutes=10)
         
         # Set admin privileges for specific email
         if email.lower() == os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org').lower():
@@ -1486,6 +1746,17 @@ def register():
             profile = UserProfile(user_id=user.id)
             db.session.add(profile)
             db.session.commit()
+            
+            # Send verification emails/SMS
+            if send_verification_email(user.email, user.email_verification_token):
+                print(f"✅ Verification email sent to {user.email}")
+            else:
+                print(f"⚠️  Failed to send verification email to {user.email}")
+            
+            if phone and send_verification_sms(phone, user.phone_verification_code):
+                print(f"✅ Verification SMS sent to {phone}")
+            else:
+                print(f"⚠️  Failed to send verification SMS to {phone}")
             
             # Store user info in session for onboarding
             session['onboarding_user_id'] = user.id
@@ -1596,6 +1867,125 @@ def logout():
     flash('You have been logged out successfully.', 'success')
     return redirect(url_for('login'))
 
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    """Verify user email with token"""
+    try:
+        user = User.query.filter_by(email_verification_token=token).first()
+        
+        if not user:
+            flash('❌ Invalid verification token. Please check your email or contact support.', 'error')
+            return redirect(url_for('login'))
+        
+        if user.email_verified:
+            flash('ℹ️ Email already verified. You can now log in.', 'info')
+            return redirect(url_for('login'))
+        
+        # Mark email as verified
+        user.email_verified = True
+        user.email_verification_token = None  # Clear the token
+        db.session.commit()
+        
+        flash('✅ Email verified successfully! You can now log in and use AI features.', 'success')
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        print(f"❌ Error verifying email: {e}")
+        flash('❌ Error verifying email. Please try again or contact support.', 'error')
+        return redirect(url_for('login'))
+
+@app.route('/verify-phone', methods=['GET', 'POST'])
+def verify_phone():
+    """Verify user phone number with SMS code"""
+    if request.method == 'GET':
+        return render_template('verify_phone.html')
+    
+    try:
+        phone = request.form.get('phone')
+        code = request.form.get('verification_code')
+        
+        if not phone or not code:
+            flash('❌ Please provide both phone number and verification code.', 'error')
+            return render_template('verify_phone.html')
+        
+        # Find user by phone number
+        user = User.query.filter_by(phone=phone).first()
+        
+        if not user:
+            flash('❌ Phone number not found. Please check your phone number or contact support.', 'error')
+            return render_template('verify_phone.html')
+        
+        if user.phone_verified:
+            flash('ℹ️ Phone number already verified. You can now log in.', 'info')
+            return redirect(url_for('login'))
+        
+        # Check if code is valid and not expired
+        if (user.phone_verification_code != code or 
+            not user.phone_verification_expires or 
+            user.phone_verification_expires < datetime.utcnow()):
+            flash('❌ Invalid or expired verification code. Please check your SMS or request a new code.', 'error')
+            return render_template('verify_phone.html')
+        
+        # Mark phone as verified
+        user.phone_verified = True
+        user.phone_verification_code = None
+        user.phone_verification_expires = None
+        db.session.commit()
+        
+        flash('✅ Phone number verified successfully! You can now log in and use AI features.', 'success')
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        print(f"❌ Error verifying phone: {e}")
+        flash('❌ Error verifying phone. Please try again or contact support.', 'error')
+        return render_template('verify_phone.html')
+
+@app.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    """Resend verification email/SMS"""
+    try:
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        
+        if not email and not phone:
+            flash('❌ Please provide either email or phone number.', 'error')
+            return redirect(url_for('login'))
+        
+        user = None
+        if email:
+            user = User.query.filter_by(email=email).first()
+        elif phone:
+            user = User.query.filter_by(phone=phone).first()
+        
+        if not user:
+            flash('❌ User not found. Please check your information or contact support.', 'error')
+            return redirect(url_for('login'))
+        
+        # Resend email verification if needed
+        if not user.email_verified:
+            user.email_verification_token = generate_verification_token()
+            if send_verification_email(user.email, user.email_verification_token):
+                flash('📧 Verification email resent successfully!', 'success')
+            else:
+                flash('❌ Failed to resend verification email. Please try again or contact support.', 'error')
+        
+        # Resend SMS verification if needed
+        if phone and not user.phone_verified:
+            user.phone_verification_code = generate_phone_verification_code()
+            user.phone_verification_expires = datetime.utcnow() + timedelta(minutes=10)
+            if send_verification_sms(phone, user.phone_verification_code):
+                flash('📱 Verification SMS resent successfully!', 'success')
+            else:
+                flash('❌ Failed to resend verification SMS. Please try again or contact support.', 'error')
+        
+        db.session.commit()
+        return redirect(url_for('login'))
+        
+    except Exception as e:
+        print(f"❌ Error resending verification: {e}")
+        flash('❌ Error resending verification. Please try again or contact support.', 'error')
+        return redirect(url_for('login'))
+
 @app.route('/extend-session', methods=['POST'])
 @login_required
 def extend_session():
@@ -1612,6 +2002,128 @@ def extend_session():
         return jsonify({'success': True, 'message': 'Session extended'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/subscription/status')
+@login_required
+def subscription_status():
+    """Get user's subscription status and usage information"""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        usage_summary = get_user_usage_summary(current_user.id)
+        if not usage_summary:
+            return jsonify({'success': False, 'error': 'Unable to retrieve usage information'}), 500
+        
+        return jsonify({
+            'success': True,
+            'data': usage_summary
+        })
+    except Exception as e:
+        print(f"❌ Error getting subscription status: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+
+@app.route('/subscription/purchase-credits', methods=['POST'])
+@login_required
+def purchase_session_credits():
+    """Handle session credit purchase (redirect to Stripe)"""
+    try:
+        data = request.get_json()
+        quantity = data.get('quantity', 1)
+        
+        if quantity < 1 or quantity > 100:
+            return jsonify({'success': False, 'error': 'Invalid quantity'}), 400
+        
+        # Redirect to Stripe checkout for $1 per session credit
+        stripe_url = "https://buy.stripe.com/3cIaEX8xpbvNbyt7RQ3Je04"
+        
+        return jsonify({
+            'success': True,
+            'redirect_url': stripe_url,
+            'message': f'Redirecting to purchase {quantity} session credit(s) for ${quantity:.2f}'
+        })
+    except Exception as e:
+        print(f"❌ Error processing credit purchase: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+
+@app.route('/subscription/upgrade', methods=['POST'])
+@login_required
+def upgrade_to_subscription():
+    """Handle subscription upgrade (redirect to Stripe)"""
+    try:
+        # Redirect to Stripe checkout for $10/month subscription
+        stripe_url = "https://buy.stripe.com/aFadR92917fx9qlgom3Je05"
+        
+        return jsonify({
+            'success': True,
+            'redirect_url': stripe_url,
+            'message': 'Redirecting to monthly subscription for $10/month'
+        })
+    except Exception as e:
+        print(f"❌ Error processing subscription upgrade: {e}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+
+@app.route('/subscription/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhook events for payment confirmations"""
+    try:
+        # In production, verify webhook signature
+        event_data = request.get_json()
+        event_type = event_data.get('type')
+        
+        if event_type == 'payment_intent.succeeded':
+            # Handle successful payment for session credits
+            payment_intent = event_data.get('data', {}).get('object', {})
+            customer_id = payment_intent.get('customer')
+            amount = payment_intent.get('amount') / 100  # Convert from cents
+            metadata = payment_intent.get('metadata', {})
+            user_id = metadata.get('user_id')
+            
+            if user_id and amount > 0:
+                # Add session credits to user account
+                credits = SessionCredits.query.filter_by(user_id=user_id).first()
+                if not credits:
+                    credits = SessionCredits(user_id=user_id)
+                    db.session.add(credits)
+                
+                credits_purchased = int(amount)  # $1 per credit
+                credits.credits_purchased += credits_purchased
+                credits.credits_remaining += credits_purchased
+                credits.payment_amount_usd += amount
+                credits.payment_status = 'completed'
+                credits.stripe_payment_intent_id = payment_intent.get('id')
+                
+                db.session.commit()
+                print(f"✅ Added {credits_purchased} session credits for user {user_id}")
+        
+        elif event_type == 'customer.subscription.created':
+            # Handle new subscription creation
+            subscription = event_data.get('data', {}).get('object', {})
+            customer_id = subscription.get('customer')
+            metadata = subscription.get('metadata', {})
+            user_id = metadata.get('user_id')
+            
+            if user_id:
+                # Update user subscription
+                user_sub = UserSubscription.query.filter_by(user_id=user_id).first()
+                if user_sub:
+                    user_sub.stripe_subscription_id = subscription.get('id')
+                    user_sub.stripe_customer_id = customer_id
+                    user_sub.subscription_type = 'subscription'
+                    user_sub.is_active = True
+                    db.session.commit()
+                    print(f"✅ Updated subscription for user {user_id}")
+        
+        return jsonify({'success': True}), 200
+        
+    except Exception as e:
+        print(f"❌ Error processing Stripe webhook: {e}")
+        return jsonify({'success': False, 'error': 'Webhook processing failed'}), 500
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -1681,6 +2193,13 @@ def profile():
     # Get user profile data
     user_profile = get_current_user_profile()
     return render_template('profile.html', profile=user_profile)
+
+
+@app.route('/subscription')
+@login_required
+def subscription_page():
+    """Dedicated subscription management page"""
+    return render_template('subscription.html')
 
 @app.route('/food-journal')
 @login_required
@@ -2463,6 +2982,25 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
                 'error': 'openai_disabled'
             }
         
+        # Check if user is verified for AI usage
+        current_user = get_current_user()
+        if current_user and not is_user_verified_for_ai(current_user):
+            print("🔒 User not verified for AI usage")
+            return {
+                'analysis': "⚠️ Account Verification Required: Please verify your email and phone number before using AI features.",
+                'suggestions': "Check your email and phone for verification codes, or contact support for assistance.",
+                'error': 'verification_required'
+            }
+        
+        # Check if user has AI usage permissions
+        if current_user and not can_user_use_ai(current_user.id):
+            print("🔒 User has no AI usage sessions or credits remaining")
+            return {
+                'analysis': "⚠️ AI Usage Limit Reached: You've used all your monthly sessions and have no credits remaining.",
+                'suggestions': "Upgrade to monthly subscription or purchase session credits to continue using AI features.",
+                'error': 'usage_limit_reached'
+            }
+        
         # Initialize OpenAI client
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
@@ -2770,6 +3308,22 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
             
             db.session.commit()
             print(f"✅ Token usage tracked: input={input_tokens}, output={output_tokens}, total={total_tokens}")
+            
+            # Record AI usage session for subscription/credit tracking
+            try:
+                if current_user:
+                    record_ai_session(
+                        user_id=current_user.id,
+                        session_type='patterns_analysis',
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=total_tokens,
+                        cost_usd=total_cost if 'total_cost' in locals() else 0.0,
+                        model_used=get_current_gpt_model()
+                    )
+                    print(f"✅ AI session recorded for user {current_user.id}")
+            except Exception as e:
+                print(f"⚠️ Error recording AI session: {e}")
             
         except Exception as e:
             # Log error but don't fail the main function
@@ -3190,7 +3744,7 @@ def serve_avatar(filename):
 
 def verify_turnstile(response):
     """
-    Verify Cloudflare Turnstile response
+    Verify Cloudflare Turnstile response with enhanced error handling and logging
     """
     # Check if running on localhost
     is_localhost = False
@@ -3201,11 +3755,18 @@ def verify_turnstile(response):
     if not app.config.get('TURNSTILE_ENABLED', True) or is_localhost:
         if is_localhost:
             print("🔧 Localhost detected: Bypassing Turnstile verification")
+        else:
+            print("🔧 Turnstile disabled in configuration")
         return True
     
-    # If no response provided, return False
+    # If no response provided, log and return False
     if not response:
+        print("❌ Turnstile verification failed: No response provided")
         return False
+    
+    # Log the response for debugging (truncated for security)
+    response_preview = response[:20] + "..." if len(response) > 20 else response
+    print(f"🔍 Turnstile verification: Processing response: {response_preview}")
     
     try:
         # Make a request to Cloudflare's Turnstile verification endpoint
@@ -3215,15 +3776,39 @@ def verify_turnstile(response):
             'response': response
         }
         
+        print(f"🔍 Turnstile verification: Sending request to {verify_url}")
+        print(f"🔍 Turnstile verification: Secret key present: {bool(app.config.get('TURNSTILE_SECRET_KEY'))}")
+        
         result = requests.post(verify_url, data=data, timeout=10)
+        print(f"🔍 Turnstile verification: HTTP response status: {result.status_code}")
+        
+        if result.status_code != 200:
+            print(f"❌ Turnstile verification failed: HTTP {result.status_code}")
+            return False
+        
         result_json = result.json()
+        print(f"🔍 Turnstile verification: Response JSON: {result_json}")
         
         # Check if the verification was successful
-        return result_json.get('success', False)
+        success = result_json.get('success', False)
+        if success:
+            print("✅ Turnstile verification successful")
+        else:
+            print(f"❌ Turnstile verification failed: {result_json.get('error-codes', ['Unknown error'])}")
+        
+        return success
+        
+    except requests.exceptions.Timeout:
+        print("❌ Turnstile verification failed: Request timeout")
+        return False
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Turnstile verification failed: Request error: {e}")
+        return False
     except Exception as e:
-        print(f"Turnstile verification error: {e}")
+        print(f"❌ Turnstile verification failed: Unexpected error: {e}")
         # In development, if there's an error, allow the request to proceed
         if app.config.get('DEBUG', False):
+            print("🔧 Development mode: Allowing request to proceed despite error")
             return True
         return False
 
@@ -4368,6 +4953,61 @@ class APICosts(db.Model):
     updated_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     user = db.relationship('User', backref='api_costs')
+
+
+class UserSubscription(db.Model):
+    __tablename__ = 'user_subscriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    subscription_type = db.Column(db.String(20), nullable=False, default='subscription')  # 'subscription' or 'pay_as_you_go'
+    stripe_subscription_id = db.Column(db.String(100), nullable=True)  # Stripe subscription ID
+    stripe_customer_id = db.Column(db.String(100), nullable=True)  # Stripe customer ID
+    monthly_fee_usd = db.Column(db.Float, default=10.0)  # Monthly subscription fee
+    sessions_per_month = db.Column(db.Integer, default=600)  # Monthly session allowance
+    sessions_used_this_month = db.Column(db.Integer, default=0)  # Sessions used in current month
+    billing_cycle_start = db.Column(db.DateTime, default=datetime.utcnow)  # When billing cycle starts
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='subscription')
+
+
+class SessionCredits(db.Model):
+    __tablename__ = 'session_credits'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    credits_purchased = db.Column(db.Integer, default=0)  # Total credits purchased
+    credits_used = db.Column(db.Integer, default=0)  # Total credits used
+    credits_remaining = db.Column(db.Integer, default=0)  # Remaining credits
+    stripe_payment_intent_id = db.Column(db.String(100), nullable=True)  # Stripe payment intent ID
+    payment_amount_usd = db.Column(db.Float, default=0.0)  # Amount paid for credits
+    payment_status = db.Column(db.String(20), default='pending')  # pending, completed, failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref='session_credits')
+
+
+class AIUsageSession(db.Model):
+    __tablename__ = 'ai_usage_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    session_type = db.Column(db.String(50), nullable=False)  # 'patterns_analysis', 'ai_chat', etc.
+    input_tokens = db.Column(db.Integer, default=0)
+    output_tokens = db.Column(db.Integer, default=0)
+    total_tokens = db.Column(db.Integer, default=0)
+    cost_usd = db.Column(db.Float, default=0.0)
+    model_used = db.Column(db.String(50), nullable=True)
+    subscription_used = db.Column(db.Boolean, default=True)  # True if used subscription, False if used credit
+    credit_id = db.Column(db.Integer, db.ForeignKey('session_credits.id'), nullable=True)  # If credit was used
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='ai_sessions')
+    credit = db.relationship('SessionCredits', backref='usage_sessions')
 
 if __name__ == '__main__':
     app.run(debug=True)

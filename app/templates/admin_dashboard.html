@@ -1385,11 +1385,60 @@
     <!-- Include Footer -->
     {% include 'includes/footer.html' %}
     
+    <!-- Verification Notice for AI Features -->
+    <div id="verificationNotice" class="fixed bottom-4 right-4 max-w-sm bg-yellow-50 border-2 border-yellow-300 rounded-lg shadow-lg p-4 hidden">
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-medium text-yellow-800">AI Features Require Verification</h4>
+                <p class="text-xs text-yellow-700 mt-1">
+                    Complete your profile and verify your contact information to unlock AI-powered insights.
+                </p>
+                <div class="mt-2">
+                    <a href="{{ url_for('profile') }}" class="text-xs text-yellow-800 underline hover:text-yellow-900">
+                        Go to Profile →
+                    </a>
+                </div>
+            </div>
+            <button onclick="document.getElementById('verificationNotice').classList.add('hidden')" class="text-xs text-yellow-400 hover:text-yellow-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <!-- AI Chat Box for logged-in users -->
     {% include 'includes/ai_chat.html' %}
 
     <!-- JavaScript for Admin Dashboard -->
     <script>
+        // Check verification status and show notice if needed
+        const checkVerificationStatus = async () => {
+            try {
+                const response = await fetch('/profile/data');
+                const data = await response.json();
+                
+                if (data.success && data.profile) {
+                    const user = data.profile.user;
+                    const verificationNotice = document.getElementById('verificationNotice');
+                    
+                    if (!user.email_verified || !user.phone_verified) {
+                        verificationNotice.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking verification status:', error);
+            }
+        };
+        
+        // Check verification status on page load
+        document.addEventListener('DOMContentLoaded', checkVerificationStatus);
+        
         // Tab functionality
         function showTab(tabName) {
             // Hide all tab contents
