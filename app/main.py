@@ -406,6 +406,9 @@ class Review(db.Model):
     title = db.Column(db.String(200), nullable=True)
     content = db.Column(db.Text, nullable=False)
     is_approved = db.Column(db.Boolean, default=False)  # Admin approval for public display
+    ip_address = db.Column(db.String(45), nullable=True)  # IPv4/IPv6 address for rate limiting
+    user_agent = db.Column(db.Text, nullable=True)  # User agent string for monitoring
+    spam_score = db.Column(db.Integer, default=0)  # Spam detection score
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -581,35 +584,113 @@ def reviews():
 
 @app.route('/reviews/submit', methods=['POST'])
 def submit_review():
-    """Submit a new review"""
+    """Submit a new review with comprehensive abuse protection"""
     try:
         data = request.get_json()
         
-        # Validate required fields
+        # 1. HONEYPOT VALIDATION (catch automated bots)
+        if data.get('website'):  # If honeypot field is filled, it's likely a bot
+            return jsonify({'success': False, 'error': 'Invalid submission'})
+        
+        # 2. BASIC VALIDATION
         if not data.get('name') or not data.get('rating') or not data.get('content'):
             return jsonify({'success': False, 'error': 'Name, rating, and content are required'})
         
-        # Validate rating (1-5)
+        # 3. INPUT SANITIZATION
+        name = str(data['name']).strip()
+        title = str(data.get('title', '')).strip()
+        content = str(data['content']).strip()
         rating = int(data['rating'])
+        
+        # 4. LENGTH VALIDATION
+        if len(name) < 2 or len(name) > 100:
+            return jsonify({'success': False, 'error': 'Name must be between 2 and 100 characters'})
+        
+        if title and (len(title) < 3 or len(title) > 200):
+            return jsonify({'success': False, 'error': 'Title must be between 3 and 200 characters'})
+        
+        if len(content) < 10 or len(content) > 2000:
+            return jsonify({'success': False, 'error': 'Review content must be between 10 and 2000 characters'})
+        
+        # 5. RATING VALIDATION
         if rating < 1 or rating > 5:
             return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'})
         
-        # Create new review
+        # 6. CONTENT FILTERING (Basic spam detection)
+        spam_indicators = [
+            'buy now', 'click here', 'visit website', 'http://', 'https://', 'www.',
+            'free money', 'make money fast', 'earn cash', 'work from home',
+            'weight loss', 'diet pills', 'viagra', 'cialis', 'casino', 'poker',
+            'loan', 'credit card', 'debt relief', 'insurance quote'
+        ]
+        
+        content_lower = content.lower()
+        name_lower = name.lower()
+        title_lower = title.lower()
+        
+        # Check for spam indicators in content
+        spam_score = 0
+        for indicator in spam_indicators:
+            if indicator in content_lower:
+                spam_score += 1
+            if indicator in name_lower:
+                spam_score += 2  # Higher penalty for spam in name
+            if indicator in title_lower:
+                spam_score += 1
+        
+        # Reject if too many spam indicators
+        if spam_score >= 3:
+            return jsonify({'success': False, 'error': 'Review content appears to be spam and cannot be submitted'})
+        
+        # 7. RATE LIMITING (Basic IP-based rate limiting)
+        client_ip = request.remote_addr
+        recent_reviews = Review.query.filter(
+            Review.created_at >= datetime.utcnow() - timedelta(hours=24)
+        ).all()
+        
+        # Count reviews from this IP in the last 24 hours
+        ip_review_count = 0
+        for review in recent_reviews:
+            # Simple IP tracking (in production, you'd want a more sophisticated approach)
+            if hasattr(review, 'ip_address') and review.ip_address == client_ip:
+                ip_review_count += 1
+        
+        if ip_review_count >= 5:  # Max 5 reviews per IP per day
+            return jsonify({'success': False, 'error': 'Too many reviews submitted. Please try again tomorrow.'})
+        
+        # 8. TURNSTILE VERIFICATION (if enabled)
+        turnstile_response = data.get('cf-turnstile-response')
+        if not is_localhost_environment():
+            if not turnstile_response:
+                return jsonify({'success': False, 'error': 'Please complete the security verification'})
+            
+            # Verify Turnstile token
+            if not verify_turnstile(turnstile_response):
+                return jsonify({'success': False, 'error': 'Security verification failed. Please try again.'})
+        
+        # 9. CREATE REVIEW
         new_review = Review(
-            name=data['name'],
+            name=name,
             rating=rating,
-            title=data.get('title', ''),
-            content=data['content']
+            title=title,
+            content=content,
+            ip_address=client_ip,  # Store IP for rate limiting
+            user_agent=request.headers.get('User-Agent', '')  # Store user agent for monitoring
         )
         
         db.session.add(new_review)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Review submitted successfully! It will be visible after approval.'})
+        return jsonify({
+            'success': True, 
+            'message': 'Review submitted successfully! It will be visible after approval.'
+        })
         
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid data format provided'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': f'Error submitting review: {str(e)}'})
+        return jsonify({'success': False, 'error': 'Error submitting review. Please try again.'})
 
 @app.route('/api/turnstile-status')
 def turnstile_status():
