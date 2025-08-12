@@ -402,7 +402,7 @@
                     return;
                 }
                 
-                const response = await fetch('/subscription/purchase-credits', {
+                const response = await fetch('/api/stripe/create-checkout-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ quantity: parseInt(quantity) })
@@ -411,7 +411,7 @@
                 const data = await response.json();
                 if (data.success) {
                     alert(`Redirecting to Stripe to purchase ${quantity} questions for $${totalCost}`);
-                    window.open(data.redirect_url, '_blank');
+                    window.location.href = data.checkout_url;
                     // Refresh status after purchase
                     setTimeout(loadCurrentStatus, 2000);
                 } else {

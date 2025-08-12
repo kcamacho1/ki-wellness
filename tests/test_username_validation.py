@@ -5,7 +5,8 @@ Test script for username validation - checks if usernames containing 'kiwellness
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
+# Add the parent directory to the path so we can import from app
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.main import is_kiwellness_username
 

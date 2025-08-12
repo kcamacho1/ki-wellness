@@ -43,6 +43,14 @@ import uuid
 import base64
 import sqlite3
 
+# Stripe integration
+try:
+    import stripe
+    STRIPE_AVAILABLE = True
+except ImportError:
+    STRIPE_AVAILABLE = False
+    print("⚠️  Stripe library not available. Payment features will be disabled.")
+
 app = Flask(__name__)
 
 # Determine which configuration to use based on environment
@@ -79,6 +87,56 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
+
+# Initialize Stripe
+def get_stripe_config():
+    """Get Stripe configuration based on payment testing mode"""
+    try:
+        # Check if payment testing mode is enabled
+        testing_setting = SystemSettings.query.filter_by(key='payment_testing_mode').first()
+        is_testing_mode = testing_setting and testing_setting.value == 'true'
+        
+        if is_testing_mode:
+            # Use sandbox keys
+            secret_key = app.config.get('STRIPE_SANDBOX_SECRET_KEY')
+            publishable_key = app.config.get('STRIPE_SANDBOX_PUBLISHABLE_KEY')
+            webhook_secret = app.config.get('STRIPE_SANDBOX_WEBHOOK_SECRET')
+            environment = 'sandbox'
+        else:
+            # Use live keys
+            secret_key = app.config.get('STRIPE_SECRET_KEY')
+            publishable_key = app.config.get('STRIPE_PUBLISHABLE_KEY')
+            webhook_secret = app.config.get('STRIPE_WEBHOOK_SECRET')
+            environment = 'live'
+        
+        return {
+            'secret_key': secret_key,
+            'publishable_key': publishable_key,
+            'webhook_secret': webhook_secret,
+            'environment': environment,
+            'is_testing_mode': is_testing_mode
+        }
+    except Exception as e:
+        print(f"❌ Error getting Stripe config: {e}")
+        return None
+
+def initialize_stripe():
+    """Initialize Stripe with appropriate configuration"""
+    if not STRIPE_AVAILABLE:
+        print("⚠️  Stripe library not available. Payment features will be disabled.")
+        return False
+    
+    config = get_stripe_config()
+    if not config or not config['secret_key']:
+        print("⚠️  Stripe not configured. Payment features will be disabled.")
+        return False
+    
+    stripe.api_key = config['secret_key']
+    print(f"✅ Stripe initialized successfully ({config['environment']} mode)")
+    return True
+
+# Initialize Stripe on startup (will be called after models are defined)
+stripe_initialized = False
 
 # Database initialization will be handled by the create_admin_account function
 # def init_database():
@@ -407,6 +465,7 @@ def create_admin_account():
 
 def initialize_system_settings(admin_user_id):
     """Initialize default system settings"""
+    global stripe_initialized
     try:
         # Check if settings already exist
         if SystemSettings.query.count() == 0:
@@ -472,6 +531,11 @@ def initialize_system_settings(admin_user_id):
                     'key': 'top_p',
                     'value': '0.9',
                     'description': 'Top-p sampling for OpenAI API (0.9 = focused responses)'
+                },
+                {
+                    'key': 'payment_testing_mode',
+                    'value': 'false',
+                    'description': 'Enable Stripe sandbox mode for payment testing'
                 }
             ]
             
@@ -514,8 +578,15 @@ def initialize_system_settings(admin_user_id):
             
             db.session.commit()
             print("✅ System settings initialized successfully!")
+            
+            # Initialize Stripe after database models are available
+            stripe_initialized = initialize_stripe()
         else:
             print("ℹ️  System settings already exist")
+            
+            # Initialize Stripe even if settings already exist
+            if not stripe_initialized:
+                stripe_initialized = initialize_stripe()
             
     except Exception as e:
         print(f"❌ Error initializing system settings: {e}")
@@ -2116,43 +2187,304 @@ def upgrade_to_subscription():
         print(f"❌ Error processing subscription upgrade: {e}")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
+@app.route('/api/stripe/create-checkout-session', methods=['POST'])
+@login_required
+def create_checkout_session():
+    """Create a Stripe checkout session for session credits"""
+    if not STRIPE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Stripe not available'}), 503
+    
+    try:
+        data = request.get_json()
+        quantity = data.get('quantity', 1)
+        
+        if quantity < 1 or quantity > 1000:
+            return jsonify({'success': False, 'error': 'Invalid quantity (1-1000)'}), 400
+        
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Get current Stripe configuration
+        stripe_config = get_stripe_config()
+        if not stripe_config:
+            return jsonify({'success': False, 'error': 'Stripe not configured'}), 503
+        
+        # Update Stripe API key if needed
+        if stripe.api_key != stripe_config['secret_key']:
+            stripe.api_key = stripe_config['secret_key']
+        
+        # Create Stripe checkout session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': f'{quantity} AI Session Credit(s)',
+                        'description': f'{quantity} AI-powered wellness session credit(s)',
+                    },
+                    'unit_amount': 100,  # $1.00 in cents
+                },
+                'quantity': quantity,
+            }],
+            mode='payment',
+            success_url=request.host_url + 'subscription?success=true',
+            cancel_url=request.host_url + 'subscription?canceled=true',
+            metadata={
+                'user_id': current_user.id,
+                'type': 'session_credits',
+                'quantity': quantity,
+                'environment': stripe_config['environment']
+            },
+            customer_email=current_user.email
+        )
+        
+        # Store pending purchase in database
+        pending_purchase = SessionCredits(
+            user_id=current_user.id,
+            credits_purchased=quantity,
+            credits_used=0,
+            credits_remaining=0,
+            payment_amount_usd=quantity,
+            payment_status='pending',
+            stripe_payment_intent_id=checkout_session.payment_intent
+        )
+        db.session.add(pending_purchase)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'session_id': checkout_session.id,
+            'checkout_url': checkout_session.url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creating checkout session: {e}")
+        return jsonify({'success': False, 'error': 'Failed to create checkout session'}), 500
+
+@app.route('/api/stripe/create-subscription', methods=['POST'])
+@login_required
+def create_subscription():
+    """Create a Stripe subscription for monthly plan"""
+    if not STRIPE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Stripe not available'}), 503
+    
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Get current Stripe configuration
+        stripe_config = get_stripe_config()
+        if not stripe_config:
+            return jsonify({'success': False, 'error': 'Stripe not configured'}), 503
+        
+        # Update Stripe API key if needed
+        if stripe.api_key != stripe_config['secret_key']:
+            stripe.api_key = stripe_config['secret_key']
+        
+        # Create or get Stripe customer
+        customer = None
+        if current_user.stripe_customer_id:
+            try:
+                customer = stripe.Customer.retrieve(current_user.stripe_customer_id)
+            except stripe.error.InvalidRequestError:
+                pass
+        
+        if not customer:
+            customer = stripe.Customer.create(
+                email=current_user.email,
+                metadata={'user_id': current_user.id}
+            )
+            current_user.stripe_customer_id = customer.id
+            db.session.commit()
+        
+        # Create checkout session for subscription
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'recurring': {
+                        'interval': 'month',
+                    },
+                    'product_data': {
+                        'name': 'KI Wellness Monthly Subscription',
+                        'description': 'Unlimited AI-powered wellness sessions',
+                    },
+                    'unit_amount': 1000,  # $10.00 in cents
+                },
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=request.host_url + 'subscription?success=true',
+            cancel_url=request.host_url + 'subscription?canceled=true',
+            customer=customer.id,
+            metadata={
+                'user_id': current_user.id,
+                'type': 'subscription'
+            }
+        )
+        
+        return jsonify({
+            'success': True,
+            'session_id': checkout_session.id,
+            'checkout_url': checkout_session.url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creating subscription: {e}")
+        return jsonify({'success': False, 'error': 'Failed to create subscription'}), 500
+
+@app.route('/api/stripe/create-portal-session', methods=['POST'])
+@login_required
+def create_portal_session():
+    """Create a Stripe customer portal session for billing management"""
+    if not STRIPE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'Stripe not available'}), 503
+    
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Get current Stripe configuration
+        stripe_config = get_stripe_config()
+        if not stripe_config:
+            return jsonify({'success': False, 'error': 'Stripe not configured'}), 503
+        
+        # Update Stripe API key if needed
+        if stripe.api_key != stripe_config['secret_key']:
+            stripe.api_key = stripe_config['secret_key']
+        
+        # Get or create Stripe customer
+        customer = None
+        if current_user.stripe_customer_id:
+            try:
+                customer = stripe.Customer.retrieve(current_user.stripe_customer_id)
+            except stripe.error.InvalidRequestError:
+                pass
+        
+        if not customer:
+            customer = stripe.Customer.create(
+                email=current_user.email,
+                metadata={'user_id': current_user.id}
+            )
+            current_user.stripe_customer_id = customer.id
+            db.session.commit()
+        
+        # Create portal session
+        portal_session = stripe.billing_portal.Session.create(
+            customer=customer.id,
+            return_url=request.host_url + 'settings'
+        )
+        
+        return jsonify({
+            'success': True,
+            'portal_url': portal_session.url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creating portal session: {e}")
+        return jsonify({'success': False, 'error': 'Failed to create portal session'}), 500
+
 
 @app.route('/subscription/stripe-webhook', methods=['POST'])
 def stripe_webhook():
     """Handle Stripe webhook events for payment confirmations"""
     try:
-        # In production, verify webhook signature
-        event_data = request.get_json()
-        event_type = event_data.get('type')
+        # Get current Stripe configuration for webhook verification
+        stripe_config = get_stripe_config()
+        if not stripe_config:
+            return jsonify({'success': False, 'error': 'Stripe not configured'}), 503
         
-        if event_type == 'payment_intent.succeeded':
-            # Handle successful payment for session credits
-            payment_intent = event_data.get('data', {}).get('object', {})
-            customer_id = payment_intent.get('customer')
-            amount = payment_intent.get('amount') / 100  # Convert from cents
-            metadata = payment_intent.get('metadata', {})
+        # Update Stripe API key if needed
+        if stripe.api_key != stripe_config['secret_key']:
+            stripe.api_key = stripe_config['secret_key']
+        
+        # Verify webhook signature in production
+        payload = request.get_data()
+        sig_header = request.headers.get('Stripe-Signature')
+        
+        try:
+            if stripe_config['webhook_secret']:
+                event = stripe.Webhook.construct_event(
+                    payload, sig_header, stripe_config['webhook_secret']
+                )
+            else:
+                # Fallback for development without webhook secret
+                event = request.get_json()
+        except ValueError as e:
+            print(f"❌ Invalid payload: {e}")
+            return jsonify({'success': False, 'error': 'Invalid payload'}), 400
+        except stripe.error.SignatureVerificationError as e:
+            print(f"❌ Invalid signature: {e}")
+            return jsonify({'success': False, 'error': 'Invalid signature'}), 400
+        
+        event_type = event.get('type')
+        print(f"📦 Processing Stripe webhook: {event_type}")
+        
+        if event_type == 'checkout.session.completed':
+            # Handle successful checkout session
+            session = event.get('data', {}).get('object', {})
+            metadata = session.get('metadata', {})
             user_id = metadata.get('user_id')
+            payment_type = metadata.get('type')
+            environment = metadata.get('environment')
             
-            if user_id and amount > 0:
-                # Add session credits to user account
-                credits = SessionCredits.query.filter_by(user_id=user_id).first()
-                if not credits:
-                    credits = SessionCredits(user_id=user_id)
-                    db.session.add(credits)
+            print(f"✅ Checkout completed for user {user_id}, type: {payment_type}, environment: {environment}")
+            
+            if payment_type == 'session_credits' and user_id:
+                # Handle session credits purchase
+                quantity = int(metadata.get('quantity', 1))
+                amount = session.get('amount_total', 0) / 100  # Convert from cents
                 
-                credits_purchased = int(amount)  # $1 per credit
-                credits.credits_purchased += credits_purchased
-                credits.credits_remaining += credits_purchased
-                credits.payment_amount_usd += amount
-                credits.payment_status = 'completed'
-                credits.stripe_payment_intent_id = payment_intent.get('id')
+                # Find and update the pending purchase
+                pending_purchase = SessionCredits.query.filter_by(
+                    user_id=user_id,
+                    payment_status='pending'
+                ).order_by(SessionCredits.created_at.desc()).first()
+                
+                if pending_purchase:
+                    pending_purchase.credits_remaining = quantity
+                    pending_purchase.payment_amount_usd = amount
+                    pending_purchase.payment_status = 'completed'
+                    pending_purchase.stripe_payment_intent_id = session.get('payment_intent')
+                    
+                    # Update user's total credits
+                    user = User.query.get(user_id)
+                    if user:
+                        user.credits_remaining = (user.credits_remaining or 0) + quantity
+                    
+                    db.session.commit()
+                    print(f"✅ Added {quantity} session credits for user {user_id}")
+                else:
+                    print(f"⚠️  No pending purchase found for user {user_id}")
+            
+            elif payment_type == 'subscription' and user_id:
+                # Handle subscription creation
+                subscription_id = session.get('subscription')
+                customer_id = session.get('customer')
+                
+                # Update user subscription
+                user_sub = UserSubscription.query.filter_by(user_id=user_id).first()
+                if not user_sub:
+                    user_sub = UserSubscription(user_id=user_id)
+                    db.session.add(user_sub)
+                
+                user_sub.stripe_subscription_id = subscription_id
+                user_sub.stripe_customer_id = customer_id
+                user_sub.subscription_type = 'subscription'
+                user_sub.is_active = True
+                user_sub.billing_cycle_start = datetime.utcnow()
                 
                 db.session.commit()
-                print(f"✅ Added {credits_purchased} session credits for user {user_id}")
+                print(f"✅ Created subscription for user {user_id}")
         
         elif event_type == 'customer.subscription.created':
-            # Handle new subscription creation
-            subscription = event_data.get('data', {}).get('object', {})
+            # Handle subscription creation (backup)
+            subscription = event.get('data', {}).get('object', {})
             customer_id = subscription.get('customer')
             metadata = subscription.get('metadata', {})
             user_id = metadata.get('user_id')
@@ -2160,13 +2492,18 @@ def stripe_webhook():
             if user_id:
                 # Update user subscription
                 user_sub = UserSubscription.query.filter_by(user_id=user_id).first()
-                if user_sub:
-                    user_sub.stripe_subscription_id = subscription.get('id')
-                    user_sub.stripe_customer_id = customer_id
-                    user_sub.subscription_type = 'subscription'
-                    user_sub.is_active = True
-                    db.session.commit()
-                    print(f"✅ Updated subscription for user {user_id}")
+                if not user_sub:
+                    user_sub = UserSubscription(user_id=user_id)
+                    db.session.add(user_sub)
+                
+                user_sub.stripe_subscription_id = subscription.get('id')
+                user_sub.stripe_customer_id = customer_id
+                user_sub.subscription_type = 'subscription'
+                user_sub.is_active = True
+                user_sub.billing_cycle_start = datetime.utcnow()
+                
+                db.session.commit()
+                print(f"✅ Updated subscription for user {user_id}")
         
         return jsonify({'success': True}), 200
         
@@ -2241,12 +2578,49 @@ def reset_password(token):
 def profile():
     # Get user profile data
     user_profile = get_current_user_profile()
-    return render_template('profile.html', profile=user_profile)
+    current_user = get_current_user()
+    return render_template('profile.html', profile=user_profile, current_user=current_user)
+
+@app.route('/settings')
+@login_required
+def settings():
+    """Settings page with verification status and billing management"""
+    current_user = get_current_user()
+    
+    # Get usage history for the user
+    usage_history = []
+    try:
+        # Get recent token usage for the user
+        recent_usage = TokenUsage.query.filter_by(user_id=current_user.id).order_by(TokenUsage.created_at.desc()).limit(5).all()
+        for usage in recent_usage:
+            usage_history.append({
+                'date': usage.created_at.strftime('%B %d, %Y'),
+                'questions_used': usage.total_tokens
+            })
+    except Exception:
+        pass
+    
+    # Get last purchase date
+    last_purchase = SessionCredits.query.filter_by(
+        user_id=current_user.id, 
+        payment_status='completed'
+    ).order_by(SessionCredits.created_at.desc()).first()
+    
+    last_purchase_date = last_purchase.created_at.strftime('%B %d, %Y') if last_purchase else 'Never'
+    
+    # Calculate total questions used
+    total_questions_used = sum(usage.total_tokens for usage in TokenUsage.query.filter_by(user_id=current_user.id).all())
+    
+    return render_template('settings.html', 
+                         current_user=current_user,
+                         usage_history=usage_history,
+                         last_purchase_date=last_purchase_date,
+                         total_questions_used=total_questions_used)
 
 
 @app.route('/subscription')
 @login_required
-def subscription_page():
+def subscription():
     """Dedicated subscription management page"""
     return render_template('subscription.html')
 
@@ -2322,14 +2696,24 @@ def admin_dashboard():
     total_monthly_tokens = sum(usage.total_tokens for usage in monthly_token_usage)
     total_monthly_cost = sum(usage.cost_usd for usage in monthly_token_usage)
     
-    # Calculate current month profit (simplified calculation)
-    # In a real app, you'd get this from actual payment/subscription data
-    # For now, using a placeholder calculation based on active users
-    active_users_this_month = len(set(usage.user_id for usage in monthly_token_usage))
+    # Calculate current month profit with actual payment data
+    current_month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
-    # Assume $10/month per active user (placeholder for actual subscription model)
-    estimated_monthly_revenue = active_users_this_month * 10.0
-    current_month_profit = estimated_monthly_revenue - total_monthly_cost
+    # Get actual payments received this month from SessionCredits
+    monthly_payments = SessionCredits.query.filter(
+        SessionCredits.created_at >= current_month_start,
+        SessionCredits.payment_status == 'completed'
+    ).all()
+    
+    total_monthly_payments = sum(payment.payment_amount_usd for payment in monthly_payments)
+    
+    # Get subscription revenue for current month
+    active_subscriptions = UserSubscription.query.filter_by(is_active=True).all()
+    subscription_revenue = sum(sub.monthly_fee_usd for sub in active_subscriptions)
+    
+    # Total revenue = payments + subscriptions
+    total_monthly_revenue = total_monthly_payments + subscription_revenue
+    current_month_profit = total_monthly_revenue - total_monthly_cost
     
     # Get API costs for display
     api_costs = APICosts.query.filter_by(is_active=True).all()
@@ -2352,7 +2736,9 @@ def admin_dashboard():
                          total_monthly_tokens=total_monthly_tokens,
                          total_monthly_cost=total_monthly_cost,
                          current_month_profit=current_month_profit,
-                         estimated_monthly_revenue=estimated_monthly_revenue,
+                         total_monthly_revenue=total_monthly_revenue,
+                         total_monthly_payments=total_monthly_payments,
+                         subscription_revenue=subscription_revenue,
                          api_costs=api_costs,
                          current_gpt_model=current_model,
                          current_model_costs=current_model_costs,
@@ -2362,7 +2748,8 @@ def admin_dashboard():
                          flexible_service_tier=get_flexible_service_tier(),
                          presence_penalty=get_presence_penalty(),
                          frequency_penalty=get_frequency_penalty(),
-                         top_p=get_top_p())
+                         top_p=get_top_p(),
+                         payment_testing_mode=get_system_setting('payment_testing_mode', False))
 
 
 @app.route('/admin/reviews/<int:review_id>/approve', methods=['POST'])
@@ -4739,6 +5126,36 @@ def update_flexible_tier():
         return jsonify({'success': False, 'error': f'Error updating flexible tier setting: {str(e)}'})
 
 
+@app.route('/admin/system/toggle-payment-testing', methods=['POST'])
+@admin_required
+def toggle_payment_testing():
+    """Toggle payment testing mode (sandbox vs live)"""
+    try:
+        data = request.get_json()
+        enable_testing = data.get('enable_testing', False)
+        
+        # Update the system setting
+        set_system_setting(
+            'payment_testing_mode', 
+            str(enable_testing).lower(), 
+            f'Payment testing mode {"enabled" if enable_testing else "disabled"}', 
+            get_current_user().id if get_current_user() else None
+        )
+        
+        # Reinitialize Stripe with new configuration
+        global stripe_initialized
+        stripe_initialized = initialize_stripe()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Payment testing mode {"enabled" if enable_testing else "disabled"}',
+            'testing_mode': enable_testing
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error toggling payment testing mode: {str(e)}'})
+
+
 @app.route('/admin/users/search')
 @admin_required
 def search_users():
@@ -4930,56 +5347,7 @@ def manage_api_costs():
         return jsonify({'success': False, 'error': f'Error retrieving API costs: {str(e)}'})
 
 
-@app.route('/admin/accounting/update-token-usage', methods=['POST'])
-@admin_required
-def update_token_usage():
-    """Update token usage for a user (for manual tracking)"""
-    try:
-        data = request.get_json()
-        user_id = data.get('user_id')
-        month = data.get('month', datetime.utcnow().strftime('%Y-%m'))
-        input_tokens = data.get('input_tokens', 0)
-        output_tokens = data.get('output_tokens', 0)
-        model_used = data.get('model_used', 'gpt-4')
-        
-        # Calculate total tokens
-        total_tokens = input_tokens + output_tokens
-        
-        # Get or create token usage record
-        token_usage = TokenUsage.query.filter_by(
-            user_id=user_id, 
-            month=month
-        ).first()
-        
-        if token_usage:
-            token_usage.input_tokens = input_tokens
-            token_usage.output_tokens = output_tokens
-            token_usage.total_tokens = total_tokens
-            token_usage.model_used = model_used
-        else:
-            token_usage = TokenUsage(
-                user_id=user_id,
-                month=month,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                total_tokens=total_tokens,
-                model_used=model_used
-            )
-            db.session.add(token_usage)
-        
-        # Calculate cost based on current API costs
-        api_cost = APICosts.query.filter_by(model_name=model_used, is_active=True).first()
-        if api_cost:
-            # Calculate exact cost based on actual input/output tokens
-            cost = (input_tokens / 1000000 * api_cost.input_cost_per_1m +
-                   output_tokens / 1000000 * api_cost.output_cost_per_1m)
-            token_usage.cost_usd = round(cost, 4)
-        
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Token usage updated successfully'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': f'Error updating token usage: {str(e)}'})
+
 
 
 

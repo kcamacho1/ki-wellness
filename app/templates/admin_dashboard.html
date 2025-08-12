@@ -39,42 +39,43 @@
     <!-- Navigation -->
     {% include 'includes/navigation.html' %}
 
-    <!-- Admin Header -->
-    <div class="bg-white shadow-sm border-b border-gray-200">
+    <!-- Business Owner Header -->
+    <div class="bg-gradient-to-r from-forest-green to-mint-green shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-forest-green">Admin Dashboard</h1>
-                    <p class="text-sage-green mt-1">Comprehensive system management and monitoring</p>
+                    <h1 class="text-3xl font-bold text-white">💰 Business Dashboard</h1>
+                    <p class="text-green-100 mt-1">Profit tracking, cost management & business insights</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                        Admin Access
-                    </span>
+                    <!-- Emergency Controls - Always Visible -->
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white bg-opacity-20 text-white">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            Business Owner
+                        </span>
+                        
+                        <!-- Emergency Stop Button - Prominent Position -->
+                        {% if emergency_stop_active %}
+                        <button onclick="toggleEmergencyStop('disable')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-green-800 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            ✅ AI Active
+                        </button>
+                        {% else %}
+                        <button onclick="toggleEmergencyStop('enable')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-lg">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            🚨 Emergency Stop
+                        </button>
+                        {% endif %}
+                    </div>
                     
-                    <!-- Emergency Stop Button -->
-                    {% if emergency_stop_active %}
-                    <button onclick="toggleEmergencyStop('disable')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        Enable OpenAI
-                    </button>
-                    {% else %}
-                    <button onclick="toggleEmergencyStop('enable')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Emergency Stop
-                    </button>
-                    {% endif %}
-                    
-
-                    
-                    <button onclick="refreshSystemHealth()" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-mint-green">
+                    <button onclick="refreshSystemHealth()" class="inline-flex items-center px-3 py-2 border border-white border-opacity-30 shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-white bg-opacity-10 hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-all duration-200">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
@@ -87,111 +88,211 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Statistics Cards -->
+        <!-- Business KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- User Statistics -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                            </svg>
-                        </div>
+            <!-- Monthly Profit - Most Important -->
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg border-2 border-green-200 p-6 transform hover:scale-105 transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-green-700 uppercase tracking-wide">💰 Monthly Profit</p>
+                        <p class="text-3xl font-bold {% if current_month_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">${{ "%.2f"|format(current_month_profit | default(0)) }}</p>
+                        <p class="text-xs text-green-600 mt-1">
+                            {% if current_month_profit >= 0 %}↗️ Profitable{% else %}↘️ Loss{% endif %}
+                        </p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Users</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ stats.total_users }}</p>
-                        <p class="text-xs text-gray-400">{{ stats.recent_signups }} new this week</p>
+                    <div class="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
+                        {% if current_month_profit >= 0 %}
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        {% else %}
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                            </svg>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                        </div>
+            <!-- Monthly Revenue -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg border-2 border-blue-200 p-6 transform hover:scale-105 transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-blue-700 uppercase tracking-wide">💵 Monthly Revenue</p>
+                        <p class="text-3xl font-bold text-blue-600">${{ "%.2f"|format(total_monthly_revenue | default(0)) }}</p>
+                        <p class="text-xs text-blue-600 mt-1">
+                            ${{ "%.2f"|format(total_monthly_payments | default(0)) }} payments + ${{ "%.2f"|format(subscription_revenue | default(0)) }} subscriptions
+                        </p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Admin Users</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ stats.admin_users }}</p>
-                        <p class="text-xs text-gray-400">{{ stats.regular_users }} regular users</p>
+                    <div class="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 {% if current_month_profit >= 0 %}bg-green-100{% else %}bg-red-100{% endif %} rounded-lg flex items-center justify-center">
-                            {% if current_month_profit >= 0 %}
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                </svg>
-                            {% else %}
-                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                </svg>
-                            {% endif %}
-                        </div>
+            <!-- Monthly Costs -->
+            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-lg border-2 border-red-200 p-6 transform hover:scale-105 transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-red-700 uppercase tracking-wide">💸 Monthly Costs</p>
+                        <p class="text-3xl font-bold text-red-600">${{ "%.4f"|format(total_monthly_cost | default(0)) }}</p>
+                        <p class="text-xs text-red-600 mt-1">
+                            {{ total_monthly_tokens | default(0) | int }} tokens used
+                        </p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Current Profit ({{ datetime.utcnow().strftime('%B %Y') }})</p>
-                        <p class="text-2xl font-semibold {% if current_month_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
-                            ${{ "%.2f"|format(current_month_profit | default(0)) }}
-                        </p>
-                        <p class="text-xs text-gray-400">
-                            Revenue: ${{ "%.2f"|format(estimated_monthly_revenue | default(0)) }} | Costs: ${{ "%.2f"|format(total_monthly_cost | default(0)) }}
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <em>Profit calculation: $10/month per active user - API costs</em>
-                        </p>
+                    <div class="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                            </svg>
-                        </div>
+            <!-- Customer Growth -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg border-2 border-purple-200 p-6 transform hover:scale-105 transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-purple-700 uppercase tracking-wide">👥 Customers</p>
+                        <p class="text-3xl font-bold text-purple-600">{{ stats.total_users }}</p>
+                        <p class="text-xs text-purple-600 mt-1">
+                            +{{ stats.recent_signups }} this week
+                        </p>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Reviews</p>
-                        <p class="text-2xl font-semibold text-gray-900">{{ system_stats.total_reviews }}</p>
-                        <p class="text-xs text-gray-400">{{ system_stats.pending_reviews }} pending</p>
+                    <div class="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Token Usage Card -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Monthly Token Usage</h3>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if openai_enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                    {% if openai_enabled %}OpenAI Active{% else %}OpenAI Disabled{% endif %}
-                </span>
+        <!-- Business Insights & Quick Actions -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Profitability Alert -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">📊 Profitability Status</h3>
+                    <div class="w-8 h-8 {% if current_month_profit >= 0 %}bg-green-100{% else %}bg-red-100{% endif %} rounded-full flex items-center justify-center">
+                        {% if current_month_profit >= 0 %}
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        {% else %}
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if current_month_profit >= 0 %}
+                    <div class="text-green-700">
+                        <p class="text-sm font-medium">✅ Business is profitable!</p>
+                        <p class="text-xs text-green-600 mt-1">Your revenue exceeds costs by ${{ "%.2f"|format(current_month_profit) }}</p>
+                    </div>
+                {% else %}
+                    <div class="text-red-700">
+                        <p class="text-sm font-medium">⚠️ Business is losing money</p>
+                        <p class="text-xs text-red-600 mt-1">Costs exceed revenue by ${{ "%.2f"|format(current_month_profit | abs) }}</p>
+                        <div class="mt-3 p-3 bg-red-50 rounded-lg">
+                            <p class="text-xs font-medium text-red-800">Quick Actions:</p>
+                            <ul class="text-xs text-red-700 mt-1 space-y-1">
+                                <li>• Review AI token usage</li>
+                                <li>• Consider price adjustments</li>
+                                <li>• Optimize user engagement</li>
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-gray-900">{{ total_monthly_tokens | default(0) | int }}</p>
-                    <p class="text-sm text-gray-500">Tokens Used</p>
+
+            <!-- Cost Management -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">💡 Cost Management</h3>
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-gray-900">${{ "%.4f"|format(total_monthly_cost | default(0)) }}</p>
-                    <p class="text-sm text-gray-500">Total Cost</p>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">AI Token Cost</span>
+                        <span class="text-sm font-medium text-red-600">${{ "%.4f"|format(total_monthly_cost | default(0)) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Tokens Used</span>
+                        <span class="text-sm font-medium text-gray-900">{{ total_monthly_tokens | default(0) | int }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Cost per Token</span>
+                        <span class="text-sm font-medium text-gray-900">${{ "%.6f"|format((total_monthly_cost / total_monthly_tokens) if total_monthly_tokens > 0 else 0) }}</span>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-2xl font-bold text-gray-900">{{ monthly_token_usage | length | default(0) }}</p>
-                    <p class="text-sm text-gray-500">Active Users</p>
+                
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p class="text-xs font-medium text-blue-800">Optimization Tips:</p>
+                    <ul class="text-xs text-blue-700 mt-1 space-y-1">
+                        <li>• Monitor token usage patterns</li>
+                        <li>• Adjust AI model settings</li>
+                        <li>• Review user engagement</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">⚡ Quick Actions</h3>
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <button onclick="showTab('ai-costs', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-700">Manage AI Costs</span>
+                        </div>
+                    </button>
+                    
+                    <button onclick="showTab('financial', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-700">View Financial Reports</span>
+                        </div>
+                    </button>
+                    
+                    <button onclick="showTab('users', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-700">Manage Customers</span>
+                        </div>
+                    </button>
+                    
+                    <button onclick="showTab('system', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-700">System Settings</span>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -256,32 +357,35 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-                    <button onclick="showTab('overview')" class="tab-button border-b-2 border-mint-green py-4 px-1 text-sm font-medium text-mint-green" data-tab="overview">
-                        📊 Overview
+                    <button onclick="showTab('overview', event)" class="tab-button border-b-2 border-mint-green py-4 px-1 text-sm font-medium text-mint-green" data-tab="overview">
+                        📊 Business Overview
                     </button>
-                    <button onclick="showTab('users')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="users">
-                        👥 User Management
+                    <button onclick="showTab('financial', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="financial">
+                        💰 Financial Reports
                     </button>
-                    <button onclick="showTab('content')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="content">
+                    <button onclick="showTab('ai-costs', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="ai-costs">
+                        🤖 Cost Management
+                    </button>
+                    <button onclick="showTab('users', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="users">
+                        👥 Customer Management
+                    </button>
+                    <button onclick="showTab('content', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="content">
                         📝 Content & Reviews
                     </button>
-                    <button onclick="showTab('analytics')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="analytics">
-                        📈 Analytics & Reports
+                    <button onclick="showTab('analytics', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="analytics">
+                        📈 Business Analytics
                     </button>
-                    <button onclick="showTab('financial')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="financial">
-                        💰 Financial Management
-                    </button>
-                    <button onclick="showTab('system')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="system">
+                    <button onclick="showTab('system', event)" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="system">
                         ⚙️ System & Settings
                     </button>
                 </nav>
             </div>
 
-            <!-- Overview Tab -->
+            <!-- Business Overview Tab -->
             <div id="overview-tab" class="tab-content p-6">
                 <div class="mb-6">
-                    <h3 class="text-2xl font-bold text-gray-900">System Overview</h3>
-                    <p class="text-sm text-gray-500">Quick snapshot of your platform's health and performance</p>
+                    <h3 class="text-2xl font-bold text-gray-900">💰 Business Overview</h3>
+                    <p class="text-sm text-gray-500">Key business metrics and profitability insights at a glance</p>
                 </div>
                 
                 <!-- Key Metrics Grid -->
@@ -366,7 +470,7 @@
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">🚀 Quick Actions</h4>
                         <div class="space-y-3">
-                            <button onclick="showTab('users')" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <button onclick="showTab('users', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">Manage Users</span>
                                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +478,7 @@
                                     </svg>
                                 </div>
                             </button>
-                            <button onclick="showTab('content')" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <button onclick="showTab('content', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">Review Content</span>
                                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,7 +486,7 @@
                                     </svg>
                                 </div>
                             </button>
-                            <button onclick="showTab('analytics')" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                            <button onclick="showTab('analytics', event)" class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm font-medium text-gray-700">View Analytics</span>
                                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -457,62 +561,133 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Account Management Section -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-                <h4 class="text-lg font-semibold text-gray-900 mb-4">👥 Account Management</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h5 class="text-sm font-medium text-gray-900 mb-3">Account Creation Status</h5>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">New Signups:</span>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if new_accounts_enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                                    {{ 'Enabled' if new_accounts_enabled else 'Disabled' }}
-                                </span>
+                
+                <!-- Business Insights Section -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg border border-blue-200 p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-xl font-bold text-blue-900">💡 Business Insights</h4>
+                        <div class="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Profitability Analysis -->
+                        <div class="bg-white rounded-lg p-4 border border-blue-200">
+                            <h5 class="text-sm font-semibold text-blue-800 mb-3">📈 Profitability Analysis</h5>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Profit Margin:</span>
+                                    <span class="text-sm font-medium {% if current_month_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {% if total_monthly_revenue > 0 %}
+                                            {{ "%.1f"|format((current_month_profit / total_monthly_revenue) * 100) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Revenue per User:</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {% if stats.total_users > 0 %}
+                                            ${{ "%.2f"|format(total_monthly_revenue / stats.total_users) }}
+                                        {% else %}
+                                            $0.00
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Cost per User:</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {% if stats.total_users > 0 %}
+                                            ${{ "%.4f"|format(total_monthly_cost / stats.total_users) }}
+                                        {% else %}
+                                            $0.00
+                                        {% endif %}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">Total Users:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ stats.total_users }}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600">New This Week:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ stats.recent_signups }}</span>
+                        </div>
+                        
+                        <!-- Growth Metrics -->
+                        <div class="bg-white rounded-lg p-4 border border-blue-200">
+                            <h5 class="text-sm font-semibold text-blue-800 mb-3">🚀 Growth Metrics</h5>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Weekly Growth:</span>
+                                    <span class="text-sm font-medium text-green-600">+{{ stats.recent_signups }} users</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Active Users:</span>
+                                    <span class="text-sm font-medium text-gray-900">{{ stats.total_users }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">Engagement Rate:</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {% if stats.total_users > 0 %}
+                                            {{ "%.1f"|format(((system_stats.total_food_entries + system_stats.total_mood_entries) / stats.total_users) * 100) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div>
-                        <h5 class="text-sm font-medium text-gray-900 mb-3">Actions</h5>
-                        <div class="space-y-3">
-                            <button onclick="toggleAccountCreation()" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white {% if new_accounts_enabled %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    {% if new_accounts_enabled %}
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636"></path>
-                                    {% else %}
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    {% endif %}
-                                </svg>
-                                {% if new_accounts_enabled %}Disable{% else %}Enable{% endif %} New Signups
-                            </button>
-                            <p class="text-xs text-gray-500">
-                                {% if new_accounts_enabled %}
-                                Currently allowing new users to register. Click to disable.
-                                {% else %}
-                                Currently blocking new user registrations. Click to enable.
-                                {% endif %}
-                            </p>
+                    <!-- Actionable Insights -->
+                    <div class="mt-4 p-4 bg-blue-100 rounded-lg">
+                        <h6 class="text-sm font-semibold text-blue-900 mb-2">🎯 Actionable Insights</h6>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            {% if current_month_profit < 0 %}
+                                <div class="bg-red-50 p-3 rounded-lg border border-red-200">
+                                    <p class="font-medium text-red-800">⚠️ Cost Alert</p>
+                                    <p class="text-red-700 mt-1">Consider optimizing AI usage or adjusting pricing to improve profitability.</p>
+                                </div>
+                            {% else %}
+                                <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                    <p class="font-medium text-green-800">✅ Profitable</p>
+                                    <p class="text-green-700 mt-1">Business is profitable! Focus on scaling and customer acquisition.</p>
+                                </div>
+                            {% endif %}
+                            
+                            {% if stats.recent_signups > 0 %}
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                    <p class="font-medium text-blue-800">📈 Growth</p>
+                                    <p class="text-blue-700 mt-1">New users joining weekly. Consider retention strategies.</p>
+                                </div>
+                            {% else %}
+                                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                    <p class="font-medium text-yellow-800">📊 Monitor</p>
+                                    <p class="text-yellow-700 mt-1">No new users this week. Review marketing and onboarding.</p>
+                                </div>
+                            {% endif %}
+                            
+                            {% if total_monthly_cost > total_monthly_revenue * 0.5 %}
+                                <div class="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                                    <p class="font-medium text-orange-800">💰 Cost Management</p>
+                                    <p class="text-orange-700 mt-1">AI costs are high relative to revenue. Review usage patterns.</p>
+                                </div>
+                            {% else %}
+                                <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                    <p class="font-medium text-green-800">✅ Efficient</p>
+                                    <p class="text-green-700 mt-1">Cost structure is healthy. Good profit margins maintained.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
+            
 
-            <!-- Users Tab -->
-            <div id="users-tab" class="tab-content p-6">
+
+            <!-- Customer Management Tab -->
+            <div id="users-tab" class="tab-content p-6 hidden">
                 <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">User Management</h3>
-                    <p class="text-sm text-gray-500">Manage user accounts, permissions, and status (showing top 5 recently active users)</p>
+                    <h3 class="text-lg font-semibold text-gray-900">👥 Customer Management</h3>
+                    <p class="text-sm text-gray-500">Manage customer accounts, track engagement, and monitor business relationships</p>
                 </div>
                 
                 <!-- Search Bar -->
@@ -756,6 +931,133 @@
                 {% endif %}
             </div>
 
+            <!-- AI Costs & Usage Tab -->
+            <div id="ai-costs-tab" class="tab-content p-6 hidden">
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold text-gray-900">AI Costs & Usage</h3>
+                    <p class="text-sm text-gray-500">Monitor AI token usage, costs, and performance metrics</p>
+                </div>
+                
+                <!-- Monthly Token Usage Overview -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-gray-900">Monthly Token Usage</h4>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if openai_enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if openai_enabled %}OpenAI Active{% else %}OpenAI Disabled{% endif %}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-gray-900">{{ total_monthly_tokens | default(0) | int }}</p>
+                            <p class="text-sm text-gray-500">Tokens Used</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-red-600">${{ "%.4f"|format(total_monthly_cost | default(0)) }}</p>
+                            <p class="text-sm text-gray-500">Total Cost</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold text-gray-900">{{ monthly_token_usage | length | default(0) }}</p>
+                            <p class="text-sm text-gray-500">Active Users</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Token Usage by User -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Token Usage by User</h4>
+                    {% if monthly_token_usage %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Input Tokens</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Output Tokens</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Tokens</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for usage in monthly_token_usage %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ usage.user.username if usage.user else 'Unknown User' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ usage.input_tokens | default(0) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ usage.output_tokens | default(0) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ usage.total_tokens | default(0) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${{ "%.4f"|format(usage.cost_usd | default(0)) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ usage.model_used | default('Unknown') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No token usage data</h3>
+                        <p class="mt-1 text-sm text-gray-500">No AI token usage recorded for this month.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Cost Breakdown -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Cost Breakdown</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-900 mb-3">Current Month Summary</h5>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Total Tokens:</span>
+                                    <span class="text-sm font-medium text-gray-900">{{ total_monthly_tokens | default(0) | int }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Total Cost:</span>
+                                    <span class="text-sm font-medium text-red-600">${{ "%.4f"|format(total_monthly_cost | default(0)) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Active Users:</span>
+                                    <span class="text-sm font-medium text-gray-900">{{ monthly_token_usage | length | default(0) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Average Cost/User:</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        ${{ "%.4f"|format((total_monthly_cost / monthly_token_usage|length) if monthly_token_usage|length > 0 else 0) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-900 mb-3">Current Model Costs</h5>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Model:</span>
+                                    <span class="text-sm font-medium text-gray-900">{{ current_gpt_model | default('gpt-3.5-turbo') }}</span>
+                                </div>
+                                {% if current_model_costs %}
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Input Cost:</span>
+                                    <span class="text-sm font-medium text-gray-900">${{ "%.2f"|format(current_model_costs.input_cost_per_1m) }}/1M tokens</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-600">Output Cost:</span>
+                                    <span class="text-sm font-medium text-gray-900">${{ "%.2f"|format(current_model_costs.output_cost_per_1m) }}/1M tokens</span>
+                                </div>
+                                {% else %}
+                                <div class="text-sm text-gray-500">Cost information not available</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- System & Settings Tab -->
             <div id="system-tab" class="tab-content p-6 hidden">
                 <div class="mb-6">
@@ -853,6 +1155,61 @@
                                         Currently allowing new users to register. Click to disable.
                                         {% else %}
                                         Currently blocking new user registrations. Click to enable.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Testing Mode -->
+                <div class="mt-8">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">💳 Payment Testing Mode</h4>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-900 mb-3">Current Environment</h5>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Payment Mode:</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if payment_testing_mode %}bg-yellow-100 text-yellow-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                            {{ 'Sandbox (Testing)' if payment_testing_mode else 'Live (Production)' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Stripe Keys:</span>
+                                        <span class="text-sm font-medium {% if payment_testing_mode %}text-yellow-600{% else %}text-green-600{% endif %}">
+                                            {{ 'Test Keys' if payment_testing_mode else 'Live Keys' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Webhook:</span>
+                                        <span class="text-sm font-medium {% if payment_testing_mode %}text-yellow-600{% else %}text-green-600{% endif %}">
+                                            {{ 'Test Endpoint' if payment_testing_mode else 'Live Endpoint' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h5 class="text-sm font-medium text-gray-900 mb-3">Actions</h5>
+                                <div class="space-y-3">
+                                    <button onclick="togglePaymentTesting()" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white {% if payment_testing_mode %}bg-green-600 hover:bg-green-700{% else %}bg-yellow-600 hover:bg-yellow-700{% endif %} focus:outline-none focus:ring-2 focus:ring-offset-2 {% if payment_testing_mode %}focus:ring-green-500{% else %}focus:ring-yellow-500{% endif %}">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {% if payment_testing_mode %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            {% else %}
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            {% endif %}
+                                        </svg>
+                                        {% if payment_testing_mode %}Switch to Live{% else %}Switch to Sandbox{% endif %}
+                                    </button>
+                                    <p class="text-xs text-gray-500">
+                                        {% if payment_testing_mode %}
+                                        Currently using Stripe sandbox for testing. Click to switch to live payments.
+                                        {% else %}
+                                        Currently using Stripe live environment. Click to switch to sandbox for testing.
                                         {% endif %}
                                     </p>
                                 </div>
@@ -1109,10 +1466,9 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Analytics & Reports Tab -->
-        <div id="analytics-tab" class="tab-content p-6 hidden">
+            <!-- Analytics & Reports Tab -->
+            <div id="analytics-tab" class="tab-content p-6 hidden">
             <div class="mb-6">
                 <h3 class="text-2xl font-bold text-gray-900">Analytics & Reports</h3>
                 <p class="text-sm text-gray-500">Comprehensive analytics for user behavior, content engagement, and system performance</p>
@@ -1140,46 +1496,7 @@
                 </div>
             </div>
             
-            <!-- Content Analytics -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h4 class="text-lg font-semibold text-gray-900 mb-4">📊 Content Analytics</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h5 class="text-sm font-medium text-gray-700 mb-2">Content Distribution</h5>
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Food Journal Entries:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ system_stats.total_food_entries }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Mood Entries:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ system_stats.total_mood_entries }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Active Reminders:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ system_stats.active_reminders }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h5 class="text-sm font-medium text-gray-700 mb-2">Review Status</h5>
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Pending Reviews:</span>
-                                <span class="text-sm font-medium text-yellow-600">{{ system_stats.pending_reviews }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Approved Reviews:</span>
-                                <span class="text-sm font-medium text-green-600">{{ system_stats.approved_reviews }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm text-gray-600">Total Reviews:</span>
-                                <span class="text-sm font-medium text-gray-900">{{ system_stats.total_reviews }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
             
             <!-- Token Usage Analytics -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -1251,41 +1568,11 @@
                 </div>
             </div>
             
-            <!-- Manual Token Usage Update -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h4 class="text-lg font-semibold text-gray-900 mb-4">Manual Token Usage Update</h4>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                        <input type="number" id="manual-user-id" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="User ID">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                        <input type="month" id="manual-month" value="{{ datetime.utcnow().strftime('%Y-%m') }}" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tokens Used</label>
-                        <input type="number" id="manual-tokens" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Token count">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                        <select id="manual-model" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                            {% for cost in api_costs %}
-                            <option value="{{ cost.model_name }}">{{ cost.model_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <button onclick="updateManualTokenUsage()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-mint-green hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        Update Token Usage
-                    </button>
-                </div>
-            </div>
-        </div>
 
-        <!-- Financial Management Tab -->
-        <div id="financial-tab" class="tab-content p-6 hidden">
+            </div>
+
+            <!-- Financial Management Tab -->
+            <div id="financial-tab" class="tab-content p-6 hidden">
             <div class="mb-4">
                 <h3 class="text-2xl font-bold text-gray-900">Financial Management</h3>
                 <p class="text-sm text-gray-500">Manage costs, track profits, and monitor financial performance</p>
@@ -1440,7 +1727,7 @@
         document.addEventListener('DOMContentLoaded', checkVerificationStatus);
         
         // Tab functionality
-        function showTab(tabName) {
+        function showTab(tabName, event = null) {
             // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
@@ -1453,11 +1740,23 @@
             });
             
             // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            const tabContent = document.getElementById(tabName + '-tab');
+            if (tabContent) {
+                tabContent.classList.remove('hidden');
+            }
             
-            // Activate selected tab button
-            event.target.classList.remove('border-transparent', 'text-gray-500');
-            event.target.classList.add('border-mint-green', 'text-mint-green');
+            // Activate selected tab button if event is provided
+            if (event && event.target) {
+                event.target.classList.remove('border-transparent', 'text-gray-500');
+                event.target.classList.add('border-mint-green', 'text-mint-green');
+            } else {
+                // Find the button by data-tab attribute and activate it
+                const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+                if (tabButton) {
+                    tabButton.classList.remove('border-transparent', 'text-gray-500');
+                    tabButton.classList.add('border-mint-green', 'text-mint-green');
+                }
+            }
         }
 
         // Account creation toggle function
@@ -1466,6 +1765,30 @@
                 const response = await fetch('/admin/system/toggle-account-creation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    location.reload(); // Refresh to show updated status
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Payment testing mode toggle function
+        async function togglePaymentTesting() {
+            try {
+                const currentMode = {{ 'true' if payment_testing_mode else 'false' }};
+                const newMode = !currentMode;
+                
+                const response = await fetch('/admin/system/toggle-payment-testing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enable_testing: newMode })
                 });
                 const data = await response.json();
                 
@@ -1679,37 +2002,7 @@
             }
         }
 
-        // Account creation toggle
-        async function toggleAccountCreation() {
-            const currentState = '{{ new_accounts_enabled }}' === 'True';
-            const newState = !currentState;
-            const actionText = newState ? 'enable' : 'disable';
-            const confirmMessage = `Are you sure you want to ${actionText} new account creation?`;
-            
-            if (!confirm(confirmMessage)) return;
-            
-            try {
-                const response = await fetch('/admin/system/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        key: 'new_accounts_enabled', 
-                        value: newState.toString(),
-                        description: 'Allow new user registrations'
-                    })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`Account creation ${actionText}d successfully!`);
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
+
 
         // Token usage analytics
         async function loadTokenUsage() {
@@ -1850,43 +2143,7 @@
             }
         }
 
-        // Update manual token usage
-        async function updateManualTokenUsage() {
-            const userId = document.getElementById('manual-user-id').value;
-            const month = document.getElementById('manual-month').value;
-            const tokens = document.getElementById('manual-tokens').value;
-            const model = document.getElementById('manual-model').value;
-            
-            if (!userId || !month || !tokens || !model) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/admin/accounting/update-token-usage', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: parseInt(userId),
-                        month: month,
-                        tokens_used: parseInt(tokens),
-                        model_used: model
-                    })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(data.message);
-                    // Clear fields
-                    document.getElementById('manual-user-id').value = '';
-                    document.getElementById('manual-tokens').value = '';
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
+
 
         // Add new AI model
         async function addNewModel() {

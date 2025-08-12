@@ -1,55 +1,48 @@
-# 📚 Documentation
+# Ki Wellness Documentation
 
-This directory contains documentation for the KI Wellness application.
+This directory contains all documentation for the Ki Wellness application.
 
-## 📁 Structure
+## Directory Structure
 
-```
-docs/
-├── README.md           # This file - documentation overview
-└── private/           # 🔒 Private documentation (not in version control)
-    ├── README.md      # Private docs explanation
-    ├── ADMIN_ACCOUNT_SETUP.md    # Admin account setup (sensitive)
-    └── SECURITY_REVIEW.md        # Security review (sensitive)
-```
+### `/setup/` - Setup and Configuration Guides
+- **RECAPTCHA_SETUP.md** - Google reCAPTCHA v3 integration setup
+- **STRIPE_SETUP.md** - Stripe payment integration setup
+- **VENV_SETUP.md** - Virtual environment setup guide
 
-## 🔒 Private Documentation
+### `/development/` - Development and Debugging Documentation
+- **CLEANUP_SUMMARY.md** - Summary of codebase cleanup activities
+- **DATABASE_CLEANUP_SUMMARY.md** - Database cleanup and migration summary
+- **DATABASE_CONFIG.md** - Database configuration and setup
+- **DEPENDENCY_REVIEW.md** - Python dependencies review and management
+- **TURNSTILE_DEBUG_SUMMARY.md** - Cloudflare Turnstile debugging (legacy)
+- **USERNAME_VALIDATION.md** - Username validation rules and implementation
 
-The `private/` directory contains sensitive documentation that is **NOT** committed to version control. This includes:
+### `/private/` - Private Documentation (Gitignored)
+- **ADMIN_ACCOUNT_SETUP.md** - Admin account setup procedures
+- **SECURITY_REVIEW.md** - Security audit and review documentation
+- **README.md** - Private documentation index
 
-- Admin account setup and configuration
-- Security reviews and assessments
-- Internal system details
-- Sensitive operational procedures
+## Quick Links
 
-### Accessing Private Documentation
+### For New Developers
+1. Start with `/setup/VENV_SETUP.md` for environment setup
+2. Review `/setup/STRIPE_SETUP.md` for payment integration
+3. Check `/setup/RECAPTCHA_SETUP.md` for security setup
 
-Private documentation is stored locally and should be:
-- Accessed only by authorized personnel
-- Not shared publicly
-- Protected from unauthorized access
-- Used for internal reference only
+### For Database Management
+1. Review `/development/DATABASE_CONFIG.md` for configuration
+2. Check `/development/DATABASE_CLEANUP_SUMMARY.md` for recent changes
+3. See `/development/CLEANUP_SUMMARY.md` for overall cleanup status
 
-## 📝 Public Documentation
+### For Troubleshooting
+1. Check `/development/TURNSTILE_DEBUG_SUMMARY.md` for security issues
+2. Review `/development/USERNAME_VALIDATION.md` for validation problems
+3. See `/development/DEPENDENCY_REVIEW.md` for dependency issues
 
-Public documentation is stored in the root directory and includes:
+## Contributing
 
-- `USERNAME_VALIDATION.md` - Username validation implementation
-- `DEPENDENCY_REVIEW.md` - Dependency analysis and review
-- `VENV_SETUP.md` - Virtual environment setup
-- `RECAPTCHA_SETUP.md` - reCAPTCHA configuration
-- `README.md` - Main project documentation
-
-## 🔐 Security
-
-- Private documentation is excluded from version control via `.gitignore`
-- Sensitive information is stored securely
-- Access control is maintained for private docs
-- Security best practices are followed
-
-## 📋 Usage
-
-1. **Public docs**: Available to all project contributors
-2. **Private docs**: Internal use only, not in version control
-3. **Security**: Follow security guidelines for sensitive information
-4. **Maintenance**: Keep documentation updated and secure
+When adding new documentation:
+- Place setup guides in `/setup/`
+- Place development/debugging docs in `/development/`
+- Place sensitive information in `/private/`
+- Update this README.md to reflect changes

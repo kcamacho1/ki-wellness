@@ -38,6 +38,16 @@ class Config:
     RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY')
     RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
     
+    # Stripe Configuration
+    STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+    STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+    
+    # Stripe Sandbox Configuration
+    STRIPE_SANDBOX_PUBLISHABLE_KEY = os.getenv('STRIPE_SANDBOX_PUBLISHABLE_KEY')
+    STRIPE_SANDBOX_SECRET_KEY = os.getenv('STRIPE_SANDBOX_SECRET_KEY')
+    STRIPE_SANDBOX_WEBHOOK_SECRET = os.getenv('STRIPE_SANDBOX_WEBHOOK_SECRET')
+    
     # Auto-detect environment and configure reCAPTCHA
     @property
     def RECAPTCHA_ENABLED(self):
