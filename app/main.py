@@ -3162,6 +3162,7 @@ def change_password():
 
 # Food Journal Routes
 @app.route('/food-journal/search', methods=['POST'])
+@limiter.limit("30 per minute")
 @login_required
 def search_food():
     try:
@@ -3262,6 +3263,7 @@ def search_food():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/food-journal/add', methods=['POST'])
+@limiter.limit("20 per minute")
 @login_required
 def add_food_entry():
     try:
@@ -3378,6 +3380,7 @@ def get_food_entries():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/food-journal/delete', methods=['POST'])
+@limiter.limit("10 per minute")
 @login_required
 def delete_food_entries():
     """
