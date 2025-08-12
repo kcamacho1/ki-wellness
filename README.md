@@ -1,84 +1,94 @@
-# KI Wellness - Food Journal & Profile Management System
+# Ki Wellness - Your Personal AI Health Coach
 
-A comprehensive wellness application built with Python Flask, featuring a user profile management system and an advanced food journal with nutritional tracking capabilities.
+A simple, safe, and affordable wellness application built by someone who understands your journey. Get personalized guidance from AI and human coaches to track your health, nutrition, and wellness goals.
 
-## 🌟 Features
+## 🌟 What Makes Ki Wellness Different
 
-### Profile Management
-- **User Profile**: Complete profile with personal details, health metrics, and wellness goals
-- **Avatar Selection**: Choose from multiple avatar options with a modal interface
-- **Age Calculation**: Automatic age calculation based on date of birth
-- **Weight Units**: Support for both kg and lbs with unit conversion
-- **Auto-save**: Real-time form saving with user-friendly feedback
+### 🤖 **AI Health Coach**
+- **Personalized AI Guidance**: Get intelligent insights and recommendations from your AI Health Coach
+- **Pay Only for What You Use**: Buy AI sessions as you need them, no subscriptions required
+- **Evidence-Based Data**: All recommendations based on reputable sources (ISSA, NIH, PubMed, PhD research)
 
-### Food Journal System
-- **Nutritional Search**: Search for foods using Open Food Facts and USDA APIs
-- **Food Cache**: Intelligent caching system to avoid repeated API calls
-- **Serving Size Conversion**: Automatic nutritional data conversion based on user's serving size and units
-- **Mood Tracking**: Track emotional state with each food entry
-- **Notes System**: Add personal observations and notes to entries
-- **7-Day View**: Display only the last 7 days of entries for focused tracking
-- **Bulk Operations**: Select and delete multiple entries at once
-- **CSV Import/Export**: Full data portability with CSV file support
+### 👩‍💼 **Built by Someone Who Understands**
+- **Founder's Story**: Created by Kristina, who needed simple wellness tracking herself
+- **Expert Background**: Software development, project management, nutrition, and personal training
+- **Mission-Driven**: Your donations fund health awareness, keep the app affordable, and support education
 
-## 🏗️ Architecture
+### 🛡️ **Safe & Affordable**
+- **Free to Try**: Start your wellness journey completely free
+- **No Hidden Fees**: Transparent pricing, no pressure
+- **Human Coach Available**: Get personalized guidance from a real coach (donation-based)
+
+## 🚀 Key Features
+
+### AI Health Coach
+- **Personalized Insights**: Get AI-powered analysis of your nutrition and mood patterns
+- **Smart Recommendations**: Receive customized guidance based on your unique data
+- **Session-Based Pricing**: Buy AI coaching sessions as you need them
+
+### Human Coach Support
+- **Real Coach Guidance**: Connect with a certified human coach
+- **Donation-Based Pricing**: Accessible to everyone regardless of budget
+- **Personalized Support**: Get one-on-one guidance for your specific needs
+
+### Simple Wellness Tracking
+- **Food Journal**: Easy meal tracking with nutritional information
+- **Mood Tracking**: Monitor your emotional state and wellness patterns
+- **Dashboard Insights**: Clear overview of your wellness journey
+- **Mobile Friendly**: Access your data anywhere, anytime
+
+### Evidence-Based Approach
+- **Reputable Sources**: Data from ISSA, NIH, PubMed, and peer-reviewed research
+- **Scientific Backing**: All recommendations based on credible health research
+- **Transparent Methods**: Clear explanation of data sources and methodologies
+
+## 🏗️ Technical Architecture
 
 ### Backend Stack
-- **Python 3.11.8**: Core application language
-- **Flask 3.1.1**: Web framework
-- **SQLAlchemy 2.0.41**: ORM for database operations
+- **Python 3.11+**: Core application language
+- **Flask 3.1.1**: Lightweight web framework
+- **SQLAlchemy 2.0.41**: Database ORM
 - **PostgreSQL**: Primary database
-- **psycopg2-binary**: PostgreSQL adapter
-- **requests**: HTTP client for API integrations
+- **Stripe**: Payment processing for AI sessions
+- **OpenAI API**: AI coaching capabilities
 
 ### Frontend Stack
-- **TailwindCSS**: Utility-first CSS framework
-- **JavaScript (ES6+)**: Frontend interactivity
+- **TailwindCSS**: Modern, utility-first styling
+- **JavaScript (ES6+)**: Interactive features
 - **HTML5**: Semantic markup
 - **Jinja2**: Template engine
 
-### External APIs
-- **Open Food Facts**: Global food database
-- **USDA FoodData Central**: Comprehensive nutritional database
+### Security & Privacy
+- **Enterprise-Grade Security**: Your data is protected
+- **Privacy First**: Your wellness journey stays private
+- **Secure Payments**: Stripe-powered payment processing
+- **Data Encryption**: All sensitive data is encrypted
 
 ## 📊 Database Schema
 
-### User Profiles (`user_profiles`)
-```sql
-- id (Primary Key)
-- name, date_of_birth, age
-- weight, height, weight_unit
-- goals, ailments, daily_activities, day_notes
-- sleep_schedule, night_notes, dietary_preferences
-- avatar, created_at, updated_at
-```
+### Core Tables
+- **Users**: User accounts and authentication
+- **User Profiles**: Personal details, health metrics, goals
+- **Food Journal**: Meal tracking and nutritional data
+- **Mood Entries**: Emotional state tracking
+- **AI Usage Sessions**: AI coaching session tracking
+- **Session Credits**: AI session credit management
+- **User Subscriptions**: Subscription management
+- **System Settings**: Application configuration
 
-### Food Cache (`food_cache`)
-```sql
-- id (Primary Key)
-- food_name, brand
-- serving_size, serving_unit
-- calories, protein, carbs, fat, fiber, sugar, sodium
-- source (openfoodfacts/usda/manual)
-- created_at
-```
+### Payment & Billing
+- **Stripe Integration**: Secure payment processing
+- **Session Credits**: Pay-per-use AI coaching
+- **Donation System**: Human coach accessibility
+- **Subscription Management**: Flexible billing options
 
-### Food Journal (`food_journal`)
-```sql
-- id (Primary Key)
-- user_id (Foreign Key to user_profiles)
-- food_name, brand, serving_size, serving_unit
-- calories, protein, carbs, fat, fiber, sugar, sodium
-- mood, notes
-- consumed_at, created_at
-```
-
-## 🚀 Installation & Setup
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11.8+
+- Python 3.11+
 - PostgreSQL 12+
-- pip (Python package manager)
+- Stripe account (for payments)
+- OpenAI API key (for AI features)
 
 ### 1. Clone Repository
 ```bash
@@ -100,96 +110,78 @@ pip install -r requirements.txt
 ### 4. Configure Environment
 Create a `.env` file in the project root:
 ```env
+# Application
 SECRET_KEY=[YOUR_SECRET_KEY]
+FLASK_ENV=development
+
+# Database
 DATABASE_URL=postgresql://postgres:[PASSWORD]@localhost/ki_wellness
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=[YOUR_PASSWORD]
 POSTGRES_DB=ki_wellness
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
+
+# Stripe (Live)
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Stripe (Sandbox)
+STRIPE_SANDBOX_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SANDBOX_SECRET_KEY=sk_test_...
+STRIPE_SANDBOX_WEBHOOK_SECRET=whsec_...
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Google reCAPTCHA
+RECAPTCHA_SITE_KEY=...
+RECAPTCHA_SECRET_KEY=...
 ```
 
-### 5. Set Up Database
-```bash
-# Initialize database and tables
-python init_db.py
-
-# Run migrations for new features
-python migrate_food_cache.py
-python migrate_food_journal.py
-```
-
-### 6. Start Application
+### 5. Initialize Database
 ```bash
 python run.py
 ```
 
 The application will be available at `http://localhost:5000`
 
-## 📡 API Endpoints
+## 🎯 Core Features
 
-### Profile Management
-- `GET /profile` - Profile page
-- `POST /profile/save` - Save profile data
-- `GET /profile/data` - Get profile data
+### AI Health Coach
+- **Chat Interface**: Direct conversation with your AI coach
+- **Nutritional Analysis**: AI-powered food recommendations
+- **Mood Insights**: Pattern recognition and emotional wellness guidance
+- **Goal Setting**: Personalized goal creation and tracking
+- **Progress Monitoring**: AI-driven progress analysis
 
-### Food Journal
-- `GET /food-journal` - Food journal page
-- `POST /food-journal/search` - Search for nutritional information
-- `POST /food-journal/add` - Add food entry
-- `GET /food-journal/entries` - Get last 7 days of entries
-- `POST /food-journal/delete` - Delete selected entries
-- `GET /food-journal/export` - Export to CSV
-- `POST /food-journal/import` - Import from CSV
+### Human Coach Integration
+- **Coach Matching**: Connect with certified wellness coaches
+- **Donation System**: Flexible pricing based on your budget
+- **Scheduling**: Easy appointment booking
+- **Follow-up Support**: Ongoing guidance and accountability
 
-### Static Files
-- `GET /favicon.ico` - Application favicon
-- `GET /avatars/<filename>` - Avatar images
-
-## 🍎 Food Journal Features
-
-### Nutritional Search
-1. **Enter Food Name**: Type the name of the food item
-2. **Set Serving Size**: Specify amount and unit (g, oz, cup, tbsp, tsp, piece, slice, ml)
-3. **Search APIs**: System searches Open Food Facts first, then USDA
-4. **Cache Results**: Found nutritional data is cached for future use
-5. **Convert Data**: Nutritional values are automatically converted to user's serving size
-
-### Supported Units
-- **Weight**: grams (g), ounces (oz), pounds (lb), kilograms (kg)
-- **Volume**: cups, tablespoons (tbsp), teaspoons (tsp), milliliters (ml), liters (l)
-- **Count**: piece, slice
-
-### Mood Tracking
-Track your emotional state with each food entry:
-- 😊 Happy
-- 😌 Calm
-- 😴 Tired
-- 😤 Stressed
-- 😋 Satisfied
-- 😐 Neutral
-- 😔 Sad
-- 🤢 Sick
-
-### Data Management
-- **7-Day View**: Only shows entries from the last 7 days
-- **Bulk Delete**: Select multiple entries and delete them at once
-- **CSV Export**: Download your food journal as a CSV file
-- **CSV Import**: Import food entries from a CSV file
+### Wellness Tracking
+- **Food Journal**: Simple meal logging with nutritional data
+- **Mood Tracking**: Daily emotional state monitoring
+- **Sleep Tracking**: Sleep quality and patterns
+- **Activity Logging**: Exercise and movement tracking
+- **Goal Progress**: Visual progress tracking
 
 ## 🧪 Testing
 
 Run the comprehensive test suite:
 ```bash
-python test_food_journal.py
-```
+# Test admin dashboard functionality
+python tests/test_admin_tabs.py
 
-This will test:
-- ✅ Food search functionality
-- ✅ Adding food entries
-- ✅ Retrieving entries
-- ✅ CSV export
-- ✅ Bulk deletion
+# Test username validation
+python tests/test_username_validation.py
+
+# Test other features
+python tests/test_*.py
+```
 
 ## 🔧 Development
 
@@ -197,54 +189,83 @@ This will test:
 ```
 ki_wellness/
 ├── app/
-│   ├── main.py              # Flask application
-│   ├── templates/
-│   │   ├── profile.html     # Profile page
-│   │   └── food_journal.html # Food journal page
+│   ├── main.py              # Flask application & routes
+│   ├── templates/           # HTML templates
+│   │   ├── landing.html     # Homepage
+│   │   ├── dashboard.html   # User dashboard
+│   │   ├── ai_self_health.html # AI coaching interface
+│   │   ├── coaching.html    # Human coaching
+│   │   ├── food_journal.html # Food tracking
+│   │   ├── profile.html     # User profile
+│   │   ├── settings.html    # User settings
+│   │   └── admin_dashboard.html # Admin panel
 │   └── static/              # Static assets
-├── config.py                # Configuration
-├── requirements.txt         # Dependencies
-├── run.py                  # Application runner
-├── init_db.py              # Database initialization
-├── migrate_*.py            # Database migrations
-└── test_*.py               # Test scripts
+├── tests/                   # Test suite
+├── docs/                    # Documentation
+│   ├── setup/              # Setup guides
+│   ├── development/        # Development docs
+│   └── private/           # Private documentation
+├── cleanup_backup/         # Migration scripts
+├── config.py              # Configuration
+├── requirements.txt       # Dependencies
+└── run.py                # Application runner
 ```
 
-### Adding New Features
-1. **Database Changes**: Create migration scripts
-2. **Backend Logic**: Add routes in `app/main.py`
-3. **Frontend**: Update templates and JavaScript
-4. **Testing**: Add comprehensive tests
-
-### API Integration
-The system integrates with external APIs for nutritional data:
-- **Open Food Facts**: Free, open database of food products
-- **USDA FoodData Central**: Comprehensive nutritional database
+### Key Components
+- **AI Coaching Engine**: OpenAI-powered health guidance
+- **Payment System**: Stripe integration for session credits
+- **Admin Dashboard**: Business management and monitoring
+- **User Management**: Authentication and profile system
+- **Data Analytics**: Wellness pattern analysis
 
 ## 🚀 Deployment
 
-### Production Setup
-1. **Environment Variables**: Set production environment variables
-2. **Database**: Use production PostgreSQL instance
-3. **Web Server**: Deploy with Gunicorn or similar
-4. **Static Files**: Serve with Nginx or CDN
+### Render Deployment
+The application is configured for deployment on Render:
 
-### Docker Support
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 5000
-CMD ["python", "run.py"]
-```
+1. **Connect Repository**: Link your GitHub repository
+2. **Environment Variables**: Set all required environment variables
+3. **Build Command**: `pip install -r requirements.txt`
+4. **Start Command**: `python run.py`
 
-## 📝 License
+### Environment Configuration
+- **Production Database**: PostgreSQL on Render
+- **Payment Processing**: Stripe live keys
+- **AI Services**: OpenAI API
+- **Security**: reCAPTCHA protection
 
-This project is licensed under the MIT License.
+## 💰 Pricing Model
+
+### AI Health Coach
+- **Free Trial**: Start with free features
+- **Session Credits**: $1 per AI coaching session
+- **Custom Quantities**: Buy as many sessions as you need
+- **No Subscriptions**: Pay only for what you use
+
+### Human Coach
+- **Donation-Based**: Pay what you can afford
+- **Flexible Pricing**: No set rates
+- **Accessible**: Available to everyone
+- **Certified Coaches**: Qualified wellness professionals
+
+## 📈 Business Dashboard
+
+### Admin Features
+- **Financial Tracking**: Revenue, costs, and profit monitoring
+- **User Analytics**: User growth and engagement metrics
+- **AI Cost Management**: Token usage and cost optimization
+- **System Settings**: Application configuration
+- **Emergency Controls**: Quick system management
+
+### Key Metrics
+- **Monthly Revenue**: Track income from AI sessions
+- **Monthly Costs**: Monitor AI API costs and expenses
+- **Customer Growth**: User acquisition and retention
+- **Profitability**: Real-time profit/loss analysis
 
 ## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
 
 1. Fork the repository
 2. Create a feature branch
@@ -254,8 +275,25 @@ This project is licensed under the MIT License.
 
 ## 📞 Support
 
-For questions or issues, please open an issue on the repository.
+- **Email**: Contact through the application
+- **Documentation**: Check `/docs` for detailed guides
+- **Issues**: Report bugs on GitHub
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- **ISSA**: International Sports Sciences Association
+- **NIH**: National Institutes of Health
+- **PubMed**: Medical research database
+- **OpenAI**: AI coaching capabilities
+- **Stripe**: Payment processing
+- **Our Community**: Users who share their wellness journeys
 
 ---
 
-**Built with ❤️ using Flask, PostgreSQL, and TailwindCSS**
+**Built with ❤️ by Kristina - A developer who understands your wellness journey**
+
+*"Wellness doesn't have to be complicated or expensive. It should be simple, safe, and accessible to everyone."*
