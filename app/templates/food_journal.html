@@ -475,6 +475,7 @@
                                 <label for="servingUnit" class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
                                 <select id="servingUnit" name="servingUnit" required
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent">
+                                    <option value="serving">serving</option>
                                     <option value="g">g</option>
                                     <option value="oz">oz</option>
                                     <option value="cup">cup</option>
@@ -560,9 +561,11 @@
                             ← Back
                         </button>
                         <button type="button" id="proceedToStep3Btn" 
-                                class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                                class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200"
+                                onclick="console.log('Continue button clicked!');">
                             Continue →
                         </button>
+
                     </div>
                 </div>
                 
@@ -584,7 +587,12 @@
                     <!-- Nutritional Information Display -->
                     <div id="nutritionInfo" class="hidden">
                         <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                            <h5 class="text-md font-medium text-forest-green mb-3">Nutritional Information</h5>
+                            <div class="flex justify-between items-center mb-3">
+                                <h5 class="text-md font-medium text-forest-green">Nutritional Information</h5>
+                                <div id="dataSource" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                    <!-- Data source will be displayed here -->
+                                </div>
+                            </div>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div class="bg-gray-50 p-3 rounded-md">
                                     <div class="text-sm text-gray-600">Calories</div>
@@ -627,54 +635,13 @@
                             ← Back
                         </button>
                         <button type="button" id="addFoodBtn" 
-                                class="px-8 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium text-lg">
+                                class="px-8 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium text-lg"
+                                onclick="console.log('Save button clicked!');">
                             🌱 Add to Journal
                         </button>
                     </div>
                 </div>
             </form>
-            
-            <!-- Nutritional Information Display -->
-            <div id="nutritionInfo" class="mt-6 hidden">
-                <div class="flex justify-between items-center mb-3">
-                    <h4 class="text-lg font-medium text-gray-900">Nutritional Information</h4>
-                    <div id="dataSource" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        <!-- Data source will be displayed here -->
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Calories</div>
-                        <div id="calories" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Protein (g)</div>
-                        <div id="protein" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Carbs (g)</div>
-                        <div id="carbs" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Fat (g)</div>
-                        <div id="fat" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Fiber (g)</div>
-                        <div id="fiber" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Sugar (g)</div>
-                        <div id="sugar" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-md">
-                        <div class="text-sm text-gray-600">Sodium (mg)</div>
-                        <div id="sodium" class="text-lg font-semibold text-gray-900">-</div>
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div>
@@ -741,26 +708,9 @@
                         <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-8">Notes</th>
                     </tr>
                 </thead>
-                <tbody id="foodJournalTable" class="bg-white divide-y divide-gray-200">
-                    <!-- Table rows will be populated by JavaScript -->
-                    <!-- Debug row to ensure table is visible -->
-                    <tr class="bg-gray-50">
-                        <td class="px-2 py-3 text-sm text-gray-900">
-                            <input type="checkbox" class="rounded border-gray-300 text-mint-green focus:ring-mint-green">
-                        </td>
-                        <td class="px-2 py-3 text-sm text-gray-900">2025-08-12</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">Breakfast</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">Sample Food</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">100g</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">250ml</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">150</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">12g</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">25g</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">5g</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">😊</td>
-                        <td class="px-2 py-3 text-sm text-gray-900">Sample note</td>
-                    </tr>
-                </tbody>
+                                    <tbody id="foodJournalTable" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
             </table>
         </div>
     </div>
@@ -851,6 +801,14 @@
             console.log('Add food button:', document.getElementById('showAddFormBtn'));
             console.log('Form container:', document.getElementById('foodEntryFormContainer'));
             console.log('Table container:', document.querySelector('.bg-white.rounded-lg.shadow-md.overflow-hidden.border.border-soft-green'));
+            
+            // Test table structure
+            const tableBody = document.getElementById('foodJournalTable');
+            console.log('Table body on page load:', tableBody);
+            if (tableBody) {
+                console.log('Table body parent:', tableBody.parentElement);
+                console.log('Table body parent parent:', tableBody.parentElement ? tableBody.parentElement.parentElement : 'No parent');
+            }
             
             initializeDateRange();
             loadFoodJournal();
@@ -1144,7 +1102,7 @@
             
             if (!barcode) {
                 console.log('No barcode value found');
-                alert('Please enter a barcode');
+                showModal('Please enter a barcode', 'Barcode Required');
                 return;
             }
             
@@ -1156,8 +1114,8 @@
                     },
                     body: JSON.stringify({
                         barcode: barcode,
-                        serving_size: 100,
-                        serving_unit: 'g'
+                        serving_size: 1, // Default to 1 serving instead of 100g
+                        serving_unit: 'serving' // Use 'serving' as default unit
                     })
                 });
                 
@@ -1168,11 +1126,11 @@
                     // Proceed to step 2 with the found food data
                     proceedToStep2(data.data);
                 } else {
-                    alert('Product not found. Please try a different barcode or search by name.');
+                    showModal('Product not found. Please try a different barcode or search by name.', 'Product Not Found');
                 }
             } catch (error) {
                 console.error('Error searching barcode:', error);
-                alert('Error searching barcode. Please try again.');
+                showModal('Error searching barcode. Please try again.', 'Search Error');
             }
         }
 
@@ -1217,6 +1175,8 @@
         }
 
         async function handleAddFood() {
+            console.log('handleAddFood called');
+            
             // Rate limiting check
             const now = Date.now();
             if (now - lastAddTime < ADD_COOLDOWN) {
@@ -1313,6 +1273,7 @@
                 };
                 
                 console.log('📝 Entry data being sent:', entryData);
+                console.log('📝 Sending POST request to /food-journal/add');
                 
                 // Add the food entry
                 const addResponse = await fetch('/food-journal/add', {
@@ -1324,31 +1285,24 @@
                 });
                 
                 const addData = await addResponse.json();
+                console.log('📝 Server response:', addData);
                 
                 if (addData.success) {
-                    // Reset form
-                    foodNameInput.value = '';
-                    servingSizeInput.value = '';
-                    servingUnitInput.value = '';
-                    timeOfDayInput.value = '';
-                    waterAmountInput.value = '';
-                    waterUnitInput.value = '';
-                    moodInput.value = '';
-                    notesInput.value = '';
-                    nutritionInfo.classList.add('hidden');
+                    console.log('✅ Food entry added successfully:', addData);
+                    
+                    // Reset form and go back to step 1
+                    resetFormToStep1();
                     
                     // Reload food journal
                     await loadFoodJournal();
                     
-                    // Hide the form and show the call-to-action
-                    hideAddForm();
-                    
-                    alert('Food entry added successfully!');
+                    showModal('Food entry added successfully!', 'Success');
                 } else {
+                    console.error('❌ Error adding food entry:', addData);
                     if (addData.error && addData.error.includes('rate limit')) {
-                        alert('Too many requests. Please wait a moment before adding another entry.');
+                        showModal('Too many requests. Please wait a moment before adding another entry.', 'Rate Limited');
                     } else {
-                        alert('Error adding food entry: ' + addData.message);
+                        showModal('Error adding food entry: ' + (addData.message || 'Unknown error'), 'Error');
                     }
                 }
                 
@@ -1443,6 +1397,16 @@
 
         async function loadFoodJournal() {
             console.log('loadFoodJournal called');
+            
+            // Check if required elements exist
+            const tableBody = document.getElementById('foodJournalTable');
+            console.log('Table body element:', tableBody);
+            
+            if (!tableBody) {
+                console.error('Table body element not found!');
+                return;
+            }
+            
             try {
                 const startDate = currentDateRange.start.toISOString().split('T')[0];
                 const endDate = currentDateRange.end.toISOString().split('T')[0];
@@ -1455,12 +1419,29 @@
                 console.log('Food journal data received:', data);
                 
                 if (data.success) {
+                    console.log('Displaying food journal with', data.entries.length, 'entries');
                     displayFoodJournal(data.entries);
                 } else {
                     console.error('Error loading food journal:', data.error);
+                    // Show error in table
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="12" class="px-6 py-4 text-center text-red-500">
+                                Error loading food journal: ${data.error}
+                            </td>
+                        </tr>
+                    `;
                 }
             } catch (error) {
                 console.error('Error loading food journal:', error);
+                // Show error in table
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="12" class="px-6 py-4 text-center text-red-500">
+                            Error loading food journal: ${error.message}
+                        </td>
+                    </tr>
+                `;
             }
         }
 
@@ -1823,16 +1804,24 @@
             console.log('useScannedBarcode called');
             console.log('scannedBarcodeValue:', scannedBarcodeValue);
             
-            if (scannedBarcodeValue) {
-                document.getElementById('barcode').value = scannedBarcodeValue;
+            // Check both scannedBarcodeValue and the displayed barcode value
+            const displayedBarcode = document.getElementById('barcodeValue').textContent;
+            const barcodeToUse = scannedBarcodeValue || displayedBarcode;
+            
+            console.log('displayedBarcode:', displayedBarcode);
+            console.log('barcodeToUse:', barcodeToUse);
+            
+            if (barcodeToUse && barcodeToUse.trim() !== '') {
+                document.getElementById('barcode').value = barcodeToUse;
                 closeBarcodeScanner();
                 
                 // Automatically search for the barcode and proceed to step 2
                 console.log('Calling handleBarcodeSearchForStep2...');
                 handleBarcodeSearchForStep2();
             } else {
-                console.log('No scanned barcode value found');
-                alert('No barcode detected. Please try scanning again.');
+                console.log('No barcode value found');
+                // Use the modal popup instead of alert
+                showModal('No barcode detected. Please try scanning again.', 'Barcode Error');
             }
         }
         
@@ -1916,16 +1905,49 @@
             if (foodData) {
                 document.getElementById('selectedFoodName').textContent = foodData.food_name || 'Manual Entry';
                 document.getElementById('selectedFoodDetails').textContent = foodData.brand ? `${foodData.brand} - ${foodData.serving_size}${foodData.serving_unit}` : 'Custom food entry';
+                
+                // Populate serving size inputs with editable values
+                const servingSizeInput = document.getElementById('servingSize');
+                const servingUnitInput = document.getElementById('servingUnit');
+                
+                if (servingSizeInput && servingUnitInput) {
+                    // Set default serving size to 1 if not provided, or use the food data
+                    const defaultServingSize = foodData.serving_size || 1;
+                    const defaultServingUnit = foodData.serving_unit || 'serving';
+                    
+                    servingSizeInput.value = defaultServingSize;
+                    
+                    // Set the serving unit dropdown
+                    servingUnitInput.value = defaultServingUnit;
+                    
+                    // If the unit is not in the dropdown options, add it
+                    const unitExists = Array.from(servingUnitInput.options).some(option => option.value === defaultServingUnit);
+                    if (!unitExists && defaultServingUnit !== 'serving') {
+                        const newOption = document.createElement('option');
+                        newOption.value = defaultServingUnit;
+                        newOption.textContent = defaultServingUnit;
+                        servingUnitInput.appendChild(newOption);
+                    }
+                }
+                
+                // Display nutrition info if available
+                if (foodData.calories !== undefined) {
+                    displayNutritionInfo(foodData, foodData.source || 'barcode_scan');
+                }
             }
         }
         
         function proceedToStep3() {
+            console.log('proceedToStep3 called');
+            
             // Validate required fields
             const servingSize = document.getElementById('servingSize').value;
             const servingUnit = document.getElementById('servingUnit').value;
             
+            console.log('servingSize:', servingSize, 'servingUnit:', servingUnit);
+            
             if (!servingSize || !servingUnit) {
-                alert('Please fill in serving size and unit');
+                showModal('Please fill in serving size and unit', 'Required Fields Missing');
                 return;
             }
             
@@ -1939,8 +1961,36 @@
             document.getElementById('step2Content').classList.add('hidden');
             document.getElementById('step3Content').classList.remove('hidden');
             
+            // Simple visibility check
+            const step3ContentElement = document.getElementById('step3Content');
+            console.log('Step 3 content after show:', step3ContentElement);
+            console.log('Step 3 hidden class:', step3ContentElement ? step3ContentElement.classList.contains('hidden') : 'Element not found');
+            console.log('Step 3 display style:', step3ContentElement ? step3ContentElement.style.display : 'Element not found');
+            
+            // Check if Step 3 has any content
+            if (step3ContentElement) {
+                console.log('Step 3 children count:', step3ContentElement.children.length);
+                console.log('Step 3 innerHTML length:', step3ContentElement.innerHTML.length);
+            }
+            
+
+            
+            console.log('Step 3 content should now be visible');
+            
+            // Check if Step 3 content is actually visible
+            const step3Content = document.getElementById('step3Content');
+            console.log('Step 3 content element:', step3Content);
+            console.log('Step 3 content classes:', step3Content ? step3Content.className : 'Element not found');
+            console.log('Step 3 content hidden:', step3Content ? step3Content.classList.contains('hidden') : 'Element not found');
+            
             // Generate review summary
             generateReviewSummary();
+            
+            // Check if the Add to Journal button exists
+            const addFoodBtn = document.getElementById('addFoodBtn');
+            console.log('Add to Journal button element:', addFoodBtn);
+            console.log('Add to Journal button visible:', addFoodBtn ? addFoodBtn.offsetParent !== null : 'Button not found');
+            console.log('Add to Journal button classes:', addFoodBtn ? addFoodBtn.className : 'Button not found');
         }
         
         function backToStep1() {
@@ -1967,7 +2017,61 @@
             document.getElementById('step3Content').classList.add('hidden');
         }
         
+        function resetFormToStep1() {
+            console.log('resetFormToStep1 called');
+            
+            // Reset all form inputs
+            const foodNameInput = document.getElementById('foodName');
+            const servingSizeInput = document.getElementById('servingSize');
+            const servingUnitInput = document.getElementById('servingUnit');
+            const timeOfDayInput = document.getElementById('timeOfDay');
+            const waterAmountInput = document.getElementById('waterAmount');
+            const waterUnitInput = document.getElementById('waterUnit');
+            const moodInput = document.getElementById('mood');
+            const notesInput = document.getElementById('notes');
+            
+            if (foodNameInput) foodNameInput.value = '';
+            if (servingSizeInput) servingSizeInput.value = '';
+            if (servingUnitInput) servingUnitInput.value = 'serving';
+            if (timeOfDayInput) timeOfDayInput.value = '';
+            if (waterAmountInput) waterAmountInput.value = '';
+            if (waterUnitInput) waterUnitInput.value = 'oz';
+            if (moodInput) moodInput.value = '';
+            if (notesInput) notesInput.value = '';
+            
+            // Reset step indicators
+            document.getElementById('step1').classList.remove('opacity-50');
+            document.getElementById('step2').classList.add('opacity-50');
+            document.getElementById('step3').classList.add('opacity-50');
+            
+            // Reset step 2 and 3 styling
+            document.getElementById('step2').querySelector('div').classList.remove('bg-mint-green', 'text-white');
+            document.getElementById('step2').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
+            document.getElementById('step3').querySelector('div').classList.remove('bg-mint-green', 'text-white');
+            document.getElementById('step3').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
+            
+            // Show step 1, hide step 2 and 3
+            document.getElementById('step1Content').classList.remove('hidden');
+            document.getElementById('step2Content').classList.add('hidden');
+            document.getElementById('step3Content').classList.add('hidden');
+            
+            // Reset selected food display
+            document.getElementById('selectedFoodName').textContent = 'No food selected';
+            document.getElementById('selectedFoodDetails').textContent = 'Select a food from step 1';
+            
+            // Hide nutrition info
+            const nutritionInfo = document.getElementById('nutritionInfo');
+            if (nutritionInfo) nutritionInfo.classList.add('hidden');
+            
+            // Clear current nutrition data
+            currentNutritionData = null;
+            
+            console.log('Form reset to step 1');
+        }
+        
         function generateReviewSummary() {
+            console.log('generateReviewSummary called');
+            
             const summary = document.getElementById('reviewSummary');
             const foodName = document.getElementById('selectedFoodName').textContent;
             const servingSize = document.getElementById('servingSize').value;
@@ -1977,6 +2081,10 @@
             const waterAmount = document.getElementById('waterAmount').value;
             const waterUnit = document.getElementById('waterUnit').value;
             const notes = document.getElementById('notes').value;
+            
+            console.log('Summary data:', {
+                foodName, servingSize, servingUnit, timeOfDay, mood, waterAmount, waterUnit, notes
+            });
             
             let summaryHTML = `
                 <div><strong>Food:</strong> ${foodName}</div>
@@ -1999,7 +2107,14 @@
                 summaryHTML += `<div><strong>Notes:</strong> ${notes}</div>`;
             }
             
+            console.log('Generated summary HTML:', summaryHTML);
             summary.innerHTML = summaryHTML;
+            
+            // Show nutrition info if available
+            if (currentNutritionData) {
+                document.getElementById('nutritionInfo').classList.remove('hidden');
+                displayNutritionInfo(currentNutritionData, currentNutritionData.source || 'barcode_scan');
+            }
         }
         
         function updateButtonStates() {
@@ -2168,6 +2283,71 @@
             csvFileData = null;
             csvHeaders = [];
             fieldMappings = {};
+        }
+        
+        // Simple modal function for alerts
+        function showModal(message, title = 'Notice') {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="alertModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-forest-green">${title}</h3>
+                                <button id="closeAlertModal" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-4">
+                                ${message}
+                            </div>
+                            <div class="flex justify-end">
+                                <button id="okAlertModal" class="px-4 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2">
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('alertModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Add event listeners
+            const modal = document.getElementById('alertModal');
+            const closeBtn = document.getElementById('closeAlertModal');
+            const okBtn = document.getElementById('okAlertModal');
+            
+            const closeModal = () => {
+                modal.remove();
+            };
+            
+            closeBtn.addEventListener('click', closeModal);
+            okBtn.addEventListener('click', closeModal);
+            
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            // Close on Escape key
+            document.addEventListener('keydown', function escapeHandler(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            });
         }
         
         function generateFieldMappings() {
@@ -2370,9 +2550,9 @@
                         <div class="text-sm font-medium text-green-800">Barcode Detected!</div>
                         <div id="barcodeValue" class="text-lg font-mono text-green-900"></div>
                     </div>
-                    <button id="useBarcodeBtn" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm" onclick="console.log('useBarcodeBtn clicked directly'); useScannedBarcode();">
-                        Use This
-                    </button>
+                                            <button id="useBarcodeBtn" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
+                            Use This
+                        </button>
                 </div>
             </div>
             
