@@ -574,11 +574,18 @@
         let currentSuggestionView = '7day'; // Only 7-day analysis now
         let patternsData = null;
 
+        // Shared profile data cache
+        let profileDataCache = null;
+
         // Load profile name and username
         const loadProfileName = async () => {
             try {
                 const response = await fetch('/profile/data');
                 const data = await response.json();
+                
+                // Cache the profile data for reuse
+                profileDataCache = data;
+                
                 const profileName = data.name || 'your';
                 const username = data.username || '';
                 const titleElement = document.getElementById('dashboardTitle');
@@ -605,13 +612,16 @@
                 const today = new Date();
                 const todayString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
                 
-                // Fetch food journal entries
-                const foodResponse = await fetch(`/food-journal/entries?start_date=${todayString}&end_date=${todayString}`);
-                const foodData = await foodResponse.json();
+                // Fetch food journal entries and mood entries in parallel
+                const [foodResponse, moodResponse] = await Promise.all([
+                    fetch(`/food-journal/entries?start_date=${todayString}&end_date=${todayString}`),
+                    fetch(`/dashboard/mood/entries?start_date=${todayString}&end_date=${todayString}`)
+                ]);
                 
-                // Fetch mood entries
-                const moodResponse = await fetch(`/dashboard/mood/entries?start_date=${todayString}&end_date=${todayString}`);
-                const moodData = await moodResponse.json();
+                const [foodData, moodData] = await Promise.all([
+                    foodResponse.json(),
+                    moodResponse.json()
+                ]);
                 
                 if (foodData.success) {
                     // Combine food journal moods with mood entries
@@ -1359,14 +1369,54 @@
             loadMacrosForDate(currentMacrosDate);
         };
         
+        // Dashboard loading state management
+        const showDashboardLoading = () => {
+            const loadingElement = document.getElementById('loadingState');
+            if (loadingElement) {
+                loadingElement.classList.remove('hidden');
+                loadingElement.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-mint-green mx-auto mb-4"></div>
+                        <p class="text-lg text-gray-600">Loading your wellness dashboard...</p>
+                        <p class="text-sm text-gray-500 mt-2">This should only take a few seconds</p>
+                    </div>
+                `;
+            }
+        };
+
+        const hideDashboardLoading = () => {
+            const loadingElement = document.getElementById('loadingState');
+            if (loadingElement) {
+                loadingElement.classList.add('hidden');
+            }
+        };
+
+        const showDashboardError = () => {
+            const loadingElement = document.getElementById('loadingState');
+            if (loadingElement) {
+                loadingElement.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-red-500 mb-4">
+                            <svg class="h-12 w-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-lg text-gray-600 mb-2">Unable to load dashboard</p>
+                        <p class="text-sm text-gray-500 mb-4">Please refresh the page or try again later</p>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-mint-green text-white rounded-lg hover:bg-forest-green transition-colors">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        };
+
         // Check verification status and show banner if needed
-        const checkVerificationStatus = async () => {
+        const checkVerificationStatus = () => {
             try {
-                const response = await fetch('/profile/data');
-                const data = await response.json();
-                
-                if (data.success && data.profile) {
-                    const user = data.profile.user;
+                // Use cached profile data instead of making another API call
+                if (profileDataCache && profileDataCache.success && profileDataCache.profile) {
+                    const user = profileDataCache.profile.user;
                     const verificationBanner = document.getElementById('verificationBanner');
                     
                     if (!user.email_verified || !user.phone_verified) {
@@ -1391,12 +1441,29 @@
             }
         };
 
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProfileName();
-            checkVerificationStatus();
-            loadTodayStats();
-            loadPatternsAnalysis();
+        // Initialize dashboard with parallel loading
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Show loading state
+            showDashboardLoading();
+            
+            // Load all data in parallel for better performance
+            try {
+                await Promise.all([
+                    loadProfileName(),
+                    loadTodayStats(),
+                    loadPatternsAnalysis()
+                ]);
+                
+                // Check verification status after profile is loaded
+                checkVerificationStatus();
+                
+                console.log('✅ Dashboard loaded successfully');
+            } catch (error) {
+                console.error('❌ Error loading dashboard:', error);
+                showDashboardError();
+            } finally {
+                hideDashboardLoading();
+            }
 
             // Add event listeners for navigation buttons
             const prevAnalysisBtn = document.getElementById('prevAnalysisBtn');

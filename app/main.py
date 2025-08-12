@@ -21,9 +21,11 @@ from functools import wraps
 try:
     from flask_oauthlib.client import OAuth
     OAUTH_AVAILABLE = True
+    print("✅ Flask-OAuthlib available. OAuth features enabled.")
 except ImportError:
     OAUTH_AVAILABLE = False
     print("⚠️  Flask-OAuthlib not available. OAuth features will be disabled.")
+    print("   To enable OAuth, install: pip install Flask-OAuthlib")
 try:
     from flask_limiter import Limiter  # type: ignore
     from flask_limiter.util import get_remote_address  # type: ignore
@@ -92,7 +94,7 @@ db = SQLAlchemy(app)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["1000 per day", "200 per hour"],  # Increased limits for better user experience
     storage_uri="memory://"
 )
 
@@ -3404,6 +3406,7 @@ def save_profile():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/profile/data')
+@limiter.limit("100 per hour")  # Higher limit for profile data
 @login_required
 def get_profile_data():
     """
@@ -3419,7 +3422,18 @@ def get_profile_data():
             # SECURITY: Verify user has access to their profile data
             verify_user_data_access(profile, "profile_data")
             
-            return jsonify({
+            # Optimized response with only essential fields for dashboard
+            response_data = {
+                'success': True,
+                'profile': {
+                    'user': {
+                        'username': user.username if user else None,
+                        'email': user.email if user else None,
+                        'phone': user.phone if user else None,
+                        'email_verified': user.email_verified if user else False,
+                        'phone_verified': user.phone_verified if user else False
+                    }
+                },
                 'name': profile.name,
                 'username': user.username if user else None,
                 'email': user.email if user else None,
@@ -3449,10 +3463,13 @@ def get_profile_data():
                 'spirit_notes': profile.spirit_notes,
                 'avatar': profile.avatar,
                 'weight_unit': profile.weight_unit
-            })
-        return jsonify({})
+            }
+            
+            return jsonify(response_data)
+        return jsonify({'success': False, 'error': 'Profile not found'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Profile data error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/profile/change-password', methods=['POST'])
 @login_required
@@ -4576,6 +4593,7 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         }
 
 @app.route('/dashboard/patterns')
+@limiter.limit("100 per hour")  # Higher limit for dashboard patterns
 @login_required
 def get_patterns_analysis():
     """Get patterns analysis for the past 7 and 30 days with caching"""
@@ -4882,6 +4900,7 @@ def add_mood_entry():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/dashboard/mood/entries')
+@limiter.limit("100 per hour")  # Higher limit for dashboard mood entries
 @login_required
 def get_mood_entries():
     """
