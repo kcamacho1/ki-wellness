@@ -54,9 +54,9 @@
         }
     </style>
     
-    <!-- Load reCAPTCHA v3 if enabled -->
+    <!-- Load reCAPTCHA v2 checkbox if enabled -->
     {% if config.RECAPTCHA_ENABLED %}
-    <script src="https://www.google.com/recaptcha/api.js?render={{ config.RECAPTCHA_SITE_KEY }}" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     {% endif %}
 </head>
 <body class="bg-gray-50">
@@ -208,14 +208,12 @@
                                     </div>
                                 </div>
                     
-                                                    <!-- reCAPTCHA Verification -->
+                                                    <!-- reCAPTCHA v2 Checkbox -->
+                                {% if config.RECAPTCHA_ENABLED %}
                                 <div class="text-center mb-6">
-                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                        <p class="text-sm text-blue-800 text-center">
-                                            <strong>Security Verification:</strong> This form is protected by reCAPTCHA v3.
-                                        </p>
-                                    </div>
+                                    <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
                                 </div>
+                                {% endif %}
                                 
                                 <div class="text-center">
                                     <button type="submit" 
@@ -292,11 +290,11 @@
         let recaptchaToken = null;
         
         // Function to get reCAPTCHA token
-        async function getRecaptchaToken() {
+        function getRecaptchaToken() {
             {% if config.RECAPTCHA_ENABLED %}
             if (typeof grecaptcha !== 'undefined') {
                 try {
-                    const token = await grecaptcha.execute('{{ config.RECAPTCHA_SITE_KEY }}', {action: 'review_submit'});
+                    const token = grecaptcha.getResponse();
                     recaptchaToken = token;
                     console.log('reCAPTCHA token obtained');
                     return token;
@@ -404,9 +402,9 @@
             }
             
             // Get reCAPTCHA token
-            const recaptchaToken = await getRecaptchaToken();
+            const recaptchaToken = getRecaptchaToken();
             if (!recaptchaToken) {
-                showMessage('Security verification failed. Please try again.', 'error');
+                showMessage('Please complete the security verification checkbox.', 'error');
                 return;
             }
             

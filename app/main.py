@@ -4180,7 +4180,7 @@ def serve_avatar(filename):
 
 def verify_recaptcha(response, action='submit'):
     """
-    Verify Google reCAPTCHA v3 response with enhanced error handling and logging
+    Verify Google reCAPTCHA v2 checkbox response with enhanced error handling and logging
     """
     # Check if running on localhost
     is_localhost = False
@@ -4230,14 +4230,8 @@ def verify_recaptcha(response, action='submit'):
         # Check if the verification was successful
         success = result_json.get('success', False)
         if success:
-            # Check the score (0.0 = bot, 1.0 = human)
-            score = result_json.get('score', 0.0)
-            action_match = result_json.get('action') == action
-            
-            print(f"✅ reCAPTCHA verification successful - Score: {score}, Action match: {action_match}")
-            
-            # Return True if score is above threshold (0.5 is recommended)
-            return score >= 0.5 and action_match
+            print(f"✅ reCAPTCHA verification successful")
+            return True
         else:
             error_codes = result_json.get('error-codes', ['Unknown error'])
             print(f"❌ reCAPTCHA verification failed: {error_codes}")

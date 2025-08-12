@@ -34,7 +34,7 @@ class Config:
     POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
     POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
     
-    # Google reCAPTCHA v3 Configuration
+    # Google reCAPTCHA v2 Configuration
     RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY')
     RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
     
@@ -86,7 +86,7 @@ class DevelopmentConfig(Config):
         
         # reCAPTCHA status will be auto-detected based on host
         recaptcha_status = "disabled" if not self.RECAPTCHA_ENABLED else "enabled"
-        print(f"🔧 Development mode: reCAPTCHA v3 {recaptcha_status}")
+        print(f"🔧 Development mode: reCAPTCHA v2 {recaptcha_status}")
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -96,9 +96,9 @@ class ProductionConfig(Config):
         super().__init__()
         # Ensure reCAPTCHA is enabled in production
         if not self.RECAPTCHA_ENABLED:
-            print("⚠️  Warning: reCAPTCHA v3 is disabled in production!")
+            print("⚠️  Warning: reCAPTCHA v2 is disabled in production!")
         else:
-            print("✅ Production mode: reCAPTCHA v3 enabled")
+            print("✅ Production mode: reCAPTCHA v2 enabled")
         
         # Force enable reCAPTCHA for kiwellness.org domain
         if 'kiwellness.org' in os.getenv('SERVER_NAME', ''):

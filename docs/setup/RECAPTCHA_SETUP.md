@@ -1,8 +1,8 @@
-# reCAPTCHA v3 Setup Guide
+# reCAPTCHA v2 Setup Guide
 
 ## 🚀 Phase 1: Immediate Replacements Complete!
 
-We've successfully replaced Cloudflare Turnstile with Google reCAPTCHA v3 and added comprehensive bot protection.
+We've successfully replaced Cloudflare Turnstile with Google reCAPTCHA v2 checkbox and added comprehensive bot protection.
 
 ## 🔑 Required Configuration
 
@@ -10,7 +10,7 @@ We've successfully replaced Cloudflare Turnstile with Google reCAPTCHA v3 and ad
 Add these to your `.env` file:
 
 ```bash
-# Google reCAPTCHA v3 Configuration
+# Google reCAPTCHA v2 Configuration
 RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
 RECAPTCHA_ENABLED=true
@@ -20,7 +20,7 @@ RECAPTCHA_ENABLED=true
 
 1. **Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin)**
 2. **Click "Create" to add a new site**
-3. **Choose reCAPTCHA v3**
+3. **Choose reCAPTCHA v2**
 4. **Add your domains:**
    - `localhost` (for development)
    - `kiwellness.org` (for production)
@@ -29,10 +29,10 @@ RECAPTCHA_ENABLED=true
 
 ## 🛡️ Security Features Implemented
 
-### **1. reCAPTCHA v3**
-- **Invisible verification** - no user interaction required
-- **Score-based protection** - 0.0 (bot) to 1.0 (human)
-- **Action-specific verification** - different actions for login, register, reviews
+### **1. reCAPTCHA v2**
+- **Checkbox verification** - user clicks "I'm not a robot"
+- **Simple pass/fail protection** - either verified or not
+- **User-friendly interface** - familiar checkbox design
 - **Automatic localhost bypass** - disabled in development
 
 ### **2. Rate Limiting**
@@ -50,15 +50,16 @@ RECAPTCHA_ENABLED=true
 
 ### **Login Form**
 - Added honeypot field (`website`)
-- reCAPTCHA v3 integration
+- reCAPTCHA v2 checkbox integration
 - Enhanced error handling
 
 ### **Register Form**
 - Same security features as login
+- reCAPTCHA v2 checkbox integration
 - Consistent user experience
 
 ### **Reviews Form**
-- reCAPTCHA v3 for review submissions
+- reCAPTCHA v2 checkbox for review submissions
 - Honeypot protection
 - Rate limiting
 
@@ -69,11 +70,11 @@ RECAPTCHA_ENABLED=true
 ## 🔧 Backend Changes
 
 ### **New Functions**
-- `verify_recaptcha()` - Replaces Turnstile verification
+- `verify_recaptcha()` - Replaces Turnstile verification (updated for v2)
 - `check_honeypot()` - Bot detection via honeypot fields
 
 ### **Updated Routes**
-- All forms now use reCAPTCHA v3
+- All forms now use reCAPTCHA v2 checkbox
 - Rate limiting applied to sensitive endpoints
 - Enhanced logging and debugging
 
@@ -90,7 +91,7 @@ RECAPTCHA_ENABLED=true
 - Honeypot fields still functional
 
 ### **Production Mode**
-- reCAPTCHA v3 fully enabled
+- reCAPTCHA v2 checkbox fully enabled
 - All security measures active
 - Comprehensive logging
 
@@ -119,7 +120,7 @@ RECAPTCHA_ENABLED=true
 2. **"Verification failed"**
    - Check backend logs for detailed error
    - Verify reCAPTCHA keys are correct
-   - Check if score threshold is met (default: 0.5)
+   - Check if checkbox was completed
 
 3. **Rate limiting errors**
    - Wait for the time limit to expire
@@ -143,7 +144,7 @@ curl http://localhost:5001/api/recaptcha-status
 - Turnstile configuration
 
 ### **What Was Added**
-- Google reCAPTCHA v3
+- Google reCAPTCHA v2 checkbox
 - Rate limiting with Flask-Limiter
 - Honeypot field validation
 - Enhanced security logging
@@ -170,4 +171,4 @@ If you encounter any issues:
 3. Test on localhost first (should work without keys)
 4. Check browser console for frontend errors
 
-The new system provides the same level of protection as Turnstile but with better integration, more reliable verification, and comprehensive bot detection through multiple layers of security.
+The new system provides the same level of protection as Turnstile but with better integration, more reliable verification, and comprehensive bot detection through multiple layers of security. The v2 checkbox provides a more user-friendly experience compared to v3's invisible verification.

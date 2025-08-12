@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Dynamically load reCAPTCHA v3 based on environment
+        // Dynamically load reCAPTCHA v2 checkbox based on environment
         console.log('🔍 Loading reCAPTCHA status...');
         
         fetch('/api/recaptcha-status')
@@ -16,11 +16,11 @@
                 console.log('🔍 reCAPTCHA status response:', data);
                 
                 if (data.enabled && '{{ config.RECAPTCHA_SITE_KEY }}' && '{{ config.RECAPTCHA_SITE_KEY }}' !== 'None') {
-                    console.log('✅ Loading production reCAPTCHA v3...');
+                    console.log('✅ Loading production reCAPTCHA v2 checkbox...');
                     
-                    // Load production reCAPTCHA v3
+                    // Load production reCAPTCHA v2 checkbox
                     const recaptchaScript = document.createElement('script');
-                    recaptchaScript.src = 'https://www.google.com/recaptcha/api.js?render={{ config.RECAPTCHA_SITE_KEY }}';
+                    recaptchaScript.src = 'https://www.google.com/recaptcha/api.js';
                     recaptchaScript.async = true;
                     recaptchaScript.defer = true;
                     
@@ -160,10 +160,10 @@
                             </div>
                         </div>
 
-                        <!-- Google reCAPTCHA v3 -->
+                        <!-- Google reCAPTCHA v2 Checkbox -->
                         {% if config.RECAPTCHA_ENABLED %}
                             <div class="flex justify-center">
-                                <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}" data-size="invisible"></div>
+                                <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
                             </div>
                         {% else %}
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -229,44 +229,33 @@
             // Basic validation
             if (username.length < 3) {
                 e.preventDefault();
-                alert('Username must be at least 3 characters long.');
+                showError('Username must be at least 3 characters long.', 'Validation Error');
                 return;
             }
             
             if (password.length < 8) {
                 e.preventDefault();
-                alert('Password must be at least 8 characters long.');
+                showError('Password must be at least 8 characters long.', 'Validation Error');
                 return;
             }
             
             // reCAPTCHA validation (only if enabled)
             {% if config.RECAPTCHA_ENABLED %}
             if (typeof grecaptcha !== 'undefined') {
-                console.log('reCAPTCHA: Executing verification...');
+                console.log('reCAPTCHA: Checking checkbox verification...');
                 
-                // Execute reCAPTCHA
-                grecaptcha.ready(function() {
-                    grecaptcha.execute('{{ config.RECAPTCHA_SITE_KEY }}', {action: 'login'})
-                        .then(function(token) {
-                            // Add the token to the form data
-                            const recaptchaInput = document.createElement('input');
-                            recaptchaInput.type = 'hidden';
-                            recaptchaInput.name = 'g-recaptcha-response';
-                            recaptchaInput.value = token;
-                            document.querySelector('form').appendChild(recaptchaInput);
-                            
-                            // Submit the form
-                            document.querySelector('form').submit();
-                        })
-                        .catch(function(error) {
-                            console.error('reCAPTCHA error:', error);
-                            alert('Security verification failed. Please try again.');
-                        });
-                });
+                // Get the reCAPTCHA response
+                const recaptchaResponse = grecaptcha.getResponse();
                 
-                // Prevent default form submission
-                e.preventDefault();
-                return;
+                if (!recaptchaResponse) {
+                    console.error('reCAPTCHA: Checkbox not completed');
+                    e.preventDefault();
+                    showError('Please complete the security verification checkbox.', 'Security Error');
+                    return;
+                }
+                
+                console.log('✅ reCAPTCHA: Checkbox completed, proceeding with form submission');
+                // Form will submit normally with the reCAPTCHA response
             } else {
                 console.warn('reCAPTCHA: Not available - checking if we should bypass...');
                 
@@ -282,7 +271,7 @@
                 } else {
                     console.error('reCAPTCHA: Not available in production');
                     e.preventDefault();
-                    alert('Security verification system is not available. Please refresh the page and try again.');
+                    showError('Security verification system is not available. Please refresh the page and try again.', 'Security Error');
                     return false;
                 }
             }
@@ -308,7 +297,7 @@
             
             if (lockoutTime && (now - lockoutTime) < 300000) { // 5 minutes
                 const remainingTime = Math.ceil((300000 - (now - lockoutTime)) / 1000);
-                alert(`Too many failed attempts. Please try again in ${remainingTime} seconds.`);
+                showWarning(`Too many failed attempts. Please try again in ${remainingTime} seconds.`, 'Account Locked');
                 document.querySelector('form').style.display = 'none';
             } else {
                 // Reset lockout
@@ -317,5 +306,6 @@
             }
         }
     </script>
+    {% include 'includes/modal.html' %}
 </body>
 </html>
