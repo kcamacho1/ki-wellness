@@ -1,160 +1,173 @@
-# reCAPTCHA Setup Guide
+# reCAPTCHA v3 Setup Guide
 
-## 🔒 Overview
+## 🚀 Phase 1: Immediate Replacements Complete!
 
-KI Wellness now uses Google reCAPTCHA v2 to protect login and registration forms from bots and automated attacks. This guide will help you set up reCAPTCHA for your application.
+We've successfully replaced Cloudflare Turnstile with Google reCAPTCHA v3 and added comprehensive bot protection.
 
-## 🚀 Quick Setup
+## 🔑 Required Configuration
 
-### Option 1: Automated Setup (Recommended)
-
-1. Run the setup script:
-   ```bash
-   python setup_recaptcha.py
-   ```
-
-2. Follow the prompts to enter your reCAPTCHA keys
-3. Restart your Flask application
-
-### Option 2: Manual Setup
-
-1. Get reCAPTCHA keys from Google
-2. Create a `.env` file in your project root
-3. Add your keys to the `.env` file
-4. Restart your Flask application
-
-## 📋 Step-by-Step Instructions
-
-### 1. Get reCAPTCHA Keys
-
-1. Visit [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin)
-2. Click "Create" to register a new site
-3. Choose "reCAPTCHA v2" > "I'm not a robot" Checkbox
-4. Add your domains:
-   - **Development**: `localhost`, `127.0.0.1`
-   - **Production**: Your actual domain (e.g., `example.com`)
-5. Accept the terms and click "Submit"
-6. Copy the "Site Key" and "Secret Key"
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in your project root:
+### **Environment Variables**
+Add these to your `.env` file:
 
 ```bash
-# reCAPTCHA Configuration
-RECAPTCHA_PUBLIC_KEY=your_site_key_here
-RECAPTCHA_PRIVATE_KEY=your_secret_key_here
+# Google reCAPTCHA v3 Configuration
+RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
 RECAPTCHA_ENABLED=true
 ```
 
-### 3. Restart Application
+### **Getting reCAPTCHA Keys**
 
-After setting up your keys, restart your Flask application:
+1. **Go to [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin)**
+2. **Click "Create" to add a new site**
+3. **Choose reCAPTCHA v3**
+4. **Add your domains:**
+   - `localhost` (for development)
+   - `kiwellness.org` (for production)
+   - Any other domains you use
+5. **Copy the Site Key and Secret Key**
 
-```bash
-# Stop the current application (Ctrl+C)
-# Then restart it
-python run.py
-```
+## 🛡️ Security Features Implemented
 
-## 🧪 Development Mode
+### **1. reCAPTCHA v3**
+- **Invisible verification** - no user interaction required
+- **Score-based protection** - 0.0 (bot) to 1.0 (human)
+- **Action-specific verification** - different actions for login, register, reviews
+- **Automatic localhost bypass** - disabled in development
 
-For development and testing, the application includes:
+### **2. Rate Limiting**
+- **Login**: 5 attempts per minute
+- **Register**: 3 attempts per hour
+- **Reviews**: 5 submissions per hour
+- **Contact**: 3 messages per hour
 
-- **Test Keys**: Automatically uses Google's test keys if no environment variables are set
-- **Development Mode**: Shows a warning when using test keys
-- **Disable Option**: Can disable reCAPTCHA entirely for testing
+### **3. Honeypot Fields**
+- **Hidden fields** that bots fill out but humans don't
+- **Multiple field names** for better bot detection
+- **Automatic rejection** of suspicious submissions
 
-### Test Keys (Development Only)
+## 📱 Frontend Changes
 
-If you don't have real keys yet, the application will use these test keys:
+### **Login Form**
+- Added honeypot field (`website`)
+- reCAPTCHA v3 integration
+- Enhanced error handling
 
-- **Site Key**: `6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI`
-- **Secret Key**: `6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe`
+### **Register Form**
+- Same security features as login
+- Consistent user experience
 
-⚠️ **Important**: Test keys only work on `localhost` and `127.0.0.1`. They will show a warning message.
+### **Reviews Form**
+- reCAPTCHA v3 for review submissions
+- Honeypot protection
+- Rate limiting
 
-## 🔧 Configuration Options
+### **Contact Form**
+- Honeypot validation
+- Rate limiting protection
 
-### Environment Variables
+## 🔧 Backend Changes
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `RECAPTCHA_PUBLIC_KEY` | Your reCAPTCHA site key | Test key | Yes (for production) |
-| `RECAPTCHA_PRIVATE_KEY` | Your reCAPTCHA secret key | Test key | Yes (for production) |
-| `RECAPTCHA_ENABLED` | Enable/disable reCAPTCHA | `true` | No |
+### **New Functions**
+- `verify_recaptcha()` - Replaces Turnstile verification
+- `check_honeypot()` - Bot detection via honeypot fields
 
-### Disable reCAPTCHA
+### **Updated Routes**
+- All forms now use reCAPTCHA v3
+- Rate limiting applied to sensitive endpoints
+- Enhanced logging and debugging
 
-To disable reCAPTCHA for testing, set:
+### **Configuration**
+- Automatic environment detection
+- Localhost bypass for development
+- Production enforcement for live sites
 
-```bash
-RECAPTCHA_ENABLED=false
-```
+## 🧪 Testing
 
-## 🎯 Testing
+### **Development Mode**
+- reCAPTCHA automatically disabled on localhost
+- Rate limiting still active for testing
+- Honeypot fields still functional
 
-### Test reCAPTCHA Functionality
+### **Production Mode**
+- reCAPTCHA v3 fully enabled
+- All security measures active
+- Comprehensive logging
 
-1. Start your Flask application
-2. Visit `/login` or `/register`
-3. Verify the reCAPTCHA widget appears
-4. Complete the reCAPTCHA challenge
-5. Submit the form
-6. Check that the form submits successfully
+## 📊 Monitoring
 
-### Test Keys Behavior
+### **Backend Logs**
+- reCAPTCHA verification results
+- Honeypot detections
+- Rate limit violations
+- Detailed error information
 
-When using test keys:
-- The reCAPTCHA widget will show a warning message
-- Any non-empty response will be accepted
-- The widget will work on `localhost` and `127.0.0.1`
+### **Frontend Console**
+- reCAPTCHA loading status
+- Verification execution
+- Error handling and user feedback
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### **Common Issues**
 
-1. **"Error for site owner: invalid key"**
-   - Solution: Replace placeholder keys with real keys from Google
-   - Or use the test keys for development
+1. **"reCAPTCHA not available"**
+   - Check if running on localhost
+   - Verify environment variables are set
+   - Check browser console for errors
 
-2. **reCAPTCHA widget not appearing**
-   - Check that `RECAPTCHA_ENABLED=true`
-   - Verify the site key is correct
-   - Check browser console for JavaScript errors
+2. **"Verification failed"**
+   - Check backend logs for detailed error
+   - Verify reCAPTCHA keys are correct
+   - Check if score threshold is met (default: 0.5)
 
-3. **Form submission fails**
-   - Ensure reCAPTCHA is completed
-   - Check server logs for validation errors
-   - Verify the secret key is correct
+3. **Rate limiting errors**
+   - Wait for the time limit to expire
+   - Check if multiple users share same IP
+   - Consider adjusting limits if needed
 
-4. **reCAPTCHA not working on production**
-   - Ensure you're using HTTPS (required for reCAPTCHA)
-   - Add your production domain to reCAPTCHA settings
-   - Verify the domain matches exactly
+### **Debug Commands**
+```bash
+# Check reCAPTCHA status
+curl http://localhost:5001/api/recaptcha-status
 
-### Debug Mode
+# Test rate limiting
+# Try submitting forms multiple times quickly
+```
 
-For debugging, you can:
+## 🔄 Migration Notes
 
-1. Check browser console for JavaScript errors
-2. Look at Flask application logs
-3. Verify environment variables are loaded correctly
+### **What Was Removed**
+- Cloudflare Turnstile integration
+- Turnstile JavaScript modules
+- Turnstile configuration
 
-## 🔗 Useful Links
+### **What Was Added**
+- Google reCAPTCHA v3
+- Rate limiting with Flask-Limiter
+- Honeypot field validation
+- Enhanced security logging
 
-- [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin)
-- [reCAPTCHA Documentation](https://developers.google.com/recaptcha)
-- [Test Keys Documentation](https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha-v2-what-should-i-do)
+### **What Was Kept**
+- Localhost development bypass
+- Environment-based configuration
+- Comprehensive error handling
+- User-friendly error messages
 
-## 🎉 Success!
+## 🎯 Next Steps
 
-Once configured, your application will have:
+1. **Set up reCAPTCHA keys** in Google Admin Console
+2. **Update environment variables** with your keys
+3. **Test on localhost** (should bypass automatically)
+4. **Deploy to production** and test verification
+5. **Monitor logs** for any issues
 
-- ✅ Bot protection on login and registration forms
-- ✅ User-friendly "I'm not a robot" checkbox
-- ✅ Secure server-side validation
-- ✅ Development-friendly test mode
-- ✅ Production-ready configuration
+## 📞 Support
 
-Your KI Wellness application is now protected with industry-standard reCAPTCHA security!
+If you encounter any issues:
+1. Check the backend logs for detailed error information
+2. Verify your reCAPTCHA keys are correct
+3. Test on localhost first (should work without keys)
+4. Check browser console for frontend errors
+
+The new system provides the same level of protection as Turnstile but with better integration, more reliable verification, and comprehensive bot detection through multiple layers of security.

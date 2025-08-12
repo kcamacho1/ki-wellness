@@ -16,6 +16,25 @@ from config import DevelopmentConfig, ProductionConfig
 from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+try:
+    from flask_limiter import Limiter  # type: ignore
+    from flask_limiter.util import get_remote_address  # type: ignore
+except ImportError:
+    # Fallback for environments where Flask-Limiter is not available
+    class Limiter:
+        def __init__(self, app=None, key_func=None, default_limits=None, storage_uri=None):
+            self.app = app
+            self.key_func = key_func
+            self.default_limits = default_limits or []
+            self.storage_uri = storage_uri
+        
+        def limit(self, limit_string):
+            def decorator(f):
+                return f
+            return decorator
+    
+    def get_remote_address():
+        return "127.0.0.1"  # Default fallback
 import random
 import hashlib
 import time
@@ -52,6 +71,14 @@ if not app.config.get('SQLALCHEMY_DATABASE_URI'):
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
+
+# Initialize Rate Limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Database initialization will be handled by the create_admin_account function
 # def init_database():
@@ -1289,13 +1316,14 @@ def reviews():
 
 
 @app.route('/reviews/submit', methods=['POST'])
+@limiter.limit("5 per hour")
 def submit_review():
     """Submit a new review with comprehensive abuse protection"""
     try:
         data = request.get_json()
         
         # 1. HONEYPOT VALIDATION (catch automated bots)
-        if data.get('website'):  # If honeypot field is filled, it's likely a bot
+        if not check_honeypot(data):
             return jsonify({'success': False, 'error': 'Invalid submission'})
         
         # 2. BASIC VALIDATION
@@ -1364,26 +1392,26 @@ def submit_review():
         if ip_review_count >= 5:  # Max 5 reviews per IP per day
             return jsonify({'success': False, 'error': 'Too many reviews submitted. Please try again tomorrow.'})
         
-        # 8. TURNSTILE VERIFICATION (if enabled)
-        turnstile_response = data.get('cf-turnstile-response')
-        print(f"🔍 Reviews: Turnstile response present: {bool(turnstile_response)}")
+        # 8. reCAPTCHA VERIFICATION (if enabled)
+        recaptcha_response = data.get('g-recaptcha-response')
+        print(f"🔍 Reviews: reCAPTCHA response present: {bool(recaptcha_response)}")
         print(f"🔍 Reviews: Is localhost environment: {is_localhost_environment()}")
         
         if not is_localhost_environment():
-            if not turnstile_response:
-                print("❌ Reviews: Turnstile response missing")
+            if not recaptcha_response:
+                print("❌ Reviews: reCAPTCHA response missing")
                 return jsonify({'success': False, 'error': 'Please complete the security verification'})
             
-            # Verify Turnstile token
-            print(f"🔍 Reviews: Verifying Turnstile response...")
-            verification_result = verify_turnstile(turnstile_response)
-            print(f"🔍 Reviews: Turnstile verification result: {verification_result}")
+            # Verify reCAPTCHA token
+            print(f"🔍 Reviews: Verifying reCAPTCHA response...")
+            verification_result = verify_recaptcha(recaptcha_response, action='review')
+            print(f"🔍 Reviews: reCAPTCHA verification result: {verification_result}")
             
             if not verification_result:
-                print("❌ Reviews: Turnstile verification failed")
+                print("❌ Reviews: reCAPTCHA verification failed")
                 return jsonify({'success': False, 'error': 'Security verification failed. Please try again.'})
             
-            print("✅ Reviews: Turnstile verification successful")
+            print("✅ Reviews: reCAPTCHA verification successful")
         
         # 9. CREATE REVIEW
         new_review = Review(
@@ -1409,22 +1437,39 @@ def submit_review():
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Error submitting review. Please try again.'})
 
-@app.route('/api/turnstile-status')
-def turnstile_status():
-    """API endpoint to check Turnstile status"""
+@app.route('/api/recaptcha-status')
+def recaptcha_status():
+    """API endpoint to check reCAPTCHA status"""
     # Check if running on localhost
     is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
     
-    # Determine if Turnstile should be enabled
-    turnstile_enabled = not is_localhost
+    # Check if reCAPTCHA keys are configured
+    site_key = app.config.get('RECAPTCHA_SITE_KEY')
+    secret_key = app.config.get('RECAPTCHA_SECRET_KEY')
+    keys_configured = bool(site_key and secret_key and site_key != 'None' and secret_key != 'None')
+    
+    # Determine if reCAPTCHA should be enabled
+    # Only enable if not localhost AND keys are configured
+    recaptcha_enabled = not is_localhost and keys_configured
+    
+    print(f"🔍 reCAPTCHA Status Check:")
+    print(f"  - Is localhost: {is_localhost}")
+    print(f"  - Keys configured: {keys_configured}")
+    print(f"  - Site key present: {bool(site_key)}")
+    print(f"  - Secret key present: {bool(secret_key)}")
+    print(f"  - Final enabled status: {recaptcha_enabled}")
     
     return jsonify({
-        'enabled': turnstile_enabled,
+        'enabled': recaptcha_enabled,
         'is_localhost': is_localhost,
-        'host': request.host
+        'host': request.host,
+        'keys_configured': keys_configured,
+        'site_key_present': bool(site_key),
+        'secret_key_present': bool(secret_key)
     })
 
 @app.route('/contact', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")
 def contact():
     if request.method == 'POST':
         # Get form data
@@ -1432,6 +1477,11 @@ def contact():
         email = request.form.get('email', '').strip()
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
+        
+        # Honeypot validation
+        if not check_honeypot(request.form):
+            flash('Invalid submission detected.', 'error')
+            return render_template('contact.html', form_data=request.form)
         
         # Basic validation
         if not all([name, email, subject, message]):
@@ -1458,42 +1508,43 @@ def contact():
     return render_template('contact.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        turnstile_response = request.form.get('cf-turnstile-response')
+        recaptcha_response = request.form.get('g-recaptcha-response')
         
         if not username or not password:
             flash('Username and password are required', 'error')
             return render_template('login.html')
         
-        # Turnstile validation (only if enabled)
+        # reCAPTCHA validation (only if enabled)
         # Check if running on localhost
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
-        turnstile_enabled = not is_localhost
+        recaptcha_enabled = not is_localhost
         
-        print(f"🔍 Login: Turnstile enabled: {turnstile_enabled}")
+        print(f"🔍 Login: reCAPTCHA enabled: {recaptcha_enabled}")
         print(f"🔍 Login: Is localhost: {is_localhost}")
-        print(f"🔍 Login: Turnstile response present: {bool(turnstile_response)}")
+        print(f"🔍 Login: reCAPTCHA response present: {bool(recaptcha_response)}")
         
-        if turnstile_enabled:
-            if not turnstile_response:
-                print("❌ Login: Turnstile response missing")
+        if recaptcha_enabled:
+            if not recaptcha_response:
+                print("❌ Login: reCAPTCHA response missing")
                 flash('Please complete the security verification', 'error')
                 return render_template('login.html')
             
-            # Verify Turnstile
-            print(f"🔍 Login: Verifying Turnstile response...")
-            verification_result = verify_turnstile(turnstile_response)
-            print(f"🔍 Login: Turnstile verification result: {verification_result}")
+            # Verify reCAPTCHA
+            print(f"🔍 Login: Verifying reCAPTCHA response...")
+            verification_result = verify_recaptcha(recaptcha_response, action='login')
+            print(f"🔍 Login: reCAPTCHA verification result: {verification_result}")
             
             if not verification_result:
-                print("❌ Login: Turnstile verification failed")
+                print("❌ Login: reCAPTCHA verification failed")
                 flash('Security verification failed. Please try again.', 'error')
                 return render_template('login.html')
             
-            print("✅ Login: Turnstile verification successful")
+            print("✅ Login: reCAPTCHA verification successful")
         
         # Ensure database tables exist before querying
         ensure_tables_exist()
@@ -1615,6 +1666,7 @@ def is_kiwellness_username(username):
     return False
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")
 def register():
     if request.method == 'POST':
         # Check if new account creation is disabled
@@ -1627,38 +1679,38 @@ def register():
         phone = request.form.get('phone')  # Add phone number field
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        turnstile_response = request.form.get('cf-turnstile-response')
+        recaptcha_response = request.form.get('g-recaptcha-response')
         
         # Enhanced validation with detailed error messages
         if not username or not email or not password:
             flash('❌ Missing Information: All fields are required. Please fill in username, email, and password.', 'error')
             return render_template('register.html')
         
-        # Turnstile validation (only if enabled)
+        # reCAPTCHA validation (only if enabled)
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
-        turnstile_enabled = not is_localhost
+        recaptcha_enabled = not is_localhost
         
-        print(f"🔍 Register: Turnstile enabled: {turnstile_enabled}")
+        print(f"🔍 Register: reCAPTCHA enabled: {recaptcha_enabled}")
         print(f"🔍 Register: Is localhost: {is_localhost}")
-        print(f"🔍 Register: Turnstile response present: {bool(turnstile_response)}")
+        print(f"🔍 Register: reCAPTCHA response present: {bool(recaptcha_response)}")
         
-        if turnstile_enabled:
-            if not turnstile_response:
-                print("❌ Register: Turnstile response missing")
+        if recaptcha_enabled:
+            if not recaptcha_response:
+                print("❌ Register: reCAPTCHA response missing")
                 flash('🔒 Security Required: Please complete the security verification to proceed.', 'error')
                 return render_template('register.html')
             
-            # Verify Turnstile
-            print(f"🔍 Register: Verifying Turnstile response...")
-            verification_result = verify_turnstile(turnstile_response)
-            print(f"🔍 Register: Turnstile verification result: {verification_result}")
+            # Verify reCAPTCHA
+            print(f"🔍 Register: Verifying reCAPTCHA response...")
+            verification_result = verify_recaptcha(recaptcha_response, action='register')
+            print(f"🔍 Register: reCAPTCHA verification result: {verification_result}")
             
             if not verification_result:
-                print("❌ Register: Turnstile verification failed")
+                print("❌ Register: reCAPTCHA verification failed")
                 flash('⚠️ Security Failed: Security verification failed. Please try again.', 'error')
                 return render_template('register.html')
             
-            print("✅ Register: Turnstile verification successful")
+            print("✅ Register: reCAPTCHA verification successful")
         
         # Enhanced username validation with detailed feedback
         username_pattern = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$')
@@ -3742,75 +3794,99 @@ def favicon():
 def serve_avatar(filename):
     return app.send_static_file(f'public/avatars/{filename}')
 
-def verify_turnstile(response):
+def verify_recaptcha(response, action='submit'):
     """
-    Verify Cloudflare Turnstile response with enhanced error handling and logging
+    Verify Google reCAPTCHA v3 response with enhanced error handling and logging
     """
     # Check if running on localhost
     is_localhost = False
     if request:
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
     
-    # If Turnstile is disabled or running on localhost, return True
-    if not app.config.get('TURNSTILE_ENABLED', True) or is_localhost:
+    # If reCAPTCHA is disabled or running on localhost, return True
+    if not app.config.get('RECAPTCHA_ENABLED', True) or is_localhost:
         if is_localhost:
-            print("🔧 Localhost detected: Bypassing Turnstile verification")
+            print("🔧 Localhost detected: Bypassing reCAPTCHA verification")
         else:
-            print("🔧 Turnstile disabled in configuration")
+            print("🔧 reCAPTCHA disabled in configuration")
         return True
     
     # If no response provided, log and return False
     if not response:
-        print("❌ Turnstile verification failed: No response provided")
+        print("❌ reCAPTCHA verification failed: No response provided")
         return False
     
     # Log the response for debugging (truncated for security)
     response_preview = response[:20] + "..." if len(response) > 20 else response
-    print(f"🔍 Turnstile verification: Processing response: {response_preview}")
+    print(f"🔍 reCAPTCHA verification: Processing response: {response_preview}")
     
     try:
-        # Make a request to Cloudflare's Turnstile verification endpoint
-        verify_url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        # Make a request to Google's reCAPTCHA verification endpoint
+        verify_url = 'https://www.google.com/recaptcha/api/siteverify'
         data = {
-            'secret': app.config['TURNSTILE_SECRET_KEY'],
-            'response': response
+            'secret': app.config['RECAPTCHA_SECRET_KEY'],
+            'response': response,
+            'remoteip': request.remote_addr if request else None
         }
         
-        print(f"🔍 Turnstile verification: Sending request to {verify_url}")
-        print(f"🔍 Turnstile verification: Secret key present: {bool(app.config.get('TURNSTILE_SECRET_KEY'))}")
+        print(f"🔍 reCAPTCHA verification: Sending request to {verify_url}")
+        print(f"🔍 reCAPTCHA verification: Secret key present: {bool(app.config.get('RECAPTCHA_SECRET_KEY'))}")
+        print(f"🔍 reCAPTCHA verification: Action: {action}")
         
         result = requests.post(verify_url, data=data, timeout=10)
-        print(f"🔍 Turnstile verification: HTTP response status: {result.status_code}")
+        print(f"🔍 reCAPTCHA verification: HTTP response status: {result.status_code}")
         
         if result.status_code != 200:
-            print(f"❌ Turnstile verification failed: HTTP {result.status_code}")
+            print(f"❌ reCAPTCHA verification failed: HTTP {result.status_code}")
             return False
         
         result_json = result.json()
-        print(f"🔍 Turnstile verification: Response JSON: {result_json}")
+        print(f"🔍 reCAPTCHA verification: Response JSON: {result_json}")
         
         # Check if the verification was successful
         success = result_json.get('success', False)
         if success:
-            print("✅ Turnstile verification successful")
+            # Check the score (0.0 = bot, 1.0 = human)
+            score = result_json.get('score', 0.0)
+            action_match = result_json.get('action') == action
+            
+            print(f"✅ reCAPTCHA verification successful - Score: {score}, Action match: {action_match}")
+            
+            # Return True if score is above threshold (0.5 is recommended)
+            return score >= 0.5 and action_match
         else:
-            print(f"❌ Turnstile verification failed: {result_json.get('error-codes', ['Unknown error'])}")
-        
-        return success
+            error_codes = result_json.get('error-codes', ['Unknown error'])
+            print(f"❌ reCAPTCHA verification failed: {error_codes}")
+            return False
         
     except requests.exceptions.Timeout:
-        print("❌ Turnstile verification failed: Request timeout")
+        print("❌ reCAPTCHA verification failed: Request timeout")
         return False
     except requests.exceptions.RequestException as e:
-        print(f"❌ Turnstile verification failed: Request error: {e}")
+        print(f"❌ reCAPTCHA verification failed: Request error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Turnstile verification failed: Unexpected error: {e}")
+        print(f"❌ reCAPTCHA verification failed: Unexpected error: {e}")
         # In development, if there's an error, allow the request to proceed
         if app.config.get('DEBUG', False):
             print("🔧 Development mode: Allowing request to proceed despite error")
             return True
         return False
+
+
+def check_honeypot(data):
+    """
+    Check if honeypot field was filled (indicates bot)
+    """
+    # Check for honeypot field (should be empty if human)
+    honeypot_fields = ['website', 'phone_number', 'company', 'subject']
+    
+    for field in honeypot_fields:
+        if data.get(field) and data.get(field).strip():
+            print(f"🚫 Bot detected: Honeypot field '{field}' was filled")
+            return False
+    
+    return True
 
 # Reminder Management Routes
 @app.route('/reminders')

@@ -34,15 +34,15 @@ class Config:
     POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
     POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
     
-    # Cloudflare Turnstile Configuration
-    TURNSTILE_SITE_KEY = os.getenv('SITE_KEY')
-    TURNSTILE_SECRET_KEY = os.getenv('SECRET_KEY')
+    # Google reCAPTCHA v3 Configuration
+    RECAPTCHA_SITE_KEY = os.getenv('RECAPTCHA_SITE_KEY')
+    RECAPTCHA_SECRET_KEY = os.getenv('RECAPTCHA_SECRET_KEY')
     
-    # Auto-detect environment and configure Turnstile
+    # Auto-detect environment and configure reCAPTCHA
     @property
-    def TURNSTILE_ENABLED(self):
+    def RECAPTCHA_ENABLED(self):
         # Check if explicitly disabled via environment variable
-        if os.getenv('TURNSTILE_ENABLED', '').lower() == 'false':
+        if os.getenv('RECAPTCHA_ENABLED', '').lower() == 'false':
             return False
         
         # Check if running on localhost (development)
@@ -74,9 +74,9 @@ class DevelopmentConfig(Config):
         else:
             print("🔧 Development mode: Using PostgreSQL database (FORCE_POSTGRES_DEV set)")
         
-        # Turnstile status will be auto-detected based on host
-        turnstile_status = "disabled" if not self.TURNSTILE_ENABLED else "enabled"
-        print(f"🔧 Development mode: Turnstile captcha {turnstile_status}")
+        # reCAPTCHA status will be auto-detected based on host
+        recaptcha_status = "disabled" if not self.RECAPTCHA_ENABLED else "enabled"
+        print(f"🔧 Development mode: reCAPTCHA v3 {recaptcha_status}")
 
 class ProductionConfig(Config):
     DEBUG = False
@@ -84,15 +84,15 @@ class ProductionConfig(Config):
     
     def __init__(self):
         super().__init__()
-        # Ensure Turnstile is enabled in production
-        if not self.TURNSTILE_ENABLED:
-            print("⚠️  Warning: Turnstile captcha is disabled in production!")
+        # Ensure reCAPTCHA is enabled in production
+        if not self.RECAPTCHA_ENABLED:
+            print("⚠️  Warning: reCAPTCHA v3 is disabled in production!")
         else:
-            print("✅ Production mode: Turnstile captcha enabled")
+            print("✅ Production mode: reCAPTCHA v3 enabled")
         
-        # Force enable Turnstile for kiwellness.org domain
+        # Force enable reCAPTCHA for kiwellness.org domain
         if 'kiwellness.org' in os.getenv('SERVER_NAME', ''):
-            print("🌐 kiwellness.org domain detected: Turnstile captcha enforced")
+            print("🌐 kiwellness.org domain detected: reCAPTCHA v3 enforced")
 
 # Configuration dictionary
 config = {

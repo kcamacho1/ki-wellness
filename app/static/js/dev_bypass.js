@@ -1,40 +1,41 @@
 /**
  * Development Bypass Module
- * Provides a mock Turnstile interface when running on localhost/development
+ * Provides a mock reCAPTCHA interface when running on localhost/development
  */
 
 (function() {
     'use strict';
     
-    console.log('🔧 Development mode: Turnstile bypass module loaded');
+    console.log('🔧 Development mode: reCAPTCHA bypass module loaded');
     
-    // Mock Turnstile module for development
-    window.TurnstileModule = {
-        init: function(siteKey, theme, size) {
-            console.log('🔧 Development mode: Mock Turnstile initialized');
-            return true;
+    // Mock reCAPTCHA interface for development
+    window.grecaptcha = {
+        ready: function(callback) {
+            console.log('🔧 Development mode: Mock reCAPTCHA ready');
+            // Execute callback immediately in development
+            if (typeof callback === 'function') {
+                callback();
+            }
         },
-        getToken: function() {
-            // Always return a mock token in development
-            return 'dev-bypass-token-' + Date.now();
+        execute: function(siteKey, options) {
+            console.log('🔧 Development mode: Mock reCAPTCHA execute called');
+            console.log('🔧 Site key:', siteKey);
+            console.log('🔧 Options:', options);
+            
+            // Return a promise that resolves with a mock token
+            return Promise.resolve('dev-bypass-token-' + Date.now());
         },
-        reset: function() {
-            console.log('🔧 Development mode: Mock Turnstile reset');
-        },
-        validateForm: function(formElement) {
-            // Always return true in development
-            return true;
-        },
-        addFormValidation: function(formSelector) {
-            console.log('🔧 Development mode: Mock form validation added');
+        render: function(element, options) {
+            console.log('🔧 Development mode: Mock reCAPTCHA render called');
+            return 'dev-widget-id';
         }
     };
     
     // Add development indicator to the page
     document.addEventListener('DOMContentLoaded', function() {
-        const turnstileContainer = document.querySelector('.cf-turnstile');
-        if (turnstileContainer) {
-            turnstileContainer.innerHTML = `
+        const recaptchaContainer = document.querySelector('.g-recaptcha');
+        if (recaptchaContainer) {
+            recaptchaContainer.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                     <div class="flex items-center justify-center mb-2">
                         <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,9 +44,18 @@
                         <span class="text-green-800 font-medium">Development Mode</span>
                     </div>
                     <p class="text-sm text-green-700">Security verification bypassed for local development</p>
+                    <p class="text-xs text-green-600 mt-1">reCAPTCHA v3 will be enabled in production</p>
                 </div>
             `;
         }
+        
+        // Also check for any forms that might need the bypass
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            if (form.querySelector('.g-recaptcha')) {
+                console.log('🔧 Development mode: Form with reCAPTCHA detected, bypass active');
+            }
+        });
     });
     
 })();

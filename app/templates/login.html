@@ -7,31 +7,50 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Dynamically load Turnstile modules based on environment
-        fetch('/api/turnstile-status')
+        // Dynamically load reCAPTCHA v3 based on environment
+        console.log('🔍 Loading reCAPTCHA status...');
+        
+        fetch('/api/recaptcha-status')
             .then(response => response.json())
             .then(data => {
-                if (data.enabled) {
-                    // Load production Turnstile
-                    const turnstileScript = document.createElement('script');
-                    turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-                    turnstileScript.async = true;
-                    turnstileScript.defer = true;
-                    document.head.appendChild(turnstileScript);
+                console.log('🔍 reCAPTCHA status response:', data);
+                
+                if (data.enabled && '{{ config.RECAPTCHA_SITE_KEY }}' && '{{ config.RECAPTCHA_SITE_KEY }}' !== 'None') {
+                    console.log('✅ Loading production reCAPTCHA v3...');
                     
-                    const moduleScript = document.createElement('script');
-                    moduleScript.src = '{{ url_for("static", filename="js/turnstile_module.js") }}';
-                    document.head.appendChild(moduleScript);
+                    // Load production reCAPTCHA v3
+                    const recaptchaScript = document.createElement('script');
+                    recaptchaScript.src = 'https://www.google.com/recaptcha/api.js?render={{ config.RECAPTCHA_SITE_KEY }}';
+                    recaptchaScript.async = true;
+                    recaptchaScript.defer = true;
+                    
+                    recaptchaScript.onload = function() {
+                        console.log('✅ reCAPTCHA script loaded successfully');
+                    };
+                    
+                    recaptchaScript.onerror = function() {
+                        console.error('❌ Failed to load reCAPTCHA script');
+                    };
+                    
+                    document.head.appendChild(recaptchaScript);
                 } else {
+                    console.log('🔧 Development mode: reCAPTCHA disabled');
+                    console.log('🔍 Site key present:', !!'{{ config.RECAPTCHA_SITE_KEY }}');
+                    console.log('🔍 Site key value:', '{{ config.RECAPTCHA_SITE_KEY }}');
+                    
                     // Load development bypass
+                    console.log('🔧 Loading development bypass module...');
                     const bypassScript = document.createElement('script');
                     bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
                     document.head.appendChild(bypassScript);
                 }
             })
             .catch(error => {
-                console.error('Error loading Turnstile status:', error);
-                // Fallback to development bypass
+                console.error('❌ Error loading reCAPTCHA status:', error);
+                console.log('🔧 Development mode: reCAPTCHA disabled (fallback)');
+                
+                // Load development bypass on error
+                console.log('🔧 Loading development bypass module (error fallback)...');
                 const bypassScript = document.createElement('script');
                 bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
                 document.head.appendChild(bypassScript);
@@ -120,6 +139,11 @@
                             </div>
                         </div>
 
+                        <!-- Honeypot field (hidden from users) -->
+                        <div style="display: none;">
+                            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                        </div>
+                        
                         <!-- Remember Me and Forgot Password -->
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
@@ -136,10 +160,10 @@
                             </div>
                         </div>
 
-                        <!-- Cloudflare Turnstile -->
-                        {% if config.TURNSTILE_ENABLED %}
+                        <!-- Google reCAPTCHA v3 -->
+                        {% if config.RECAPTCHA_ENABLED %}
                             <div class="flex justify-center">
-                                <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
+                                <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}" data-size="invisible"></div>
                             </div>
                         {% else %}
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -167,27 +191,7 @@
                         </p>
                     </div>
                     
-                    <!-- Verification Notice -->
-                    <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div class="flex items-start space-x-3">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <h4 class="text-sm font-medium text-blue-800 mb-1">AI Features Require Verification</h4>
-                                <p class="text-xs text-blue-700">
-                                    To access AI-powered wellness insights, you'll need to verify your email and phone number after logging in.
-                                </p>
-                                <div class="mt-2">
-                                    <a href="{{ url_for('verify_phone') }}" class="text-xs text-blue-600 underline hover:text-blue-800">
-                                        Need help with verification? →
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -235,46 +239,55 @@
                 return;
             }
             
-            // Turnstile validation (only if enabled and module is available)
-            {% if config.TURNSTILE_ENABLED %}
-            if (window.TurnstileModule) {
-                console.log('Turnstile: Module available, checking token...');
+            // reCAPTCHA validation (only if enabled)
+            {% if config.RECAPTCHA_ENABLED %}
+            if (typeof grecaptcha !== 'undefined') {
+                console.log('reCAPTCHA: Executing verification...');
                 
-                // Wait for Turnstile to be ready if it's still initializing
-                if (!window.TurnstileModule.isReady()) {
-                    console.log('Turnstile: Module not ready, waiting...');
-                    e.preventDefault();
-                    alert('Security verification is still loading. Please wait a moment and try again.');
-                    return;
-                }
+                // Execute reCAPTCHA
+                grecaptcha.ready(function() {
+                    grecaptcha.execute('{{ config.RECAPTCHA_SITE_KEY }}', {action: 'login'})
+                        .then(function(token) {
+                            // Add the token to the form data
+                            const recaptchaInput = document.createElement('input');
+                            recaptchaInput.type = 'hidden';
+                            recaptchaInput.name = 'g-recaptcha-response';
+                            recaptchaInput.value = token;
+                            document.querySelector('form').appendChild(recaptchaInput);
+                            
+                            // Submit the form
+                            document.querySelector('form').submit();
+                        })
+                        .catch(function(error) {
+                            console.error('reCAPTCHA error:', error);
+                            alert('Security verification failed. Please try again.');
+                        });
+                });
                 
-                const token = window.TurnstileModule.getToken();
-                console.log('Turnstile: Token check result:', token ? 'TOKEN_PRESENT' : 'NO_TOKEN');
-                
-                if (!token) {
-                    e.preventDefault();
-                    
-                    // Get detailed status for debugging
-                    const status = window.TurnstileModule.getStatus();
-                    console.warn('Turnstile: Validation failed. Status:', status);
-                    
-                    alert('Please complete the security verification.');
-                    return;
-                }
-                
-                // Add the token to the form data
-                const turnstileInput = document.createElement('input');
-                turnstileInput.type = 'hidden';
-                turnstileInput.name = 'cf-turnstile-response';
-                turnstileInput.value = token;
-                this.appendChild(turnstileInput);
-                
-            } else {
-                console.warn('Turnstile: Module not available');
+                // Prevent default form submission
                 e.preventDefault();
-                alert('Security verification system is not available. Please refresh the page and try again.');
                 return;
+            } else {
+                console.warn('reCAPTCHA: Not available - checking if we should bypass...');
+                
+                // Check if we're in development mode
+                const isLocalhost = window.location.hostname === 'localhost' || 
+                                  window.location.hostname === '127.0.0.1' || 
+                                  window.location.hostname === '0.0.0.0';
+                
+                if (isLocalhost) {
+                    console.log('🔧 Development mode: Bypassing reCAPTCHA verification');
+                    // Allow form submission in development
+                    return true;
+                } else {
+                    console.error('reCAPTCHA: Not available in production');
+                    e.preventDefault();
+                    alert('Security verification system is not available. Please refresh the page and try again.');
+                    return false;
+                }
             }
+            {% else %}
+            console.log('🔧 reCAPTCHA disabled in configuration');
             {% endif %}
             
             // Disable submit button to prevent double submission
