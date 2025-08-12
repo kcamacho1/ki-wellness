@@ -16,6 +16,14 @@ from config import DevelopmentConfig, ProductionConfig
 from openai import OpenAI
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+
+# OAuth imports
+try:
+    from flask_oauthlib.client import OAuth
+    OAUTH_AVAILABLE = True
+except ImportError:
+    OAUTH_AVAILABLE = False
+    print("⚠️  Flask-OAuthlib not available. OAuth features will be disabled.")
 try:
     from flask_limiter import Limiter  # type: ignore
     from flask_limiter.util import get_remote_address  # type: ignore
@@ -87,6 +95,28 @@ limiter = Limiter(
     default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
+
+# Initialize OAuth
+if OAUTH_AVAILABLE:
+    oauth = OAuth(app)
+    
+    # Google OAuth configuration
+    google_oauth = oauth.remote_app(
+        'google',
+        consumer_key=os.environ.get('GOOGLE_CLIENT_ID'),
+        consumer_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+        request_token_params={
+            'scope': 'email profile'
+        },
+        base_url='https://www.googleapis.com/oauth2/v1/',
+        request_token_url=None,
+        access_token_method='POST',
+        access_token_url='https://accounts.google.com/o/oauth2/token',
+        authorize_url='https://accounts.google.com/o/oauth2/auth'
+    )
+else:
+    oauth = None
+    google_oauth = None
 
 # Initialize Stripe
 def get_stripe_config():
@@ -387,6 +417,13 @@ class User(db.Model):
     sms_notifications = db.Column(db.Boolean, default=False)
     push_notifications = db.Column(db.Boolean, default=True)
     
+    # OAuth fields
+    oauth_provider = db.Column(db.String(20), nullable=True)  # 'google', 'facebook', etc.
+    oauth_id = db.Column(db.String(255), nullable=True, unique=True)  # OAuth provider's user ID
+    oauth_email = db.Column(db.String(255), nullable=True)  # Email from OAuth provider
+    oauth_name = db.Column(db.String(255), nullable=True)  # Name from OAuth provider
+    oauth_picture = db.Column(db.String(500), nullable=True)  # Profile picture URL from OAuth provider
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     
@@ -402,6 +439,39 @@ class UserProfile(db.Model):
     name = db.Column(db.String(100), nullable=True)
     avatar = db.Column(db.String(100), nullable=True, default='default-avatar.png')
     weight_unit = db.Column(db.String(10), nullable=True, default='kg')
+    
+    # Basic profile information
+    date_of_birth = db.Column(db.Date, nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    weight = db.Column(db.Float, nullable=True)
+    height = db.Column(db.Float, nullable=True)
+    
+    # Wellness goals and preferences
+    goal = db.Column(db.String(100), nullable=True)  # Primary wellness goal
+    goals = db.Column(db.Text, nullable=True)  # General wellness goals
+    custom_goal = db.Column(db.String(200), nullable=True)  # Custom goal description
+    ailments = db.Column(db.Text, nullable=True)  # Health conditions
+    dietary_preferences = db.Column(db.Text, nullable=True)
+    sleep_schedule = db.Column(db.String(100), nullable=True)
+    
+    # Physical wellness
+    daily_activities = db.Column(db.Text, nullable=True)  # Work activities
+    exercise_routine = db.Column(db.Text, nullable=True)
+    day_notes = db.Column(db.Text, nullable=True)  # Body notes/goals
+    night_notes = db.Column(db.Text, nullable=True)  # Recovery notes
+    
+    # Spiritual and emotional wellness
+    spiritual_religion = db.Column(db.Text, nullable=True)
+    self_connection = db.Column(db.Text, nullable=True)
+    surroundings_connection = db.Column(db.Text, nullable=True)
+    providing_others = db.Column(db.Text, nullable=True)
+    safe_groups = db.Column(db.Text, nullable=True)
+    awe_things = db.Column(db.Text, nullable=True)
+    creative_expression = db.Column(db.Text, nullable=True)
+    upsetting_situations = db.Column(db.Text, nullable=True)
+    spirit_notes = db.Column(db.Text, nullable=True)
+    
+    # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -979,7 +1049,18 @@ def verify_user_data_access(user_profile, data_type="unknown"):
 def get_current_user_profile():
     user = get_current_user()
     if user:
-        return UserProfile.query.filter_by(user_id=user.id).first()
+        profile = UserProfile.query.filter_by(user_id=user.id).first()
+        if not profile:
+            # Create a default profile if it doesn't exist
+            profile = UserProfile(
+                user_id=user.id,
+                name=user.username,
+                avatar='default-avatar.png',
+                weight_unit='kg'
+            )
+            db.session.add(profile)
+            db.session.commit()
+        return profile
     return None
 
 # Admin decorator with session timeout
@@ -1047,6 +1128,8 @@ class FoodJournal(db.Model):
     brand = db.Column(db.String(100), nullable=True)
     serving_size = db.Column(db.Float, nullable=False)
     serving_unit = db.Column(db.String(20), nullable=False)
+    
+    # Core nutritional values (displayed to user)
     calories = db.Column(db.Float, nullable=True)
     protein = db.Column(db.Float, nullable=True)
     carbs = db.Column(db.Float, nullable=True)
@@ -1054,6 +1137,44 @@ class FoodJournal(db.Model):
     fiber = db.Column(db.Float, nullable=True)
     sugar = db.Column(db.Float, nullable=True)
     sodium = db.Column(db.Float, nullable=True)
+    
+    # Extended nutritional values (stored but not displayed)
+    saturated_fat = db.Column(db.Float, nullable=True)
+    trans_fat = db.Column(db.Float, nullable=True)
+    cholesterol = db.Column(db.Float, nullable=True)
+    potassium = db.Column(db.Float, nullable=True)
+    calcium = db.Column(db.Float, nullable=True)
+    iron = db.Column(db.Float, nullable=True)
+    vitamin_a = db.Column(db.Float, nullable=True)
+    vitamin_c = db.Column(db.Float, nullable=True)
+    vitamin_d = db.Column(db.Float, nullable=True)
+    vitamin_e = db.Column(db.Float, nullable=True)
+    vitamin_k = db.Column(db.Float, nullable=True)
+    vitamin_b6 = db.Column(db.Float, nullable=True)
+    vitamin_b12 = db.Column(db.Float, nullable=True)
+    magnesium = db.Column(db.Float, nullable=True)
+    zinc = db.Column(db.Float, nullable=True)
+    phosphorus = db.Column(db.Float, nullable=True)
+    manganese = db.Column(db.Float, nullable=True)
+    selenium = db.Column(db.Float, nullable=True)
+    copper = db.Column(db.Float, nullable=True)
+    thiamin = db.Column(db.Float, nullable=True)
+    riboflavin = db.Column(db.Float, nullable=True)
+    niacin = db.Column(db.Float, nullable=True)
+    folate = db.Column(db.Float, nullable=True)
+    pantothenic_acid = db.Column(db.Float, nullable=True)
+    biotin = db.Column(db.Float, nullable=True)
+    choline = db.Column(db.Float, nullable=True)
+    betaine = db.Column(db.Float, nullable=True)
+    taurine = db.Column(db.Float, nullable=True)
+    caffeine = db.Column(db.Float, nullable=True)
+    alcohol = db.Column(db.Float, nullable=True)
+    water_content = db.Column(db.Float, nullable=True)
+    ash = db.Column(db.Float, nullable=True)
+    
+    # Metadata
+    data_source = db.Column(db.String(50), nullable=True)  # openfoodfacts, usda, common_foods_db
+    barcode = db.Column(db.String(50), nullable=True)
     time_of_day = db.Column(db.String(20), nullable=True)  # breakfast, lunch, dinner, snacks
     water_amount = db.Column(db.Float, nullable=True)
     water_unit = db.Column(db.String(20), nullable=True)  # oz, liters, gallons
@@ -1361,10 +1482,10 @@ def find_best_match(products, original_food_name):
     return None
 
 def extract_nutritional_data(product, original_food_name):
-    """Extract and validate nutritional data from product"""
+    """Extract and validate nutritional data from product with comprehensive fields"""
     nutriments = product.get('nutriments', {})
     
-    # Get nutritional values with fallbacks
+    # Core nutritional values (displayed to user)
     calories = nutriments.get('energy-kcal_100g') or nutriments.get('energy_100g')
     protein = nutriments.get('proteins_100g')
     carbs = nutriments.get('carbohydrates_100g')
@@ -1372,6 +1493,40 @@ def extract_nutritional_data(product, original_food_name):
     fiber = nutriments.get('fiber_100g')
     sugar = nutriments.get('sugars_100g')
     sodium = nutriments.get('salt_100g')
+    
+    # Extended nutritional values (stored but not displayed)
+    saturated_fat = nutriments.get('saturated-fat_100g')
+    trans_fat = nutriments.get('trans-fat_100g')
+    cholesterol = nutriments.get('cholesterol_100g')
+    potassium = nutriments.get('potassium_100g')
+    calcium = nutriments.get('calcium_100g')
+    iron = nutriments.get('iron_100g')
+    vitamin_a = nutriments.get('vitamin-a_100g')
+    vitamin_c = nutriments.get('vitamin-c_100g')
+    vitamin_d = nutriments.get('vitamin-d_100g')
+    vitamin_e = nutriments.get('vitamin-e_100g')
+    vitamin_k = nutriments.get('vitamin-k_100g')
+    vitamin_b6 = nutriments.get('vitamin-b6_100g')
+    vitamin_b12 = nutriments.get('vitamin-b12_100g')
+    magnesium = nutriments.get('magnesium_100g')
+    zinc = nutriments.get('zinc_100g')
+    phosphorus = nutriments.get('phosphorus_100g')
+    manganese = nutriments.get('manganese_100g')
+    selenium = nutriments.get('selenium_100g')
+    copper = nutriments.get('copper_100g')
+    thiamin = nutriments.get('thiamin_100g')
+    riboflavin = nutriments.get('riboflavin_100g')
+    niacin = nutriments.get('niacin_100g')
+    folate = nutriments.get('folate_100g')
+    pantothenic_acid = nutriments.get('pantothenic-acid_100g')
+    biotin = nutriments.get('biotin_100g')
+    choline = nutriments.get('choline_100g')
+    betaine = nutriments.get('betaine_100g')
+    taurine = nutriments.get('taurine_100g')
+    caffeine = nutriments.get('caffeine_100g')
+    alcohol = nutriments.get('alcohol_100g')
+    water_content = nutriments.get('water_100g')
+    ash = nutriments.get('ash_100g')
     
     # Validate data quality
     if not calories or calories <= 0:
@@ -1386,6 +1541,8 @@ def extract_nutritional_data(product, original_food_name):
         'brand': product.get('brands', ''),
         'serving_size': 100,
         'serving_unit': 'g',
+        
+        # Core nutritional values (displayed to user)
         'calories': calories,
         'protein': protein,
         'carbs': carbs,
@@ -1393,6 +1550,41 @@ def extract_nutritional_data(product, original_food_name):
         'fiber': fiber,
         'sugar': sugar,
         'sodium': sodium,
+        
+        # Extended nutritional values (stored but not displayed)
+        'saturated_fat': saturated_fat,
+        'trans_fat': trans_fat,
+        'cholesterol': cholesterol,
+        'potassium': potassium,
+        'calcium': calcium,
+        'iron': iron,
+        'vitamin_a': vitamin_a,
+        'vitamin_c': vitamin_c,
+        'vitamin_d': vitamin_d,
+        'vitamin_e': vitamin_e,
+        'vitamin_k': vitamin_k,
+        'vitamin_b6': vitamin_b6,
+        'vitamin_b12': vitamin_b12,
+        'magnesium': magnesium,
+        'zinc': zinc,
+        'phosphorus': phosphorus,
+        'manganese': manganese,
+        'selenium': selenium,
+        'copper': copper,
+        'thiamin': thiamin,
+        'riboflavin': riboflavin,
+        'niacin': niacin,
+        'folate': folate,
+        'pantothenic_acid': pantothenic_acid,
+        'biotin': biotin,
+        'choline': choline,
+        'betaine': betaine,
+        'taurine': taurine,
+        'caffeine': caffeine,
+        'alcohol': alcohol,
+        'water_content': water_content,
+        'ash': ash,
+        
         'source': 'openfoodfacts'
     }
 
@@ -1451,8 +1643,21 @@ def convert_nutritional_data(nutrition_data, user_serving_size, user_serving_uni
     converted_data['serving_size'] = user_serving_size
     converted_data['serving_unit'] = user_serving_unit
     
-    nutritional_fields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
-    for field in nutritional_fields:
+    # Core nutritional fields (displayed to user)
+    core_nutritional_fields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+    
+    # Extended nutritional fields (stored but not displayed)
+    extended_nutritional_fields = [
+        'saturated_fat', 'trans_fat', 'cholesterol', 'potassium', 'calcium', 'iron',
+        'vitamin_a', 'vitamin_c', 'vitamin_d', 'vitamin_e', 'vitamin_k', 'vitamin_b6', 'vitamin_b12',
+        'magnesium', 'zinc', 'phosphorus', 'manganese', 'selenium', 'copper', 'thiamin',
+        'riboflavin', 'niacin', 'folate', 'pantothenic_acid', 'biotin', 'choline', 'betaine',
+        'taurine', 'caffeine', 'alcohol', 'water_content', 'ash'
+    ]
+    
+    # Convert all nutritional fields
+    all_nutritional_fields = core_nutritional_fields + extended_nutritional_fields
+    for field in all_nutritional_fields:
         if converted_data.get(field) is not None:
             converted_data[field] = converted_data[field] * conversion_factor
     
@@ -1792,6 +1997,108 @@ def login():
     
     return render_template('login.html')
 
+# Google OAuth routes
+@app.route('/login/google')
+def google_login():
+    """Initiate Google OAuth login"""
+    if not OAUTH_AVAILABLE or not google_oauth:
+        flash('OAuth is not available', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if new account creation is enabled
+    if not are_new_accounts_enabled():
+        flash('New account creation is currently disabled by administrator', 'error')
+        return redirect(url_for('login'))
+    
+    return google_oauth.authorize(callback=url_for('google_authorized', _external=True))
+
+@app.route('/login/google/authorized')
+def google_authorized():
+    """Handle Google OAuth callback"""
+    if not OAUTH_AVAILABLE or not google_oauth:
+        flash('OAuth is not available', 'error')
+        return redirect(url_for('login'))
+    
+    try:
+        resp = google_oauth.authorized_response()
+        if resp is None or resp.get('access_token') is None:
+            flash('Access denied: reason={} error={}'.format(
+                request.args['error_reason'],
+                request.args['error_description']
+            ), 'error')
+            return redirect(url_for('login'))
+        
+        # Get user info from Google
+        access_token = resp['access_token']
+        user_info = google_oauth.get('userinfo', token=(access_token, ''))
+        
+        if user_info.status != 200:
+            flash('Failed to get user info from Google', 'error')
+            return redirect(url_for('login'))
+        
+        google_user = user_info.data
+        
+        # Check if user already exists
+        existing_user = User.query.filter_by(oauth_id=google_user['id']).first()
+        
+        if existing_user:
+            # User exists, log them in
+            session['user_id'] = existing_user.id
+            session['last_activity'] = datetime.utcnow().isoformat()
+            session.permanent = True
+            
+            flash('Login successful!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            # New user, create account
+            # Check if new account creation is enabled
+            if not are_new_accounts_enabled():
+                flash('New account creation is currently disabled by administrator', 'error')
+                return redirect(url_for('login'))
+            
+            # Create new user
+            new_user = User(
+                username=google_user['email'].split('@')[0],  # Use email prefix as username
+                email=google_user['email'],
+                oauth_provider='google',
+                oauth_id=google_user['id'],
+                oauth_email=google_user['email'],
+                oauth_name=google_user.get('name', ''),
+                oauth_picture=google_user.get('picture', ''),
+                email_verified=True,  # Google emails are verified
+                is_active=True
+            )
+            
+            # Set a random password for OAuth users (they won't use it)
+            import secrets
+            random_password = secrets.token_urlsafe(32)
+            new_user.set_password(random_password)
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Create user profile
+            profile = UserProfile(
+                user_id=new_user.id,
+                name=google_user.get('name', ''),
+                avatar='default-avatar.png'
+            )
+            db.session.add(profile)
+            db.session.commit()
+            
+            # Log the user in
+            session['user_id'] = new_user.id
+            session['last_activity'] = datetime.utcnow().isoformat()
+            session.permanent = True
+            
+            flash('Account created and login successful!', 'success')
+            return redirect(url_for('dashboard'))
+            
+    except Exception as e:
+        print(f"❌ Google OAuth error: {e}")
+        flash('An error occurred during Google login. Please try again.', 'error')
+        return redirect(url_for('login'))
+
 def is_kiwellness_username(username):
     """
     Check if username contains 'kiwellness' in any form including special characters, numbers, and variations
@@ -2083,6 +2390,7 @@ def onboarding():
             height = request.form.get('height', '').strip()
             weight = request.form.get('weight', '').strip()
             goal = request.form.get('goal', '').strip()
+            custom_goal = request.form.get('customGoal', '').strip()
             
             if not name:
                 flash('Name is required.', 'error')
@@ -2094,13 +2402,18 @@ def onboarding():
                 if user:
                     user.phone = phone
                 
-                # Update user profile
+                # Get or create user profile
                 profile = UserProfile.query.filter_by(user_id=user_id).first()
-                if profile:
-                    profile.name = name
-                    profile.height = float(height) if height else None
-                    profile.weight = float(weight) if weight else None
-                    profile.goal = goal
+                if not profile:
+                    profile = UserProfile(user_id=user_id)
+                    db.session.add(profile)
+                
+                # Update profile with basic information
+                profile.name = name
+                profile.height = float(height) if height else None
+                profile.weight = float(weight) if weight else None
+                profile.goal = goal
+                profile.custom_goal = custom_goal if goal == 'other' else None
                 
                 # Create user agreement record
                 agreement = UserAgreement(
@@ -2929,7 +3242,10 @@ def admin_dashboard():
                          presence_penalty=get_presence_penalty(),
                          frequency_penalty=get_frequency_penalty(),
                          top_p=get_top_p(),
-                         payment_testing_mode=get_system_setting('payment_testing_mode', False))
+                         payment_testing_mode=get_system_setting('payment_testing_mode', False),
+                         oauth_available=OAUTH_AVAILABLE,
+                         google_client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+                         google_client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'))
 
 
 @app.route('/admin/reviews/<int:review_id>/approve', methods=['POST'])
@@ -3016,6 +3332,7 @@ def save_profile():
         
         profile.goals = data.get('goals')
         profile.goal = data.get('goal')  # Primary wellness goal
+        profile.custom_goal = data.get('custom_goal')
         profile.ailments = data.get('ailments')
         profile.daily_activities = data.get('daily_activities')
         profile.day_notes = data.get('day_notes')
@@ -3069,6 +3386,7 @@ def get_profile_data():
                 'height': profile.height,
                 'goals': profile.goals,
                 'goal': profile.goal,
+                'custom_goal': profile.custom_goal,
                 'ailments': profile.ailments,
                 'daily_activities': profile.daily_activities,
                 'day_notes': profile.day_notes,
@@ -3268,26 +3586,43 @@ def search_food():
 def add_food_entry():
     try:
         data = request.get_json()
+        print(f"📝 Received food entry data: {data}")
         
         # Get current user profile
         user_profile = get_current_user_profile()
         if not user_profile:
+            print("❌ User profile not found")
             return jsonify({'success': False, 'error': 'User profile not found'})
+        
+        print(f"✅ User profile found: {user_profile.id}")
         
         # Handle timezone-aware datetime
         browser_timezone = data.get('browser_timezone')
         if data.get('consumed_at'):
-            consumed_at = get_browser_timezone_datetime(browser_timezone) if browser_timezone else datetime.strptime(data['consumed_at'], '%Y-%m-%d %H:%M')
+            try:
+                # Try to parse ISO format first (e.g., '2025-08-12T19:42:57.623Z')
+                consumed_at = datetime.fromisoformat(data['consumed_at'].replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    # Fallback to old format (e.g., '2025-08-12 19:42')
+                    consumed_at = datetime.strptime(data['consumed_at'], '%Y-%m-%d %H:%M')
+                except ValueError:
+                    # If all parsing fails, use current time
+                    consumed_at = get_browser_timezone_datetime(browser_timezone) if browser_timezone else datetime.utcnow()
         else:
             consumed_at = get_browser_timezone_datetime(browser_timezone) if browser_timezone else datetime.utcnow()
         
-        # Create food journal entry
+        print(f"📅 Consumed at: {consumed_at}")
+        
+        # Create food journal entry with comprehensive nutritional data
         food_entry = FoodJournal(
             user_id=user_profile.id,
             food_name=data['food_name'],
             brand=data.get('brand'),
             serving_size=data['serving_size'],
             serving_unit=data['serving_unit'],
+            
+            # Core nutritional values (displayed to user)
             calories=data.get('calories'),
             protein=data.get('protein'),
             carbs=data.get('carbs'),
@@ -3295,6 +3630,44 @@ def add_food_entry():
             fiber=data.get('fiber'),
             sugar=data.get('sugar'),
             sodium=data.get('sodium'),
+            
+            # Extended nutritional values (stored but not displayed)
+            saturated_fat=data.get('saturated_fat'),
+            trans_fat=data.get('trans_fat'),
+            cholesterol=data.get('cholesterol'),
+            potassium=data.get('potassium'),
+            calcium=data.get('calcium'),
+            iron=data.get('iron'),
+            vitamin_a=data.get('vitamin_a'),
+            vitamin_c=data.get('vitamin_c'),
+            vitamin_d=data.get('vitamin_d'),
+            vitamin_e=data.get('vitamin_e'),
+            vitamin_k=data.get('vitamin_k'),
+            vitamin_b6=data.get('vitamin_b6'),
+            vitamin_b12=data.get('vitamin_b12'),
+            magnesium=data.get('magnesium'),
+            zinc=data.get('zinc'),
+            phosphorus=data.get('phosphorus'),
+            manganese=data.get('manganese'),
+            selenium=data.get('selenium'),
+            copper=data.get('copper'),
+            thiamin=data.get('thiamin'),
+            riboflavin=data.get('riboflavin'),
+            niacin=data.get('niacin'),
+            folate=data.get('folate'),
+            pantothenic_acid=data.get('pantothenic_acid'),
+            biotin=data.get('biotin'),
+            choline=data.get('choline'),
+            betaine=data.get('betaine'),
+            taurine=data.get('taurine'),
+            caffeine=data.get('caffeine'),
+            alcohol=data.get('alcohol'),
+            water_content=data.get('water_content'),
+            ash=data.get('ash'),
+            
+            # Metadata
+            data_source=data.get('data_source'),
+            barcode=data.get('barcode'),
             time_of_day=data.get('time_of_day'),
             water_amount=data.get('water_amount'),
             water_unit=data.get('water_unit'),
@@ -3303,13 +3676,20 @@ def add_food_entry():
             consumed_at=consumed_at
         )
         
+        print(f"🍽️ Created food entry object: {food_entry.food_name}")
+        
         db.session.add(food_entry)
         db.session.commit()
         
+        print("✅ Food entry saved successfully")
         return jsonify({'success': True, 'message': 'Food entry added successfully'})
         
     except Exception as e:
         db.session.rollback()
+        print(f"❌ Error adding food entry: {str(e)}")
+        print(f"❌ Error type: {type(e)}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/food-journal/entries')
@@ -3647,7 +4027,7 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         # Initialize OpenAI client
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
-        # Prepare the data for analysis
+        # Prepare the data for analysis with comprehensive nutritional data
         analysis_data = {
             'total_entries': len(entries_data),
             'foods': [],
@@ -3660,19 +4040,90 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
                 'calories': 0,
                 'protein': 0,
                 'carbs': 0,
-                'fat': 0
+                'fat': 0,
+                'fiber': 0,
+                'sugar': 0,
+                'sodium': 0
+            },
+            'extended_nutritional_totals': {
+                'saturated_fat': 0,
+                'trans_fat': 0,
+                'cholesterol': 0,
+                'potassium': 0,
+                'calcium': 0,
+                'iron': 0,
+                'vitamin_a': 0,
+                'vitamin_c': 0,
+                'vitamin_d': 0,
+                'vitamin_e': 0,
+                'vitamin_k': 0,
+                'vitamin_b6': 0,
+                'vitamin_b12': 0,
+                'magnesium': 0,
+                'zinc': 0,
+                'phosphorus': 0,
+                'manganese': 0,
+                'selenium': 0,
+                'copper': 0,
+                'thiamin': 0,
+                'riboflavin': 0,
+                'niacin': 0,
+                'folate': 0,
+                'pantothenic_acid': 0,
+                'biotin': 0,
+                'choline': 0,
+                'betaine': 0,
+                'taurine': 0,
+                'caffeine': 0,
+                'alcohol': 0,
+                'water_content': 0,
+                'ash': 0
+            },
+            'nutritional_insights': {
+                'micronutrient_gaps': [],
+                'vitamin_deficiencies': [],
+                'mineral_deficiencies': [],
+                'nutrient_ratios': {},
+                'data_quality': {
+                    'entries_with_full_nutrition': 0,
+                    'entries_with_basic_nutrition': 0,
+                    'entries_with_no_nutrition': 0
+                }
             }
         }
         
         for entry in entries_data:
-            # Collect food data
+            # Collect food data with comprehensive nutritional information
             if entry.get('food_name'):
-                analysis_data['foods'].append({
+                food_data = {
                     'name': entry['food_name'],
+                    'brand': entry.get('brand'),
                     'serving_size': entry.get('serving_size'),
                     'serving_unit': entry.get('serving_unit'),
-                    'time_of_day': entry.get('time_of_day')
-                })
+                    'time_of_day': entry.get('time_of_day'),
+                    'data_source': entry.get('data_source'),
+                    'barcode': entry.get('barcode')
+                }
+                
+                # Add core nutritional data
+                core_nutrients = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+                for nutrient in core_nutrients:
+                    if entry.get(nutrient) is not None:
+                        food_data[nutrient] = entry[nutrient]
+                
+                # Add extended nutritional data
+                extended_nutrients = [
+                    'saturated_fat', 'trans_fat', 'cholesterol', 'potassium', 'calcium', 'iron',
+                    'vitamin_a', 'vitamin_c', 'vitamin_d', 'vitamin_e', 'vitamin_k', 'vitamin_b6', 'vitamin_b12',
+                    'magnesium', 'zinc', 'phosphorus', 'manganese', 'selenium', 'copper', 'thiamin',
+                    'riboflavin', 'niacin', 'folate', 'pantothenic_acid', 'biotin', 'choline', 'betaine',
+                    'taurine', 'caffeine', 'alcohol', 'water_content', 'ash'
+                ]
+                for nutrient in extended_nutrients:
+                    if entry.get(nutrient) is not None:
+                        food_data[nutrient] = entry[nutrient]
+                
+                analysis_data['foods'].append(food_data)
             
             # Collect mood data
             if entry.get('mood'):
@@ -3709,15 +4160,34 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
             if entry.get('time_of_day'):
                 analysis_data['meal_times'].append(entry['time_of_day'])
             
-            # Sum nutritional data
-            if entry.get('calories'):
-                analysis_data['nutritional_totals']['calories'] += entry['calories']
-            if entry.get('protein'):
-                analysis_data['nutritional_totals']['protein'] += entry['protein']
-            if entry.get('carbs'):
-                analysis_data['nutritional_totals']['carbs'] += entry['carbs']
-            if entry.get('fat'):
-                analysis_data['nutritional_totals']['fat'] += entry['fat']
+            # Sum core nutritional data
+            core_nutrients = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+            for nutrient in core_nutrients:
+                if entry.get(nutrient) is not None:
+                    analysis_data['nutritional_totals'][nutrient] += entry[nutrient]
+            
+            # Sum extended nutritional data
+            extended_nutrients = [
+                'saturated_fat', 'trans_fat', 'cholesterol', 'potassium', 'calcium', 'iron',
+                'vitamin_a', 'vitamin_c', 'vitamin_d', 'vitamin_e', 'vitamin_k', 'vitamin_b6', 'vitamin_b12',
+                'magnesium', 'zinc', 'phosphorus', 'manganese', 'selenium', 'copper', 'thiamin',
+                'riboflavin', 'niacin', 'folate', 'pantothenic_acid', 'biotin', 'choline', 'betaine',
+                'taurine', 'caffeine', 'alcohol', 'water_content', 'ash'
+            ]
+            for nutrient in extended_nutrients:
+                if entry.get(nutrient) is not None:
+                    analysis_data['extended_nutritional_totals'][nutrient] += entry[nutrient]
+            
+            # Analyze data quality
+            has_core_nutrition = any(entry.get(nutrient) is not None for nutrient in core_nutrients)
+            has_extended_nutrition = any(entry.get(nutrient) is not None for nutrient in extended_nutrients)
+            
+            if has_extended_nutrition:
+                analysis_data['nutritional_insights']['data_quality']['entries_with_full_nutrition'] += 1
+            elif has_core_nutrition:
+                analysis_data['nutritional_insights']['data_quality']['entries_with_basic_nutrition'] += 1
+            else:
+                analysis_data['nutritional_insights']['data_quality']['entries_with_no_nutrition'] += 1
         
         # Prepare user profile context with personal touch
         user_name = user_profile.name if user_profile and user_profile.name else "there"
@@ -3752,21 +4222,65 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         dashboard_water_count = len(analysis_data['dashboard_water_entries'])
         dashboard_water_oz = sum([entry['amount'] for entry in analysis_data['dashboard_water_entries']])
         
-        # Create prompt for OpenAI with personal touch
+        # Create prompt for OpenAI with comprehensive nutritional data
         prompt = f"""
-        You are {user_name}'s personal wellness coach. Analyze their nutritional journal data from the past {time_period} days and speak directly to them with personalized insights.
+        You are {user_name}'s personal wellness coach. Analyze their comprehensive nutritional journal data from the past {time_period} days and speak directly to them with personalized insights.
         
         {profile_context}
         
-        {user_name}'s NUTRITIONAL JOURNAL DATA:
+        {user_name}'s COMPREHENSIVE NUTRITIONAL JOURNAL DATA:
         - Total entries: {analysis_data['total_entries']}
         - Foods consumed: {len(analysis_data['foods'])} different items
         - Mood entries: {len(analysis_data['moods'])} entries
         - Water intake entries: {len(analysis_data['water_intake'])} entries
+        
+        CORE NUTRITIONAL TOTALS:
         - Total calories: {analysis_data['nutritional_totals']['calories']:.1f}
         - Total protein: {analysis_data['nutritional_totals']['protein']:.1f}g
         - Total carbs: {analysis_data['nutritional_totals']['carbs']:.1f}g
         - Total fat: {analysis_data['nutritional_totals']['fat']:.1f}g
+        - Total fiber: {analysis_data['nutritional_totals']['fiber']:.1f}g
+        - Total sugar: {analysis_data['nutritional_totals']['sugar']:.1f}g
+        - Total sodium: {analysis_data['nutritional_totals']['sodium']:.1f}mg
+        
+        EXTENDED NUTRITIONAL TOTALS (for detailed analysis):
+        - Saturated fat: {analysis_data['extended_nutritional_totals']['saturated_fat']:.1f}g
+        - Trans fat: {analysis_data['extended_nutritional_totals']['trans_fat']:.1f}g
+        - Cholesterol: {analysis_data['extended_nutritional_totals']['cholesterol']:.1f}mg
+        - Potassium: {analysis_data['extended_nutritional_totals']['potassium']:.1f}mg
+        - Calcium: {analysis_data['extended_nutritional_totals']['calcium']:.1f}mg
+        - Iron: {analysis_data['extended_nutritional_totals']['iron']:.1f}mg
+        - Vitamin A: {analysis_data['extended_nutritional_totals']['vitamin_a']:.1f}IU
+        - Vitamin C: {analysis_data['extended_nutritional_totals']['vitamin_c']:.1f}mg
+        - Vitamin D: {analysis_data['extended_nutritional_totals']['vitamin_d']:.1f}IU
+        - Vitamin E: {analysis_data['extended_nutritional_totals']['vitamin_e']:.1f}mg
+        - Vitamin K: {analysis_data['extended_nutritional_totals']['vitamin_k']:.1f}mcg
+        - Vitamin B6: {analysis_data['extended_nutritional_totals']['vitamin_b6']:.1f}mg
+        - Vitamin B12: {analysis_data['extended_nutritional_totals']['vitamin_b12']:.1f}mcg
+        - Magnesium: {analysis_data['extended_nutritional_totals']['magnesium']:.1f}mg
+        - Zinc: {analysis_data['extended_nutritional_totals']['zinc']:.1f}mg
+        - Phosphorus: {analysis_data['extended_nutritional_totals']['phosphorus']:.1f}mg
+        - Manganese: {analysis_data['extended_nutritional_totals']['manganese']:.1f}mg
+        - Selenium: {analysis_data['extended_nutritional_totals']['selenium']:.1f}mcg
+        - Copper: {analysis_data['extended_nutritional_totals']['copper']:.1f}mg
+        - Thiamin (B1): {analysis_data['extended_nutritional_totals']['thiamin']:.1f}mg
+        - Riboflavin (B2): {analysis_data['extended_nutritional_totals']['riboflavin']:.1f}mg
+        - Niacin (B3): {analysis_data['extended_nutritional_totals']['niacin']:.1f}mg
+        - Folate (B9): {analysis_data['extended_nutritional_totals']['folate']:.1f}mcg
+        - Pantothenic Acid (B5): {analysis_data['extended_nutritional_totals']['pantothenic_acid']:.1f}mg
+        - Biotin (B7): {analysis_data['extended_nutritional_totals']['biotin']:.1f}mcg
+        - Choline: {analysis_data['extended_nutritional_totals']['choline']:.1f}mg
+        - Betaine: {analysis_data['extended_nutritional_totals']['betaine']:.1f}mg
+        - Taurine: {analysis_data['extended_nutritional_totals']['taurine']:.1f}mg
+        - Caffeine: {analysis_data['extended_nutritional_totals']['caffeine']:.1f}mg
+        - Alcohol: {analysis_data['extended_nutritional_totals']['alcohol']:.1f}g
+        - Water content: {analysis_data['extended_nutritional_totals']['water_content']:.1f}g
+        - Ash: {analysis_data['extended_nutritional_totals']['ash']:.1f}g
+        
+        DATA QUALITY ANALYSIS:
+        - Entries with full nutritional data: {analysis_data['nutritional_insights']['data_quality']['entries_with_full_nutrition']}
+        - Entries with basic nutritional data: {analysis_data['nutritional_insights']['data_quality']['entries_with_basic_nutrition']}
+        - Entries with no nutritional data: {analysis_data['nutritional_insights']['data_quality']['entries_with_no_nutrition']}
         
         HYDRATION ANALYSIS:
         - Total water intake: {total_water_oz:.1f} oz
@@ -3775,7 +4289,7 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         - Other water sources: {len(analysis_data['water_entries']) - dashboard_water_count} entries
         - Water entry details: {analysis_data['water_entries']}
         
-        Detailed Data:
+        DETAILED FOOD DATA (with comprehensive nutritional profiles):
         - Foods: {analysis_data['foods']}
         - Moods: {analysis_data['moods']}
         - Water intake (oz): {analysis_data['water_intake']}
@@ -3789,6 +4303,9 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
         - Connect patterns to their specific profile goals and lifestyle
         - Include specific data points like calorie ranges, mood frequencies, water intake patterns
         - Identify correlations between different data points (e.g., mood and food choices)
+        - Analyze micronutrient patterns and potential deficiencies using the extended nutritional data
+        - Consider vitamin and mineral intake patterns for comprehensive health insights
+        - Evaluate data quality and completeness of nutritional information
         
         2. ACTIONABLE SUGGESTIONS (with tailored links based on profile goals):
         - Provide 3-4 specific, actionable recommendations based on their data patterns
@@ -3810,7 +4327,7 @@ def analyze_patterns_with_openai(entries_data, time_period, user_profile=None):
             <div class="body-section">
                 <h3><span class="section-icon">💪</span> Body</h3>
                 <div class="section-content">
-                    [Analyze {user_name}'s physical patterns with specific data: calorie ranges (e.g., "Your daily average is 1,200-1,800 calories"), macronutrient ratios, hydration consistency, and energy patterns. Reference exact nutritional data and water intake patterns.]
+                    [Analyze {user_name}'s physical patterns with specific data: calorie ranges (e.g., "Your daily average is 1,200-1,800 calories"), macronutrient ratios, hydration consistency, and energy patterns. Reference exact nutritional data and water intake patterns. Include micronutrient analysis using the comprehensive vitamin and mineral data, identifying potential deficiencies or excesses in vitamins A, C, D, E, K, B-complex, calcium, iron, magnesium, zinc, and other essential nutrients. Consider the quality of nutritional data available.]
                 </div>
             </div>
             

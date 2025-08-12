@@ -3,41 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal - Ki Wellness</title>
+    <title>Food Journal - Ki Wellness</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <style>
-        /* QuaggaJS Scanner Styles */
-        #scannerVideo video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover;
-        }
-        
-        #scannerVideo canvas {
-            display: none !important;
-        }
-        
-        .quagga-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 10;
-        }
-    </style>
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='public/icons/favicon-16x16.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='public/icons/favicon-32x32.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='public/icons/apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='public/android-chrome-192x192.png') }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='public/android-chrome-512x512.png') }}">
-    <meta name="msapplication-TileColor" content="#1e3a8a">
-    <meta name="theme-color" content="#1e3a8a">
     <script>
         tailwind.config = {
             theme: {
@@ -58,227 +30,6 @@
             }
         }
     </script>
-    
-    <style>
-        /* Reset any conflicting styles */
-        * {
-            box-sizing: border-box;
-        }
-        
-        body {
-            background-color: #f8fafc !important;
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* Ensure proper spacing and positioning */
-        #foodEntryFormContainer {
-            margin-bottom: 2rem !important;
-            position: relative;
-            z-index: 10;
-        }
-        
-        /* Ensure table is visible and properly positioned */
-        .bg-white.rounded-lg.shadow-md.overflow-hidden.border.border-soft-green {
-            position: relative;
-            z-index: 1;
-            margin-top: 2rem !important;
-            margin-bottom: 2rem !important;
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            min-height: 200px !important;
-        }
-        
-        /* Ensure table content is visible */
-        table {
-            width: 100% !important;
-            display: table !important;
-            visibility: visible !important;
-        }
-        
-        tbody {
-            display: table-row-group !important;
-            visibility: visible !important;
-        }
-        
-        tr {
-            display: table-row !important;
-            visibility: visible !important;
-        }
-        
-        td, th {
-            display: table-cell !important;
-            visibility: visible !important;
-        }
-        
-        /* Ensure form and table are separate */
-        #foodEntryFormContainer {
-            margin-bottom: 2rem !important;
-            position: relative;
-            z-index: 10;
-        }
-        
-        /* Ensure proper page layout */
-        .max-w-7xl {
-            max-width: 80rem !important;
-        }
-        
-        /* Ensure proper spacing between sections */
-        .mb-8 {
-            margin-bottom: 2rem !important;
-        }
-        
-        /* Ensure buttons are clickable */
-        button[type="button"] {
-            cursor: pointer;
-            position: relative;
-            z-index: 5;
-        }
-        
-        /* Ensure the main add food button is always visible */
-        #showAddFormBtn {
-            background-color: #2563eb !important;
-            color: white !important;
-            border: 2px solid #1d4ed8 !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-        
-        #showAddFormBtn:hover {
-            background-color: #1d4ed8 !important;
-            border-color: #1e40af !important;
-        }
-        
-        /* Navigation and branding colors - ensure they work */
-        nav .text-forest-green,
-        .text-forest-green {
-            color: #1b4332 !important;
-        }
-        
-        nav .bg-forest-green,
-        .bg-forest-green {
-            background-color: #1b4332 !important;
-        }
-        
-        nav .text-sage-green,
-        .text-sage-green {
-            color: #6b7280 !important;
-        }
-        
-        nav .bg-sage-green,
-        .bg-sage-green {
-            background-color: #6b7280 !important;
-        }
-        
-        nav .text-mint-green,
-        .text-mint-green {
-            color: #10b981 !important;
-        }
-        
-        nav .bg-mint-green,
-        .bg-mint-green {
-            background-color: #10b981 !important;
-        }
-        
-        /* Hover effects for mint green */
-        nav a:hover,
-        nav button:hover {
-            background-color: #10b981 !important;
-        }
-        
-        nav .text-soft-green,
-        .text-soft-green {
-            color: #d1fae5 !important;
-        }
-        
-        nav .bg-soft-green,
-        .bg-soft-green {
-            background-color: #d1fae5 !important;
-        }
-        
-        nav .border-soft-green,
-        .border-soft-green {
-            border-color: #d1fae5 !important;
-        }
-        
-        nav .text-nature-gray,
-        .text-nature-gray {
-            color: #f8fafc !important;
-        }
-        
-        nav .bg-nature-gray,
-        .bg-nature-gray {
-            background-color: #f8fafc !important;
-        }
-        
-        nav .text-calm-blue,
-        .text-calm-blue {
-            color: #3b82f6 !important;
-        }
-        
-        nav .bg-calm-blue,
-        .bg-calm-blue {
-            background-color: #3b82f6 !important;
-        }
-        
-        nav .text-earth-brown,
-        .text-earth-brown {
-            color: #92400e !important;
-        }
-        
-        nav .bg-earth-brown,
-        .bg-earth-brown {
-            background-color: #92400e !important;
-        }
-        
-        /* Navigation link styles */
-        nav .nav-link,
-        .nav-link {
-            color: #6b7280 !important;
-            text-decoration: none !important;
-            padding: 0.5rem 1rem !important;
-            border-radius: 0.375rem !important;
-            transition: all 0.2s !important;
-        }
-        
-        nav .nav-link:hover,
-        .nav-link:hover {
-            color: #1b4332 !important;
-            background-color: #f3f4f6 !important;
-        }
-        
-        nav .nav-active,
-        .nav-active {
-            color: #1b4332 !important;
-            background-color: #d1fae5 !important;
-            font-weight: 600 !important;
-        }
-        
-        /* Ensure navigation is visible */
-        nav {
-            background-color: white !important;
-            border-bottom: 1px solid #d1fae5 !important;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            height: auto !important;
-            min-height: 64px !important;
-        }
-        
-        /* Override any hidden classes on navigation */
-        nav.hidden,
-        nav[class*="hidden"] {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-        
-        /* Ensure navigation items are visible */
-        nav * {
-            visibility: visible !important;
-        }
-    </style>
 </head>
 <body class="bg-nature-gray min-h-screen">
     {% include 'includes/navigation.html' %}
@@ -286,313 +37,129 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-forest-green mb-2">Journal</h2>
-            <p class="text-sage-green">Track your nutrition, mood, and wellness journey with mindful awareness</p>
+            <h2 class="text-3xl font-bold text-forest-green mb-2">Food Journal</h2>
+            <p class="text-sage-green">Track your nutrition and wellness journey</p>
         </div>
 
-        <!-- Call to Action Button -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8 text-center border border-soft-green">
-            <h3 class="text-xl font-semibold text-forest-green mb-4">Ready to track your nutrition?</h3>
-            <p class="text-sage-green mb-6">Log your food, water intake, and notes to keep track of your wellness journey.</p>
-            <button id="showAddFormBtn" 
-                    class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 font-medium text-lg shadow-lg">
-                🌱 Add Food & Notes
-            </button>
-        </div>
-
-        <!-- Food Entry Form (Hidden by default) -->
-        <div id="foodEntryFormContainer" class="bg-white rounded-lg shadow-md p-6 mb-8 hidden border border-soft-green">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-semibold text-forest-green">Add Food to Journal</h3>
-                <button id="hideAddFormBtn" 
-                        class="text-sage-green hover:text-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+        <!-- Add Food Button -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8 border border-soft-green">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-forest-green">Add Food Entry</h3>
+                <button id="addFoodBtn" 
+                        class="px-6 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium">
+                    + Add Food
                 </button>
             </div>
-            
-            <!-- Step Indicator -->
-            <div class="mb-6">
-                <div class="flex items-center justify-center space-x-4">
-                    <div id="step1" class="flex items-center">
-                        <div class="w-8 h-8 bg-mint-green text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
-                        <span class="ml-2 text-sm font-medium text-forest-green">Find Food</span>
-                    </div>
-                    <div class="w-8 h-1 bg-gray-300"></div>
-                    <div id="step2" class="flex items-center opacity-50">
-                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">2</div>
-                        <span class="ml-2 text-sm font-medium text-gray-600">Add Details</span>
-                    </div>
-                    <div class="w-8 h-1 bg-gray-300"></div>
-                    <div id="step3" class="flex items-center opacity-50">
-                        <div class="w-8 h-8 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">3</div>
-                        <span class="ml-2 text-sm font-medium text-gray-600">Save</span>
-                    </div>
-                </div>
-            </div>
-            
-            <form id="foodEntryForm" class="space-y-6">
-                <!-- Step 1: Find Food -->
-                <div id="step1Content" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h4 class="text-lg font-medium text-forest-green mb-2">How would you like to find your food?</h4>
-                        <p class="text-sage-green">Choose the easiest method for you</p>
-                    </div>
-                    
-                    <!-- Quick Options -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <button type="button" id="scanBarcodeBtn" 
-                                class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-center"
-                                onclick="console.log('scanBarcodeBtn clicked directly')">
-                            <div class="text-3xl mb-3">📷</div>
-                            <div class="font-medium text-blue-900 mb-1">Scan Barcode</div>
-                            <div class="text-sm text-blue-700">Use camera to scan product barcode</div>
-                        </button>
-                        
-                        <button type="button" id="searchByNameBtn" 
-                                class="p-6 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all duration-200 text-center"
-                                onclick="console.log('searchByNameBtn clicked directly')">
-                            <div class="text-3xl mb-3">🔍</div>
-                            <div class="font-medium text-green-900 mb-1">Search by Name</div>
-                            <div class="text-sm text-green-700">Type food name to search database</div>
-                        </button>
-                        
-                        <button type="button" id="manualEntryBtn" 
-                                class="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 text-center"
-                                onclick="console.log('manualEntryBtn clicked directly')">
-                            <div class="text-3xl mb-3">✏️</div>
-                            <div class="font-medium text-purple-900 mb-1">Manual Entry</div>
-                            <div class="text-sm text-purple-700">Enter food details manually</div>
+        </div>
+
+        <!-- Add Food Modal -->
+        <div id="addFoodModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-forest-green">Add Food Entry</h3>
+                        <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                         </button>
                     </div>
                     
-                    <!-- Search by Name Section (Hidden by default) -->
-                    <div id="searchByNameSection" class="hidden">
-                        <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                            <h5 class="text-md font-medium text-forest-green mb-3">Search for Food</h5>
-                            <div class="flex space-x-2">
-                                <input type="text" id="foodName" name="foodName"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
-                                       placeholder="e.g., Apple, Chicken Breast, Pizza">
-                                <button type="button" id="searchFoodBtn" 
-                                        class="px-4 py-2 bg-calm-blue text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200">
-                                    🔍 Search
-                                </button>
-                                <button type="button" id="backToOptionsBtn" 
-                                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                                    ← Back
-                                </button>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">Search our database for nutritional information</p>
-                            <div id="rateLimitStatus" class="text-xs text-orange-600 mt-1 hidden">
-                                ⏱️ Rate limit active - please wait
-                            </div>
+                    <!-- Step 1: Choose Method -->
+                    <div id="step1" class="space-y-6">
+                        <div class="text-center mb-6">
+                            <h4 class="text-lg font-medium text-forest-green mb-2">How would you like to add food?</h4>
+                            <p class="text-sage-green">Choose the easiest method for you</p>
                         </div>
-                    </div>
-                    
-                    <!-- Manual Entry Section (Hidden by default) -->
-                    <div id="manualEntrySection" class="hidden">
-                        <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                            <h5 class="text-md font-medium text-forest-green mb-3">Manual Food Entry</h5>
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="manualFoodName" class="block text-sm font-medium text-gray-700 mb-1">Food Name *</label>
-                                    <input type="text" id="manualFoodName" name="manualFoodName"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
-                                           placeholder="e.g., Homemade Sandwich">
-                                </div>
-                                <div class="flex space-x-2">
-                                    <div class="flex-1">
-                                        <label for="manualServingSize" class="block text-sm font-medium text-gray-700 mb-1">Serving Size *</label>
-                                        <input type="number" id="manualServingSize" name="manualServingSize" step="0.1"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
-                                               placeholder="1.0">
-                                    </div>
-                                    <div class="w-24">
-                                        <label for="manualServingUnit" class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-                                        <select id="manualServingUnit" name="manualServingUnit"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent">
-                                            <option value="g">g</option>
-                                            <option value="oz">oz</option>
-                                            <option value="cup">cup</option>
-                                            <option value="piece">piece</option>
-                                            <option value="slice">slice</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button type="button" id="backToOptionsBtn2" 
-                                            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                                        ← Back to Options
-                                    </button>
-                                    <button type="button" id="proceedManualEntryBtn" 
-                                            class="px-4 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
-                                        Continue →
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hidden fields for barcode -->
-                    <input type="hidden" id="barcode" name="barcode">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button type="button" id="scanBarcodeBtn" 
+                                    class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-center">
+                                <div class="text-3xl mb-3">📷</div>
+                                <div class="font-medium text-blue-900 mb-1">Scan Barcode</div>
+                                <div class="text-sm text-blue-700">Use camera to scan product barcode</div>
+                            </button>
                             
-                </div>
-                
-                <!-- Step 2: Add Details (Hidden by default) -->
-                <div id="step2Content" class="hidden space-y-6">
-                    <div class="text-center mb-6">
-                        <h4 class="text-lg font-medium text-forest-green mb-2">Add Details</h4>
-                        <p class="text-sage-green">Complete your food entry with additional information</p>
-                    </div>
-                    
-                    <!-- Selected Food Display -->
-                    <div id="selectedFoodDisplay" class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="font-medium text-green-900" id="selectedFoodName">No food selected</div>
-                                <div class="text-sm text-green-700" id="selectedFoodDetails">Select a food from step 1</div>
-                            </div>
-                            <button type="button" id="changeFoodBtn" 
-                                    class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
-                                Change
+                            <button type="button" id="manualEntryBtn" 
+                                    class="p-6 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all duration-200 text-center">
+                                <div class="text-3xl mb-3">✏️</div>
+                                <div class="font-medium text-green-900 mb-1">Manual Entry</div>
+                                <div class="text-sm text-green-700">Enter food details manually</div>
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Serving Information -->
-                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                        <h5 class="text-md font-medium text-forest-green mb-3">Serving Information</h5>
-                        <div class="flex space-x-2">
-                            <div class="flex-1">
-                                <label for="servingSize" class="block text-sm font-medium text-gray-700 mb-1">Serving Size *</label>
-                                <input type="number" id="servingSize" name="servingSize" step="0.1" required
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
-                                       placeholder="1.0">
-                            </div>
-                            <div class="w-24">
-                                <label for="servingUnit" class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-                                <select id="servingUnit" name="servingUnit" required
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent">
-                                    <option value="serving">serving</option>
-                                    <option value="g">g</option>
-                                    <option value="oz">oz</option>
-                                    <option value="cup">cup</option>
-                                    <option value="tbsp">tbsp</option>
-                                    <option value="tsp">tsp</option>
-                                    <option value="piece">piece</option>
-                                    <option value="slice">slice</option>
-                                    <option value="ml">ml</option>
-                                </select>
-                            </div>
+
+                    <!-- Step 2: Serving Size & Search -->
+                    <div id="step2" class="hidden space-y-6">
+                        <div class="text-center mb-6">
+                            <h4 class="text-lg font-medium text-forest-green mb-2">Enter Serving Information</h4>
+                            <p class="text-sage-green">We'll search for nutritional data based on your serving size</p>
                         </div>
-                    
-                    <!-- Meal Context Section -->
-                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                        <h5 class="text-md font-medium text-forest-green mb-3">Meal Context</h5>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="timeOfDay" class="block text-sm font-medium text-gray-700 mb-1">Meal Time</label>
-                                <select id="timeOfDay" name="timeOfDay"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
-                                    <option value="">Select meal time</option>
-                                    <option value="breakfast">🌅 Breakfast</option>
-                                    <option value="lunch">☀️ Lunch</option>
-                                    <option value="dinner">🌙 Dinner</option>
-                                    <option value="snacks">🍎 Snacks</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="mood" class="block text-sm font-medium text-gray-700 mb-1">How are you feeling?</label>
-                                <select id="mood" name="mood"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
-                                    <option value="">Select mood</option>
-                                    <option value="😋 Satisfied">😋 Satisfied</option>
-                                    <option value="😊 Happy">😊 Happy</option>
-                                    <option value="😌 Relaxed">😌 Relaxed</option>
-                                    <option value="😐 Neutral">😐 Neutral</option>
-                                    <option value="😔 Tired">😔 Tired</option>
-                                    <option value="😤 Stressed">😤 Stressed</option>
-                                    <option value="😫 Hungry">😫 Hungry</option>
-                                    <option value="🤢 Unwell">🤢 Unwell</option>
-                                </select>
-                            </div>
+                        
+                        <div id="foodInfo" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="font-medium text-blue-900" id="selectedFoodName">No food selected</div>
+                            <div class="text-sm text-blue-700" id="selectedFoodDetails">Select a food from step 1</div>
                         </div>
+                        
+                        <form id="servingForm" class="space-y-4">
+                            <div class="flex space-x-2">
+                                <div class="flex-1">
+                                    <label for="servingSize" class="block text-sm font-medium text-gray-700 mb-1">Serving Size *</label>
+                                    <input type="number" id="servingSize" name="servingSize" step="0.1" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent"
+                                           placeholder="1.0">
+                                </div>
+                                <div class="w-24">
+                                    <label for="servingUnit" class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                                    <select id="servingUnit" name="servingUnit" required
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent">
+                                        <option value="serving">serving</option>
+                                        <option value="g">g</option>
+                                        <option value="oz">oz</option>
+                                        <option value="cup">cup</option>
+                                        <option value="piece">piece</option>
+                                        <option value="slice">slice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-4">
+                                <button type="button" id="backToStep1Btn" 
+                                        class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                    ← Back
+                                </button>
+                                <button type="button" id="searchNutritionBtn" 
+                                        class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                                    🔍 Search Nutrition
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
-                    <!-- Hydration Section -->
-                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                        <h5 class="text-md font-medium text-forest-green mb-3">Hydration</h5>
-                        <div class="flex space-x-2">
-                            <div class="flex-1">
-                                <label for="waterAmount" class="block text-sm font-medium text-gray-700 mb-1">Water Consumed</label>
-                                <input type="number" id="waterAmount" name="waterAmount" step="0.1" min="0"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent"
-                                       placeholder="0.0">
-                            </div>
-                            <div class="w-24">
-                                <label for="waterUnit" class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                                <select id="waterUnit" name="waterUnit"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent bg-white">
-                                    <option value="oz">oz</option>
-                                    <option value="liters">L</option>
-                                    <option value="gallons">gal</option>
-                                </select>
-                            </div>
+                    <!-- Step 3: Nutritional Profile -->
+                    <div id="step3" class="hidden space-y-6">
+                        <div class="text-center mb-6">
+                            <h4 class="text-lg font-medium text-forest-green mb-2">Nutritional Information</h4>
+                            <p class="text-sage-green">Review and customize the nutritional data</p>
                         </div>
-                    </div>
-                    
-                    <!-- Notes Section -->
-                    <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                        <h5 class="text-md font-medium text-forest-green mb-3">Additional Notes</h5>
-                        <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                            <textarea id="notes" name="notes" rows="3" 
-                                      placeholder="Any observations about this meal, how it made you feel, or other notes..."
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:border-transparent resize-none"></textarea>
+                        
+                        <!-- Loading State -->
+                        <div id="loadingNutrition" class="text-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-mint-green mx-auto mb-4"></div>
+                            <p class="text-sage-green">Searching for nutritional information...</p>
                         </div>
-                    </div>
-                    
-                    <!-- Navigation Buttons -->
-                    <div class="flex justify-between pt-4">
-                        <button type="button" id="backToStep1Btn" 
-                                class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                            ← Back
-                        </button>
-                        <button type="button" id="proceedToStep3Btn" 
-                                class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200"
-                                onclick="console.log('Continue button clicked!');">
-                            Continue →
-                        </button>
-
-                    </div>
-                </div>
-                
-                <!-- Step 3: Review & Save (Hidden by default) -->
-                <div id="step3Content" class="hidden space-y-6">
-                    <div class="text-center mb-6">
-                        <h4 class="text-lg font-medium text-forest-green mb-2">Review & Save</h4>
-                        <p class="text-sage-green">Review your entry and add it to your journal</p>
-                    </div>
-                    
-                    <!-- Review Summary -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h5 class="text-md font-medium text-blue-900 mb-3">Entry Summary</h5>
-                        <div id="reviewSummary" class="space-y-2 text-sm">
-                            <!-- Summary will be populated by JavaScript -->
-                        </div>
-                    </div>
-                    
-                    <!-- Nutritional Information Display -->
-                    <div id="nutritionInfo" class="hidden">
-                        <div class="bg-soft-green rounded-lg p-4 border border-mint-green">
-                            <div class="flex justify-between items-center mb-3">
-                                <h5 class="text-md font-medium text-forest-green">Nutritional Information</h5>
+                        
+                        <!-- Nutrition Display -->
+                        <div id="nutritionDisplay" class="hidden space-y-4">
+                            <!-- Data Source -->
+                            <div class="flex justify-between items-center">
+                                <h5 class="text-md font-medium text-forest-green">Nutritional Data</h5>
                                 <div id="dataSource" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                                     <!-- Data source will be displayed here -->
                                 </div>
                             </div>
+                            
+                            <!-- Nutrition Grid -->
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div class="bg-gray-50 p-3 rounded-md">
                                     <div class="text-sm text-gray-600">Calories</div>
@@ -611,7 +178,8 @@
                                     <div id="fat" class="text-lg font-semibold text-gray-900">-</div>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <div class="bg-gray-50 p-3 rounded-md">
                                     <div class="text-sm text-gray-600">Fiber (g)</div>
                                     <div id="fiber" class="text-lg font-semibold text-gray-900">-</div>
@@ -625,36 +193,123 @@
                                     <div id="sodium" class="text-lg font-semibold text-gray-900">-</div>
                                 </div>
                             </div>
+                            
+                            <!-- Additional Details -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="mealTime" class="block text-sm font-medium text-gray-700 mb-1">Meal Time</label>
+                                    <select id="mealTime" name="mealTime"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent">
+                                        <option value="">Select meal time</option>
+                                        <option value="breakfast">🌅 Breakfast</option>
+                                        <option value="lunch">☀️ Lunch</option>
+                                        <option value="dinner">🌙 Dinner</option>
+                                        <option value="snacks">🍎 Snacks</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                                    <textarea id="notes" name="notes" rows="3" 
+                                              placeholder="Any observations about this meal..."
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent resize-none"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex justify-between pt-4">
+                                <button type="button" id="backToStep2Btn" 
+                                        class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                    ← Back
+                                </button>
+                                <div class="flex space-x-2">
+                                    <button type="button" id="editNutritionBtn" 
+                                            class="px-6 py-2 bg-calm-blue text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200">
+                                        ✏️ Edit
+                                    </button>
+                                    <button type="button" id="addToJournalBtn" 
+                                            class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                                        🌱 Add to Journal
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Error State -->
+                        <div id="nutritionError" class="hidden text-center py-8">
+                            <div class="text-red-500 text-4xl mb-4">⚠️</div>
+                            <h5 class="text-lg font-medium text-red-800 mb-2">Nutritional Data Not Found</h5>
+                            <p class="text-red-600 mb-4">We couldn't find nutritional information for this food item.</p>
+                            <div class="flex justify-center space-x-2">
+                                <button type="button" id="backToStep2FromErrorBtn" 
+                                        class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                                    ← Back
+                                </button>
+                                <button type="button" id="addWithoutNutritionBtn" 
+                                        class="px-6 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                                    Add Without Nutrition
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barcode Scanner Modal -->
+        <div id="scannerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-forest-green">Barcode Scanner</h3>
+                        <button id="closeScanner" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <div id="scannerStatus" class="text-sm text-gray-600 mb-2">Click "Start Scanner" to begin</div>
+                        <div id="scannerVideo" class="relative bg-gray-100 rounded-lg overflow-hidden mb-4" style="height: 300px;">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-gray-500">Camera preview will appear here</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center space-x-4">
+                            <button id="startScannerBtn" 
+                                    class="px-4 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                                Start Scanner
+                            </button>
+                            <button id="stopScannerBtn" 
+                                    class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 hidden">
+                                Stop Scanner
+                            </button>
                         </div>
                     </div>
                     
-                    <!-- Navigation Buttons -->
-                    <div class="flex justify-between pt-4">
-                        <button type="button" id="backToStep2Btn" 
-                                class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                            ← Back
-                        </button>
-                        <button type="button" id="addFoodBtn" 
-                                class="px-8 py-3 bg-mint-green text-white rounded-lg hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200 font-medium text-lg"
-                                onclick="console.log('Save button clicked!');">
-                            🌱 Add to Journal
-                        </button>
+                    <div id="scannedBarcode" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="text-center">
+                            <div class="text-green-800 font-medium mb-2">Barcode Detected!</div>
+                            <div class="text-green-700 mb-4">Barcode: <span id="barcodeValue" class="font-mono"></span></div>
+                            <button id="useBarcodeBtn" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">
+                                Use This Barcode
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
 
-    </div>
-
-    <!-- Food Journal Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-soft-green mt-8">
-        <div class="px-6 py-4 border-b border-soft-green">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-4">
+        <!-- Food Journal Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden border border-soft-green">
+            <div class="px-6 py-4 border-b border-soft-green">
+                <div class="flex justify-between items-center">
                     <h3 class="text-xl font-semibold text-forest-green">Nutritional Journal</h3>
                     <div class="flex items-center space-x-2">
                         <button id="prevWeekBtn" 
-                                class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:ring-offset-2 transition-colors duration-200">
+                                class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
@@ -663,481 +318,210 @@
                             <span id="dateRangeDisplay">Loading...</span>
                         </div>
                         <button id="nextWeekBtn" 
-                                class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-light-blue focus:ring-offset-2 transition-colors duration-200">
+                                class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                             </svg>
                         </button>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <a href="#" id="exportLink"
-                       class="px-3 py-1.5 text-xs bg-calm-blue text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200">
-                        Export CSV
-                    </a>
-                    <label for="importFile" 
-                           class="px-3 py-1.5 text-xs bg-mint-green text-white rounded-md hover:bg-forest-green focus:ring-2 focus:ring-mint-green focus:ring-offset-2 cursor-pointer transition-colors duration-200">
-                        Import CSV
-                        <input type="file" id="importFile" accept=".csv" class="hidden">
-                    </label>
-                    <button id="deleteSelectedBtn" 
-                            class="px-3 py-1.5 text-xs bg-earth-brown text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-earth-brown focus:ring-offset-2 hidden transition-colors duration-200">
-                        Delete Selected
-                    </button>
-                </div>
             </div>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-soft-green">
-                    <tr>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-8">
-                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-mint-green focus:ring-mint-green">
-                        </th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-24">Date</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-20">Meal</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-32">Food</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Serving</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Water</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Cal</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Protein</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Carbs</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-16">Fat</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-20">Mood</th>
-                        <th class="px-2 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider w-8">Notes</th>
-                    </tr>
-                </thead>
-                                    <tbody id="foodJournalTable" class="bg-white divide-y divide-gray-200">
+            
+            <div class="overflow-x-auto">
+                <table class="w-full divide-y divide-gray-200">
+                    <thead class="bg-soft-green">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Meal</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Food</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Serving</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Calories</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Protein</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Carbs</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Fat</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodJournalTable" class="bg-white divide-y divide-gray-200">
                         <!-- Table rows will be populated by JavaScript -->
                     </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Field Mapping Modal -->
-    <div id="fieldMappingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-forest-green">Map CSV Fields</h3>
-                    <button id="closeFieldMappingModal" class="text-gray-400 hover:text-gray-600">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600 mb-2">Your CSV file contains the following columns. Please map them to the correct fields:</p>
-                    <div id="csvPreview" class="bg-gray-50 p-3 rounded text-xs font-mono max-h-32 overflow-y-auto"></div>
-                </div>
-                
-                <div class="space-y-3" id="fieldMappings">
-                    <!-- Field mappings will be generated here -->
-                </div>
-                
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button id="cancelFieldMapping" class="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors duration-200">
-                        Cancel
-                    </button>
-                    <button id="confirmFieldMapping" class="px-4 py-2 text-sm bg-mint-green text-white rounded-md hover:bg-forest-green transition-colors duration-200">
-                        Import with Mapping
-                    </button>
-                </div>
+                </table>
             </div>
         </div>
     </div>
-
-
 
     <script>
         // Global variables
-        let currentNutritionData = null;
-        let selectedEntries = new Set();
         let currentDateRange = {
             start: new Date(),
             end: new Date()
         };
-        let csvFileData = null;
-        let csvHeaders = [];
-        let fieldMappings = {};
-        
-        // Rate limiting variables
-        let lastSearchTime = 0;
-        let lastAddTime = 0;
-        let lastDeleteTime = 0;
-        const SEARCH_COOLDOWN = 2000; // 2 seconds between searches
-        const ADD_COOLDOWN = 3000; // 3 seconds between adds
-        const DELETE_COOLDOWN = 5000; // 5 seconds between deletes
-
-        // DOM elements
-        const foodEntryForm = document.getElementById('foodEntryForm');
-        const addFoodBtn = document.getElementById('addFoodBtn');
-        const nutritionInfo = document.getElementById('nutritionInfo');
-        const selectAll = document.getElementById('selectAll');
-        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
-        const importFile = document.getElementById('importFile');
-        const exportLink = document.getElementById('exportLink');
-        const prevWeekBtn = document.getElementById('prevWeekBtn');
-        const nextWeekBtn = document.getElementById('nextWeekBtn');
-        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-        const showAddFormBtn = document.getElementById('showAddFormBtn');
-        const hideAddFormBtn = document.getElementById('hideAddFormBtn');
-        const foodEntryFormContainer = document.getElementById('foodEntryFormContainer');
-        
-        // Field mapping modal elements
-        const fieldMappingModal = document.getElementById('fieldMappingModal');
-        const closeFieldMappingModal = document.getElementById('closeFieldMappingModal');
-        const cancelFieldMapping = document.getElementById('cancelFieldMapping');
-        const confirmFieldMapping = document.getElementById('confirmFieldMapping');
+        let scannerStream = null;
+        let scannedBarcodeValue = null;
+        let currentNutritionData = null;
+        let currentFoodInfo = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing...');
-            console.log('Page structure check:');
-            console.log('Navigation:', document.querySelector('nav'));
-            console.log('Main container:', document.querySelector('.max-w-7xl'));
-            console.log('Add food button:', document.getElementById('showAddFormBtn'));
-            console.log('Form container:', document.getElementById('foodEntryFormContainer'));
-            console.log('Table container:', document.querySelector('.bg-white.rounded-lg.shadow-md.overflow-hidden.border.border-soft-green'));
-            
-            // Test table structure
-            const tableBody = document.getElementById('foodJournalTable');
-            console.log('Table body on page load:', tableBody);
-            if (tableBody) {
-                console.log('Table body parent:', tableBody.parentElement);
-                console.log('Table body parent parent:', tableBody.parentElement ? tableBody.parentElement.parentElement : 'No parent');
-            }
-            
             initializeDateRange();
             loadFoodJournal();
             setupEventListeners();
-            
-            // Test if buttons exist
-            console.log('Testing button existence:');
-            console.log('scanBarcodeBtn:', document.getElementById('scanBarcodeBtn'));
-            console.log('searchByNameBtn:', document.getElementById('searchByNameBtn'));
-            console.log('manualEntryBtn:', document.getElementById('manualEntryBtn'));
-            
-            // Start button state update timer
-            setInterval(updateButtonStates, 1000);
         });
 
         function setupEventListeners() {
-            console.log('Setting up event listeners...');
-            
             // Add food button
-            if (addFoodBtn) {
-                addFoodBtn.addEventListener('click', handleAddFood);
-            }
+            document.getElementById('addFoodBtn').addEventListener('click', showAddFoodModal);
             
-            // Show/hide form buttons
-            if (showAddFormBtn) {
-                showAddFormBtn.addEventListener('click', showAddForm);
-            }
-            if (hideAddFormBtn) {
-                hideAddFormBtn.addEventListener('click', hideAddForm);
-            }
-            
-            // Search buttons
-            const searchFoodBtn = document.getElementById('searchFoodBtn');
-            const searchBarcodeBtn = document.getElementById('searchBarcodeBtn');
-            const clearSearchBtn = document.getElementById('clearSearchBtn');
-            
-            if (searchFoodBtn) {
-                searchFoodBtn.addEventListener('click', handleSearchFood);
-            }
-            if (searchBarcodeBtn) {
-                searchBarcodeBtn.addEventListener('click', handleBarcodeSearch);
-            }
-            if (clearSearchBtn) {
-                clearSearchBtn.addEventListener('click', clearNutritionData);
-            }
+            // Modal close buttons
+            document.getElementById('closeModal').addEventListener('click', hideAddFoodModal);
+            document.getElementById('closeScanner').addEventListener('click', closeBarcodeScanner);
             
             // Step 1 buttons
-            const scanBarcodeBtn = document.getElementById('scanBarcodeBtn');
-            const searchByNameBtn = document.getElementById('searchByNameBtn');
-            const manualEntryBtn = document.getElementById('manualEntryBtn');
-            const backToOptionsBtn = document.getElementById('backToOptionsBtn');
-            const backToOptionsBtn2 = document.getElementById('backToOptionsBtn2');
-            const proceedManualEntryBtn = document.getElementById('proceedManualEntryBtn');
-            
-            if (scanBarcodeBtn) {
-                console.log('Adding click listener to scanBarcodeBtn');
-                scanBarcodeBtn.addEventListener('click', openBarcodeScanner);
-            }
-            if (searchByNameBtn) {
-                console.log('Adding click listener to searchByNameBtn');
-                searchByNameBtn.addEventListener('click', showSearchByName);
-            }
-            if (manualEntryBtn) {
-                console.log('Adding click listener to manualEntryBtn');
-                manualEntryBtn.addEventListener('click', showManualEntry);
-            }
-            if (backToOptionsBtn) {
-                backToOptionsBtn.addEventListener('click', backToOptions);
-            }
-            if (backToOptionsBtn2) {
-                backToOptionsBtn2.addEventListener('click', backToOptions);
-            }
-            if (proceedManualEntryBtn) {
-                proceedManualEntryBtn.addEventListener('click', handleManualFoodEntry);
-            }
+            document.getElementById('scanBarcodeBtn').addEventListener('click', openBarcodeScanner);
+            document.getElementById('manualEntryBtn').addEventListener('click', showManualEntry);
             
             // Step 2 buttons
-            const changeFoodBtn = document.getElementById('changeFoodBtn');
-            const backToStep1Btn = document.getElementById('backToStep1Btn');
-            const proceedToStep3Btn = document.getElementById('proceedToStep3Btn');
-            
-            if (changeFoodBtn) {
-                changeFoodBtn.addEventListener('click', backToStep1);
-            }
-            if (backToStep1Btn) {
-                backToStep1Btn.addEventListener('click', backToStep1);
-            }
-            if (proceedToStep3Btn) {
-                proceedToStep3Btn.addEventListener('click', proceedToStep3);
-            }
+            document.getElementById('backToStep1Btn').addEventListener('click', backToStep1);
+            document.getElementById('searchNutritionBtn').addEventListener('click', searchNutrition);
             
             // Step 3 buttons
-            const backToStep2Btn = document.getElementById('backToStep2Btn');
-            if (backToStep2Btn) {
-                backToStep2Btn.addEventListener('click', backToStep2);
-            }
+            document.getElementById('backToStep2Btn').addEventListener('click', backToStep2);
+            document.getElementById('backToStep2FromErrorBtn').addEventListener('click', backToStep2);
+            document.getElementById('addToJournalBtn').addEventListener('click', addToJournal);
+            document.getElementById('addWithoutNutritionBtn').addEventListener('click', addToJournal);
+            document.getElementById('editNutritionBtn').addEventListener('click', editNutrition);
             
-            // Barcode scanner buttons
-            const openScannerBtn = document.getElementById('openScannerBtn');
-            const closeScannerBtn = document.getElementById('closeScannerBtn');
-            const startScannerBtn = document.getElementById('startScannerBtn');
-            const stopScannerBtn = document.getElementById('stopScannerBtn');
-            const useBarcodeBtn = document.getElementById('useBarcodeBtn');
-            const manualBarcodeBtn = document.getElementById('manualBarcodeBtn');
+            // Scanner buttons
+            document.getElementById('startScannerBtn').addEventListener('click', startBarcodeScanner);
+            document.getElementById('stopScannerBtn').addEventListener('click', stopBarcodeScanner);
+            document.getElementById('useBarcodeBtn').addEventListener('click', useScannedBarcode);
             
-            if (openScannerBtn) {
-                openScannerBtn.addEventListener('click', openBarcodeScanner);
-            }
-            if (closeScannerBtn) {
-                closeScannerBtn.addEventListener('click', closeBarcodeScanner);
-            }
-            if (startScannerBtn) {
-                startScannerBtn.addEventListener('click', startBarcodeScanner);
-            }
-            if (stopScannerBtn) {
-                stopScannerBtn.addEventListener('click', stopBarcodeScanner);
-            }
-            if (useBarcodeBtn) {
-                useBarcodeBtn.addEventListener('click', useScannedBarcode);
-            }
-            if (manualBarcodeBtn) {
-                manualBarcodeBtn.addEventListener('click', handleManualBarcode);
-            }
-            
-            // Select all checkbox
-            if (selectAll) {
-                selectAll.addEventListener('change', handleSelectAll);
-            }
-            
-            // Delete selected button
-            if (deleteSelectedBtn) {
-                deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
-            }
-            
-            // Import file
-            if (importFile) {
-                importFile.addEventListener('change', handleImportFile);
-            }
-            
-            // Date navigation buttons
-            if (prevWeekBtn) {
-                prevWeekBtn.addEventListener('click', handlePrevWeek);
-            }
-            if (nextWeekBtn) {
-                nextWeekBtn.addEventListener('click', handleNextWeek);
-            }
-            
-            // Field mapping modal
-            const closeFieldMappingModal = document.getElementById('closeFieldMappingModal');
-            const cancelFieldMapping = document.getElementById('cancelFieldMapping');
-            const confirmFieldMapping = document.getElementById('confirmFieldMapping');
-            
-            if (closeFieldMappingModal) {
-                closeFieldMappingModal.addEventListener('click', hideFieldMappingModal);
-            }
-            if (cancelFieldMapping) {
-                cancelFieldMapping.addEventListener('click', hideFieldMappingModal);
-            }
-            if (confirmFieldMapping) {
-                confirmFieldMapping.addEventListener('click', handleConfirmFieldMapping);
-            }
-            
-            console.log('Event listeners setup complete');
+            // Date navigation
+            document.getElementById('prevWeekBtn').addEventListener('click', handlePrevWeek);
+            document.getElementById('nextWeekBtn').addEventListener('click', handleNextWeek);
         }
 
-        async function handleSearchFood() {
-            // Rate limiting check
-            const now = Date.now();
-            if (now - lastSearchTime < SEARCH_COOLDOWN) {
-                const remainingTime = Math.ceil((SEARCH_COOLDOWN - (now - lastSearchTime)) / 1000);
-                showRateLimitStatus(`⏱️ Please wait ${remainingTime} seconds before searching again`);
+        function showAddFoodModal() {
+            document.getElementById('addFoodModal').classList.remove('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            resetForm();
+        }
+
+        function hideAddFoodModal() {
+            document.getElementById('addFoodModal').classList.add('hidden');
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('servingForm').reset();
+            currentNutritionData = null;
+            currentFoodInfo = null;
+            hideAllStep3Elements();
+        }
+
+        function showManualEntry() {
+            currentFoodInfo = {
+                food_name: '',
+                brand: '',
+                source: 'manual'
+            };
+            document.getElementById('selectedFoodName').textContent = 'Manual Entry';
+            document.getElementById('selectedFoodDetails').textContent = 'Enter food details manually';
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        }
+
+        function backToStep1() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            resetForm();
+        }
+
+        function backToStep2() {
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            hideAllStep3Elements();
+        }
+
+        function hideAllStep3Elements() {
+            document.getElementById('loadingNutrition').classList.add('hidden');
+            document.getElementById('nutritionDisplay').classList.add('hidden');
+            document.getElementById('nutritionError').classList.add('hidden');
+        }
+
+        async function searchNutrition() {
+            const formData = new FormData(document.getElementById('servingForm'));
+            const servingSize = formData.get('servingSize');
+            const servingUnit = formData.get('servingUnit');
+            
+            if (!servingSize || !servingUnit) {
+                alert('Please fill in serving size and unit');
                 return;
             }
             
-            const foodName = document.getElementById('foodName').value.trim();
-            const servingSize = parseFloat(document.getElementById('servingSize').value);
-            const servingUnit = document.getElementById('servingUnit').value;
-            
-            if (!foodName) {
-                alert('Please enter a food name');
-                return;
-            }
-            
-            if (!servingSize || servingSize <= 0) {
-                alert('Please enter a valid serving size');
-                return;
-            }
-            
-            lastSearchTime = now;
-            searchFoodBtn.disabled = true;
-            searchFoodBtn.textContent = 'Searching...';
+            // Show step 3 with loading state
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            hideAllStep3Elements();
+            document.getElementById('loadingNutrition').classList.remove('hidden');
             
             try {
-                const response = await fetch('/food-journal/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        food_name: foodName,
-                        serving_size: servingSize,
-                        serving_unit: servingUnit
-                    })
-                });
+                let searchData = {
+                    serving_size: parseFloat(servingSize),
+                    serving_unit: servingUnit
+                };
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    console.log('✅ Search successful:', data);
-                    currentNutritionData = data.data;
-                    displayNutritionInfo(data.data, data.source);
-                    nutritionInfo.classList.remove('hidden');
+                // Add food name or barcode based on source
+                if (currentFoodInfo.source === 'barcode') {
+                    searchData.barcode = currentFoodInfo.barcode;
                 } else {
-                    console.log('❌ Search failed:', data);
-                    if (data.error && data.error.includes('rate limit')) {
-                        alert('Too many search requests. Please wait a moment before trying again.');
-                    } else {
-                        alert('Food not found. Please try a different search term or add manually.');
-                    }
+                    searchData.food_name = document.getElementById('foodName')?.value || 'Manual Entry';
                 }
-            } catch (error) {
-                console.error('Error searching food:', error);
-                alert('Error searching for food. Please try again.');
-            } finally {
-                searchFoodBtn.disabled = false;
-                searchFoodBtn.textContent = '🔍 Search';
-            }
-        }
-
-        async function handleBarcodeSearch() {
-            const barcode = document.getElementById('barcode').value.trim();
-            const servingSize = parseFloat(document.getElementById('servingSize').value);
-            const servingUnit = document.getElementById('servingUnit').value;
-            
-            if (!barcode) {
-                alert('Please enter a barcode');
-                return;
-            }
-            
-            if (!servingSize || servingSize <= 0) {
-                alert('Please enter a valid serving size');
-                return;
-            }
-            
-            searchBarcodeBtn.disabled = true;
-            searchBarcodeBtn.textContent = 'Scanning...';
-            
-            try {
+                
                 const response = await fetch('/food-journal/search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        barcode: barcode,
-                        serving_size: servingSize,
-                        serving_unit: servingUnit
-                    })
+                    body: JSON.stringify(searchData)
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
                     currentNutritionData = data.data;
-                    displayNutritionInfo(data.data, data.source);
-                    nutritionInfo.classList.remove('hidden');
                     
-                    // Auto-fill food name if found via barcode
+                    // Update food info with actual product name from API
                     if (data.data.food_name) {
-                        document.getElementById('foodName').value = data.data.food_name;
+                        currentFoodInfo.food_name = data.data.food_name;
+                        currentFoodInfo.brand = data.data.brand || '';
+                        
+                        // Update the display in step 2
+                        document.getElementById('selectedFoodName').textContent = data.data.food_name;
+                        if (data.data.brand) {
+                            document.getElementById('selectedFoodDetails').textContent = `${data.data.brand} - Barcode: ${currentFoodInfo.barcode}`;
+                        } else {
+                            document.getElementById('selectedFoodDetails').textContent = `Barcode: ${currentFoodInfo.barcode}`;
+                        }
                     }
                     
-                    // Proceed to step 2 with the found food data
-                    proceedToStep2(data.data);
+                    displayNutritionInfo(data.data, data.source);
+                    document.getElementById('loadingNutrition').classList.add('hidden');
+                    document.getElementById('nutritionDisplay').classList.remove('hidden');
                 } else {
-                    alert('Product not found. Please try a different barcode or search by name.');
+                    document.getElementById('loadingNutrition').classList.add('hidden');
+                    document.getElementById('nutritionError').classList.remove('hidden');
                 }
             } catch (error) {
-                console.error('Error searching barcode:', error);
-                alert('Error searching for product. Please try again.');
-            } finally {
-                searchBarcodeBtn.disabled = false;
-                searchBarcodeBtn.textContent = '📱 Scan';
-            }
-        }
-        
-        async function handleBarcodeSearchForStep2() {
-            console.log('handleBarcodeSearchForStep2 called');
-            const barcode = document.getElementById('barcode').value.trim();
-            console.log('Barcode value:', barcode);
-            
-            if (!barcode) {
-                console.log('No barcode value found');
-                showModal('Please enter a barcode', 'Barcode Required');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/food-journal/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        barcode: barcode,
-                        serving_size: 1, // Default to 1 serving instead of 100g
-                        serving_unit: 'serving' // Use 'serving' as default unit
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentNutritionData = data.data;
-                    // Proceed to step 2 with the found food data
-                    proceedToStep2(data.data);
-                } else {
-                    showModal('Product not found. Please try a different barcode or search by name.', 'Product Not Found');
-                }
-            } catch (error) {
-                console.error('Error searching barcode:', error);
-                showModal('Error searching barcode. Please try again.', 'Search Error');
+                console.error('Error searching nutrition:', error);
+                document.getElementById('loadingNutrition').classList.add('hidden');
+                document.getElementById('nutritionError').classList.remove('hidden');
             }
         }
 
         function displayNutritionInfo(nutritionData, source = null) {
-            console.log('📊 Displaying nutrition data:', nutritionData);
-            console.log('📊 Data source:', source);
-            
             document.getElementById('calories').textContent = nutritionData.calories ? Math.round(nutritionData.calories) : '-';
             document.getElementById('protein').textContent = nutritionData.protein ? nutritionData.protein.toFixed(1) : '-';
             document.getElementById('carbs').textContent = nutritionData.carbs ? nutritionData.carbs.toFixed(1) : '-';
@@ -1154,129 +538,80 @@
                     'openfoodfacts': '🌐 Open Food Facts',
                     'openfoodfacts_barcode': '📱 Barcode Scan',
                     'usda': '🏛️ USDA Database',
-                    'cache': '💾 Cached Data'
+                    'cache': '💾 Cached Data',
+                    'manual': '✏️ Manual Entry'
                 };
                 dataSourceElement.textContent = sourceLabels[source] || `Source: ${source}`;
-                dataSourceElement.className = 'text-xs px-2 py-1 rounded';
-                
-                // Color coding based on source
-                if (source === 'common_foods_db') {
-                    dataSourceElement.className += ' text-green-700 bg-green-100';
-                } else if (source === 'openfoodfacts' || source === 'openfoodfacts_barcode') {
-                    dataSourceElement.className += ' text-blue-700 bg-blue-100';
-                } else if (source === 'usda') {
-                    dataSourceElement.className += ' text-purple-700 bg-purple-100';
-                } else {
-                    dataSourceElement.className += ' text-gray-700 bg-gray-100';
-                }
             } else {
-                dataSourceElement.textContent = '';
+                dataSourceElement.textContent = 'Manual Entry';
             }
         }
 
-        async function handleAddFood() {
-            console.log('handleAddFood called');
+        async function addToJournal() {
+            const formData = new FormData(document.getElementById('servingForm'));
+            const mealTime = document.getElementById('mealTime').value;
+            const notes = document.getElementById('notes').value;
             
-            // Rate limiting check
-            const now = Date.now();
-            if (now - lastAddTime < ADD_COOLDOWN) {
-                const remainingTime = Math.ceil((ADD_COOLDOWN - (now - lastAddTime)) / 1000);
-                showRateLimitStatus(`⏱️ Please wait ${remainingTime} seconds before adding another entry`);
-                return;
-            }
-            
-            const foodNameInput = document.getElementById('foodName');
-            const servingSizeInput = document.getElementById('servingSize');
-            const servingUnitInput = document.getElementById('servingUnit');
-            const timeOfDayInput = document.getElementById('timeOfDay');
-            const waterAmountInput = document.getElementById('waterAmount');
-            const waterUnitInput = document.getElementById('waterUnit');
-            const moodInput = document.getElementById('mood');
-            const notesInput = document.getElementById('notes');
-            
-            const foodName = foodNameInput.value.trim();
-            const servingSize = parseFloat(servingSizeInput.value);
-            const servingUnit = servingUnitInput.value;
-            const timeOfDay = timeOfDayInput.value;
-            const waterAmount = parseFloat(waterAmountInput.value) || 0;
-            const waterUnit = waterUnitInput.value;
-            const mood = moodInput.value;
-            const notes = notesInput.value;
-            
-            if (!foodName || !servingSize) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            lastAddTime = now;
-            // Disable the Add to Journal button while processing
-            addFoodBtn.disabled = true;
-            addFoodBtn.textContent = 'Adding...';
+            const entryData = {
+                food_name: currentFoodInfo.food_name || 'Manual Entry',
+                brand: currentFoodInfo.brand || '',
+                serving_size: parseFloat(formData.get('servingSize')),
+                serving_unit: formData.get('servingUnit'),
+                
+                // Core nutritional values (displayed to user)
+                calories: currentNutritionData?.calories || null,
+                protein: currentNutritionData?.protein || null,
+                carbs: currentNutritionData?.carbs || null,
+                fat: currentNutritionData?.fat || null,
+                fiber: currentNutritionData?.fiber || null,
+                sugar: currentNutritionData?.sugar || null,
+                sodium: currentNutritionData?.sodium || null,
+                
+                // Extended nutritional values (stored but not displayed)
+                saturated_fat: currentNutritionData?.saturated_fat || null,
+                trans_fat: currentNutritionData?.trans_fat || null,
+                cholesterol: currentNutritionData?.cholesterol || null,
+                potassium: currentNutritionData?.potassium || null,
+                calcium: currentNutritionData?.calcium || null,
+                iron: currentNutritionData?.iron || null,
+                vitamin_a: currentNutritionData?.vitamin_a || null,
+                vitamin_c: currentNutritionData?.vitamin_c || null,
+                vitamin_d: currentNutritionData?.vitamin_d || null,
+                vitamin_e: currentNutritionData?.vitamin_e || null,
+                vitamin_k: currentNutritionData?.vitamin_k || null,
+                vitamin_b6: currentNutritionData?.vitamin_b6 || null,
+                vitamin_b12: currentNutritionData?.vitamin_b12 || null,
+                magnesium: currentNutritionData?.magnesium || null,
+                zinc: currentNutritionData?.zinc || null,
+                phosphorus: currentNutritionData?.phosphorus || null,
+                manganese: currentNutritionData?.manganese || null,
+                selenium: currentNutritionData?.selenium || null,
+                copper: currentNutritionData?.copper || null,
+                thiamin: currentNutritionData?.thiamin || null,
+                riboflavin: currentNutritionData?.riboflavin || null,
+                niacin: currentNutritionData?.niacin || null,
+                folate: currentNutritionData?.folate || null,
+                pantothenic_acid: currentNutritionData?.pantothenic_acid || null,
+                biotin: currentNutritionData?.biotin || null,
+                choline: currentNutritionData?.choline || null,
+                betaine: currentNutritionData?.betaine || null,
+                taurine: currentNutritionData?.taurine || null,
+                caffeine: currentNutritionData?.caffeine || null,
+                alcohol: currentNutritionData?.alcohol || null,
+                water_content: currentNutritionData?.water_content || null,
+                ash: currentNutritionData?.ash || null,
+                
+                // Metadata
+                data_source: currentNutritionData?.source || null,
+                barcode: currentFoodInfo.barcode || null,
+                time_of_day: mealTime,
+                notes: notes,
+                consumed_at: new Date().toISOString(),
+                browser_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
             
             try {
-                // Use existing nutrition data if available, otherwise search for it
-                if (!currentNutritionData) {
-                    console.log('🔍 No existing nutrition data, searching...');
-                    const searchResponse = await fetch('/food-journal/search', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            food_name: foodName,
-                            serving_size: servingSize,
-                            serving_unit: servingUnit
-                        })
-                    });
-                    
-                    const searchData = await searchResponse.json();
-                    
-                    if (searchData.success) {
-                        currentNutritionData = searchData.data;
-                        displayNutritionInfo(searchData.data, searchData.source);
-                        nutritionInfo.classList.remove('hidden');
-                        console.log('✅ Found nutrition data during add:', searchData.data);
-                    } else {
-                        // If no nutritional data found, still allow adding with basic info
-                        currentNutritionData = null;
-                        nutritionInfo.classList.add('hidden');
-                        console.log('❌ No nutrition data found during add');
-                    }
-                } else {
-                    console.log('✅ Using existing nutrition data:', currentNutritionData);
-                }
-                
-                // Prepare entry data
-                // Get current timezone
-                const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const currentDateTime = new Date().toISOString();
-                
-                const entryData = {
-                    food_name: foodName,
-                    brand: currentNutritionData?.brand || '',
-                    serving_size: servingSize,
-                    serving_unit: servingUnit,
-                    calories: currentNutritionData?.calories || null,
-                    protein: currentNutritionData?.protein || null,
-                    carbs: currentNutritionData?.carbs || null,
-                    fat: currentNutritionData?.fat || null,
-                    fiber: currentNutritionData?.fiber || null,
-                    sugar: currentNutritionData?.sugar || null,
-                    sodium: currentNutritionData?.sodium || null,
-                    time_of_day: timeOfDay,
-                    water_amount: waterAmount,
-                    water_unit: waterUnit,
-                    mood: mood,
-                    notes: notes,
-                    consumed_at: currentDateTime,
-                    browser_timezone: browserTimezone
-                };
-                
-                console.log('📝 Entry data being sent:', entryData);
-                console.log('📝 Sending POST request to /food-journal/add');
-                
-                // Add the food entry
-                const addResponse = await fetch('/food-journal/add', {
+                const response = await fetch('/food-journal/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1284,47 +619,135 @@
                     body: JSON.stringify(entryData)
                 });
                 
-                const addData = await addResponse.json();
-                console.log('📝 Server response:', addData);
+                const data = await response.json();
                 
-                if (addData.success) {
-                    console.log('✅ Food entry added successfully:', addData);
-                    
-                    // Reset form and go back to step 1
-                    resetFormToStep1();
-                    
-                    // Reload food journal
-                    await loadFoodJournal();
-                    
-                    showModal('Food entry added successfully!', 'Success');
+                if (data.success) {
+                    hideAddFoodModal();
+                    loadFoodJournal();
+                    alert('Food entry added successfully!');
                 } else {
-                    console.error('❌ Error adding food entry:', addData);
-                    if (addData.error && addData.error.includes('rate limit')) {
-                        showModal('Too many requests. Please wait a moment before adding another entry.', 'Rate Limited');
-                    } else {
-                        showModal('Error adding food entry: ' + (addData.message || 'Unknown error'), 'Error');
-                    }
+                    alert('Error adding food entry: ' + (data.message || 'Unknown error'));
                 }
-                
             } catch (error) {
                 console.error('Error adding food:', error);
                 alert('Error adding food entry. Please try again.');
-            } finally {
-                // Re-enable the Add to Journal button
-                addFoodBtn.disabled = false;
-                addFoodBtn.textContent = 'Add to Journal';
             }
         }
 
+        function editNutrition() {
+            // For now, just go back to step 2 to allow editing serving size
+            backToStep2();
+        }
 
+        function openBarcodeScanner() {
+            document.getElementById('scannerModal').classList.remove('hidden');
+            document.getElementById('scannerStatus').textContent = 'Click "Start Scanner" to begin';
+            document.getElementById('scannedBarcode').classList.add('hidden');
+        }
 
+        function closeBarcodeScanner() {
+            stopBarcodeScanner();
+            document.getElementById('scannerModal').classList.add('hidden');
+            document.getElementById('scannedBarcode').classList.add('hidden');
+            scannedBarcodeValue = null;
+        }
 
+        async function startBarcodeScanner() {
+            try {
+                document.getElementById('scannerStatus').textContent = 'Requesting camera permissions...';
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    document.getElementById('scannerStatus').textContent = 'Camera not supported in this browser.';
+                    return;
+                }
+                
+                document.getElementById('scannerStatus').textContent = 'Initializing scanner...';
+                
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: "#scannerVideo",
+                        constraints: {
+                            width: { min: 640, ideal: 1280, max: 1920 },
+                            height: { min: 480, ideal: 720, max: 1080 },
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: [
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_128_reader",
+                            "code_39_reader",
+                            "upc_reader",
+                            "upc_e_reader"
+                        ]
+                    },
+                    locate: true
+                }, function(err) {
+                    if (err) {
+                        document.getElementById('scannerStatus').textContent = 'Scanner initialization failed: ' + err.message;
+                        return;
+                    }
+                    
+                    document.getElementById('scannerStatus').textContent = 'Scanner ready - position barcode in view';
+                    document.getElementById('startScannerBtn').classList.add('hidden');
+                    document.getElementById('stopScannerBtn').classList.remove('hidden');
+                    
+                    Quagga.start();
+                    Quagga.onDetected(onBarcodeDetected);
+                });
+                
+            } catch (error) {
+                document.getElementById('scannerStatus').textContent = 'Scanner error: ' + error.message;
+            }
+        }
+
+        function stopBarcodeScanner() {
+            if (typeof Quagga !== 'undefined') {
+                Quagga.stop();
+            }
+            document.getElementById('scannerStatus').textContent = 'Scanner stopped';
+            document.getElementById('startScannerBtn').classList.remove('hidden');
+            document.getElementById('stopScannerBtn').classList.add('hidden');
+        }
+
+        function onBarcodeDetected(result) {
+            const barcode = result.codeResult.code;
+            
+            if (scannedBarcodeValue === barcode) return;
+            
+            scannedBarcodeValue = barcode;
+            document.getElementById('scannerStatus').textContent = 'Barcode detected!';
+            document.getElementById('barcodeValue').textContent = barcode;
+            document.getElementById('scannedBarcode').classList.remove('hidden');
+            
+            stopBarcodeScanner();
+        }
+
+        function useScannedBarcode() {
+            if (scannedBarcodeValue) {
+                currentFoodInfo = {
+                    food_name: '', // Will be populated from API response
+                    brand: '',
+                    barcode: scannedBarcodeValue,
+                    source: 'barcode'
+                };
+                
+                document.getElementById('selectedFoodName').textContent = `Barcode: ${scannedBarcodeValue}`;
+                document.getElementById('selectedFoodDetails').textContent = 'Scanning for product information...';
+                
+                closeBarcodeScanner();
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+            }
+        }
 
         function initializeDateRange() {
-            // Set current date range to last 7 days in user's timezone
             const today = new Date();
             const sevenDaysAgo = new Date(today);
-            sevenDaysAgo.setDate(today.getDate() - 6); // 7 days including today
+            sevenDaysAgo.setDate(today.getDate() - 6);
             
             currentDateRange = {
                 start: sevenDaysAgo,
@@ -1337,16 +760,7 @@
         function updateDateRangeDisplay() {
             const startDate = currentDateRange.start.toLocaleDateString();
             const endDate = currentDateRange.end.toLocaleDateString();
-            dateRangeDisplay.textContent = `${startDate} - ${endDate}`;
-            
-            // Update export link
-            updateExportLink();
-        }
-
-        function updateExportLink() {
-            const startDate = currentDateRange.start.toISOString().split('T')[0];
-            const endDate = currentDateRange.end.toISOString().split('T')[0];
-            exportLink.href = `/food-journal/export?start_date=${startDate}&end_date=${endDate}`;
+            document.getElementById('dateRangeDisplay').textContent = `${startDate} - ${endDate}`;
         }
 
         function handlePrevWeek() {
@@ -1370,7 +784,6 @@
             const newEnd = new Date(currentDateRange.end);
             newEnd.setDate(newEnd.getDate() + 7);
             
-            // Don't allow going into the future
             const today = new Date();
             if (newStart > today) {
                 return;
@@ -1385,63 +798,21 @@
             loadFoodJournal();
         }
 
-        // Format date in user's timezone
-        function formatDateInUserTimezone(dateString) {
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleString();
-            } catch (error) {
-                return dateString;
-            }
-        }
-
         async function loadFoodJournal() {
-            console.log('loadFoodJournal called');
-            
-            // Check if required elements exist
-            const tableBody = document.getElementById('foodJournalTable');
-            console.log('Table body element:', tableBody);
-            
-            if (!tableBody) {
-                console.error('Table body element not found!');
-                return;
-            }
-            
             try {
                 const startDate = currentDateRange.start.toISOString().split('T')[0];
                 const endDate = currentDateRange.end.toISOString().split('T')[0];
                 
-                console.log('Loading food journal for date range:', startDate, 'to', endDate);
-                
                 const response = await fetch(`/food-journal/entries?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
                 
-                console.log('Food journal data received:', data);
-                
                 if (data.success) {
-                    console.log('Displaying food journal with', data.entries.length, 'entries');
                     displayFoodJournal(data.entries);
                 } else {
                     console.error('Error loading food journal:', data.error);
-                    // Show error in table
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="12" class="px-6 py-4 text-center text-red-500">
-                                Error loading food journal: ${data.error}
-                            </td>
-                        </tr>
-                    `;
                 }
             } catch (error) {
                 console.error('Error loading food journal:', error);
-                // Show error in table
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="12" class="px-6 py-4 text-center text-red-500">
-                            Error loading food journal: ${error.message}
-                        </td>
-                    </tr>
-                `;
             }
         }
 
@@ -1452,8 +823,8 @@
             if (entries.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">
-                        No food entries found for the last 7 days
+                    <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                        No food entries found for this period
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -1464,56 +835,46 @@
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50';
                 row.innerHTML = `
-                    <td class="px-2 py-4 whitespace-nowrap">
-                        <input type="checkbox" class="entry-checkbox rounded border-gray-300 text-light-blue focus:ring-light-blue" 
-                               data-entry-id="${entry.id}">
-                    </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${formatDateTime(entry.consumed_at)}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${getMealTimeDisplay(entry.time_of_day)}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap">
+                    <td class="px-4 py-4 whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900">${entry.food_name}</div>
                         ${entry.brand ? `<div class="text-sm text-gray-500">${entry.brand}</div>` : ''}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${entry.serving_size} ${entry.serving_unit}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${getWaterDisplay(entry.water_amount, entry.water_unit)}
-                    </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${entry.calories ? Math.round(entry.calories) : '-'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${entry.protein ? entry.protein.toFixed(1) : '-'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${entry.carbs ? entry.carbs.toFixed(1) : '-'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         ${entry.fat ? entry.fat.toFixed(1) : '-'}
                     </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${entry.mood || '-'}
-                    </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                        ${entry.notes ? `<span class="cursor-pointer text-mint-green hover:text-forest-green" title="${entry.notes}">📝</span>` : '-'}
+                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.notes || '-'}
                     </td>
                 `;
                 tableBody.appendChild(row);
             });
-            
-            // Add event listeners to checkboxes
-            document.querySelectorAll('.entry-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', handleEntrySelection);
-            });
         }
 
         function formatDateTime(dateTimeStr) {
-            return formatDateInUserTimezone(dateTimeStr);
+            try {
+                const date = new Date(dateTimeStr);
+                return date.toLocaleString();
+            } catch (error) {
+                return dateTimeStr;
+            }
         }
 
         function getMealTimeDisplay(timeOfDay) {
@@ -1526,1052 +887,6 @@
             };
             return mealTimeMap[timeOfDay] || timeOfDay;
         }
-
-        function getWaterDisplay(amount, unit) {
-            if (!amount || !unit) return '-';
-            return `${amount} ${unit}`;
-        }
-
-        function showAddForm() {
-            foodEntryFormContainer.classList.remove('hidden');
-            showAddFormBtn.parentElement.classList.add('hidden');
-            // Focus on the first input field
-            document.getElementById('foodName').focus();
-        }
-
-        function hideAddForm() {
-            foodEntryFormContainer.classList.add('hidden');
-            showAddFormBtn.parentElement.classList.remove('hidden');
-            // Reset form
-            foodEntryForm.reset();
-            // Clear nutrition data
-            currentNutritionData = null;
-            nutritionInfo.classList.add('hidden');
-        }
-        
-        function clearNutritionData() {
-            currentNutritionData = null;
-            nutritionInfo.classList.add('hidden');
-            // Reset nutrition display
-            document.getElementById('calories').textContent = '-';
-            document.getElementById('protein').textContent = '-';
-            document.getElementById('carbs').textContent = '-';
-            document.getElementById('fat').textContent = '-';
-            document.getElementById('fiber').textContent = '-';
-            document.getElementById('sugar').textContent = '-';
-            document.getElementById('sodium').textContent = '-';
-            document.getElementById('dataSource').textContent = '';
-        }
-        
-        function showRateLimitStatus(message) {
-            const statusElement = document.getElementById('rateLimitStatus');
-            statusElement.textContent = message;
-            statusElement.classList.remove('hidden');
-            
-            // Hide after 3 seconds
-            setTimeout(() => {
-                statusElement.classList.add('hidden');
-            }, 3000);
-        }
-        
-        // Barcode Scanner Variables
-        let scannerStream = null;
-        let scannerInterval = null;
-        let scannedBarcodeValue = null;
-        
-        function openBarcodeScanner() {
-            console.log('openBarcodeScanner called');
-            document.getElementById('scannerModal').classList.remove('hidden');
-            updateScannerStatus('Click "Start Scanner" to begin');
-        }
-        
-        function closeBarcodeScanner() {
-            console.log('closeBarcodeScanner called');
-            stopBarcodeScanner();
-            document.getElementById('scannerModal').classList.add('hidden');
-            document.getElementById('scannedBarcode').classList.add('hidden');
-            scannedBarcodeValue = null;
-        }
-        
-        function updateScannerStatus(message) {
-            document.getElementById('scannerStatus').textContent = message;
-        }
-        
-        function updateDebugInfo(message) {
-            const debugElement = document.getElementById('scannerDebug');
-            const debugInfo = document.getElementById('debugInfo');
-            
-            debugInfo.textContent = message;
-            debugElement.classList.remove('hidden');
-        }
-        
-        function hideDebugInfo() {
-            document.getElementById('scannerDebug').classList.add('hidden');
-        }
-        
-        async function startBarcodeScanner() {
-            console.log('startBarcodeScanner called');
-            try {
-                updateScannerStatus('Checking camera availability...');
-                updateDebugInfo('Checking browser support...');
-                
-                // First check if camera is available
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    updateScannerStatus('Camera not supported in this browser.');
-                    updateDebugInfo('getUserMedia not supported');
-                    return;
-                }
-                
-                updateDebugInfo('Camera API available');
-                
-                updateScannerStatus('Requesting camera permissions...');
-                
-                // Test camera access first
-                updateDebugInfo('Requesting camera permissions...');
-                const testStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1280, min: 640 },
-                        height: { ideal: 720, min: 480 }
-                    }
-                });
-                
-                updateDebugInfo('Camera access granted');
-                
-                // Stop test stream
-                testStream.getTracks().forEach(track => track.stop());
-                
-                updateScannerStatus('Initializing scanner...');
-                updateDebugInfo('Initializing QuaggaJS...');
-                
-                // Configure QuaggaJS with more robust settings
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: "#scannerVideo",
-                        constraints: {
-                            width: { min: 640, ideal: 1280, max: 1920 },
-                            height: { min: 480, ideal: 720, max: 1080 },
-                            facingMode: "environment",
-                            aspectRatio: { min: 1, max: 2 }
-                        },
-                        area: { // Only read barcodes in the center 50% of the image
-                            top: "25%",
-                            right: "25%",
-                            left: "25%",
-                            bottom: "25%"
-                        }
-                    },
-                    decoder: {
-                        readers: [
-                            "ean_reader",
-                            "ean_8_reader",
-                            "code_128_reader",
-                            "code_39_reader",
-                            "upc_reader",
-                            "upc_e_reader"
-                        ],
-                        debug: {
-                            drawBoundingBox: true,
-                            showFrequency: true,
-                            drawScanline: true,
-                            showPattern: true
-                        }
-                    },
-                    locate: true,
-                    frequency: 10
-                }, function(err) {
-                    if (err) {
-                        console.error('Quagga initialization error:', err);
-                        updateDebugInfo('QuaggaJS error: ' + err.message);
-                        
-                        // Provide more specific error messages
-                        if (err.name === 'NotAllowedError') {
-                            updateScannerStatus('Camera access denied. Please allow camera permissions and try again.');
-                        } else if (err.name === 'NotFoundError') {
-                            updateScannerStatus('No camera found. Please check your device has a camera.');
-                        } else if (err.name === 'NotReadableError') {
-                            updateScannerStatus('Camera is in use by another application. Please close other camera apps.');
-                        } else {
-                            updateScannerStatus('Scanner initialization failed: ' + err.message);
-                        }
-                        
-                        // Reset button state
-                        document.getElementById('startScannerBtn').classList.remove('hidden');
-                        document.getElementById('stopScannerBtn').classList.add('hidden');
-                        return;
-                    }
-                    
-                    console.log('Quagga initialized successfully');
-                    updateScannerStatus('Scanner ready - position barcode in view');
-                    updateDebugInfo('Scanner active - looking for barcodes');
-                    
-                    // Show/hide buttons
-                    document.getElementById('startScannerBtn').classList.add('hidden');
-                    document.getElementById('stopScannerBtn').classList.remove('hidden');
-                    
-                    // Start scanning
-                    Quagga.start();
-                    
-                    // Listen for barcode detection
-                    Quagga.onDetected(onBarcodeDetected);
-                    
-                    // Listen for processing events
-                    Quagga.onProcessed(onProcessed);
-                    
-                });
-                
-            } catch (error) {
-                console.error('Scanner error:', error);
-                
-                if (error.name === 'NotAllowedError') {
-                    updateScannerStatus('Camera access denied. Please allow camera permissions.');
-                } else if (error.name === 'NotFoundError') {
-                    updateScannerStatus('No camera found on this device.');
-                } else if (error.name === 'NotReadableError') {
-                    updateScannerStatus('Camera is in use by another application.');
-                } else {
-                    updateScannerStatus('Scanner error: ' + error.message);
-                }
-                
-                // Reset button state
-                document.getElementById('startScannerBtn').classList.remove('hidden');
-                document.getElementById('stopScannerBtn').classList.add('hidden');
-            }
-        }
-        
-        function stopBarcodeScanner() {
-            // Stop QuaggaJS
-            if (typeof Quagga !== 'undefined') {
-                Quagga.stop();
-            }
-            
-            updateScannerStatus('Scanner stopped');
-            hideDebugInfo();
-            
-            // Show/hide buttons
-            document.getElementById('startScannerBtn').classList.remove('hidden');
-            document.getElementById('stopScannerBtn').classList.add('hidden');
-        }
-        
-        // Remove the old barcode detection functions as they're replaced by QuaggaJS
-        
-        function onBarcodeDetected(result) {
-            const barcode = result.codeResult.code;
-            
-            if (scannedBarcodeValue === barcode) return; // Prevent duplicate detections
-            
-            console.log('Barcode detected:', barcode);
-            scannedBarcodeValue = barcode;
-            updateScannerStatus('Barcode detected!');
-            
-            // Show the detected barcode
-            document.getElementById('barcodeValue').textContent = barcode;
-            document.getElementById('scannedBarcode').classList.remove('hidden');
-            
-            // Stop scanning after successful detection
-            stopBarcodeScanner();
-        }
-        
-        function onProcessed(result) {
-            // This function is called for every frame processed
-            if (result) {
-                // Draw bounding box if barcode is found
-                const drawingCanvas = Quagga.canvas.dom.overlay;
-                const drawingCtx = drawingCanvas.getContext('2d');
-                
-                if (result.boxes) {
-                    drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-                    result.boxes.filter(function (box) {
-                        return box !== result.box;
-                    }).forEach(function (box) {
-                        Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
-                    });
-                }
-                
-                if (result.box) {
-                    Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
-                }
-                
-                if (result.codeResult && result.codeResult.code) {
-                    Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
-                }
-            }
-        }
-        
-        function useScannedBarcode() {
-            console.log('useScannedBarcode called');
-            console.log('scannedBarcodeValue:', scannedBarcodeValue);
-            
-            // Check both scannedBarcodeValue and the displayed barcode value
-            const displayedBarcode = document.getElementById('barcodeValue').textContent;
-            const barcodeToUse = scannedBarcodeValue || displayedBarcode;
-            
-            console.log('displayedBarcode:', displayedBarcode);
-            console.log('barcodeToUse:', barcodeToUse);
-            
-            if (barcodeToUse && barcodeToUse.trim() !== '') {
-                document.getElementById('barcode').value = barcodeToUse;
-                closeBarcodeScanner();
-                
-                // Automatically search for the barcode and proceed to step 2
-                console.log('Calling handleBarcodeSearchForStep2...');
-                handleBarcodeSearchForStep2();
-            } else {
-                console.log('No barcode value found');
-                // Use the modal popup instead of alert
-                showModal('No barcode detected. Please try scanning again.', 'Barcode Error');
-            }
-        }
-        
-        // Handle manual food entry
-        function handleManualFoodEntry() {
-            const foodName = document.getElementById('manualFoodName').value.trim();
-            const servingSize = document.getElementById('manualServingSize').value;
-            const servingUnit = document.getElementById('manualServingUnit').value;
-            
-            if (!foodName || !servingSize || !servingUnit) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            // Create a basic food data object for manual entry
-            const manualFoodData = {
-                food_name: foodName,
-                serving_size: parseFloat(servingSize),
-                serving_unit: servingUnit,
-                brand: 'Manual Entry'
-            };
-            
-            // Proceed to step 2 with manual food data
-            proceedToStep2(manualFoodData);
-        }
-        
-        function handleManualBarcode() {
-            const manualBarcode = document.getElementById('manualBarcode').value.trim();
-            
-            if (!manualBarcode) {
-                alert('Please enter a barcode');
-                return;
-            }
-            
-            // Validate barcode format (basic check)
-            if (!/^\d{8,13}$/.test(manualBarcode)) {
-                alert('Please enter a valid barcode (8-13 digits)');
-                return;
-            }
-            
-            // Use the manual barcode
-            document.getElementById('barcode').value = manualBarcode;
-            closeBarcodeScanner();
-            
-            // Automatically search for the barcode
-            handleBarcodeSearch();
-        }
-        
-        // Step Navigation Functions
-        function showSearchByName() {
-            console.log('showSearchByName called');
-            document.getElementById('searchByNameSection').classList.remove('hidden');
-            document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3').classList.add('hidden');
-        }
-        
-        function showManualEntry() {
-            console.log('showManualEntry called');
-            document.getElementById('manualEntrySection').classList.remove('hidden');
-            document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3').classList.add('hidden');
-        }
-        
-        function backToOptions() {
-            console.log('backToOptions called');
-            document.getElementById('searchByNameSection').classList.add('hidden');
-            document.getElementById('manualEntrySection').classList.add('hidden');
-            document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3').classList.remove('hidden');
-        }
-        
-        function proceedToStep2(foodData) {
-            // Update step indicator
-            document.getElementById('step1').classList.add('opacity-50');
-            document.getElementById('step2').classList.remove('opacity-50');
-            document.getElementById('step2').querySelector('div').classList.remove('bg-gray-300', 'text-gray-600');
-            document.getElementById('step2').querySelector('div').classList.add('bg-mint-green', 'text-white');
-            
-            // Hide step 1, show step 2
-            document.getElementById('step1Content').classList.add('hidden');
-            document.getElementById('step2Content').classList.remove('hidden');
-            
-            // Update selected food display
-            if (foodData) {
-                document.getElementById('selectedFoodName').textContent = foodData.food_name || 'Manual Entry';
-                document.getElementById('selectedFoodDetails').textContent = foodData.brand ? `${foodData.brand} - ${foodData.serving_size}${foodData.serving_unit}` : 'Custom food entry';
-                
-                // Populate serving size inputs with editable values
-                const servingSizeInput = document.getElementById('servingSize');
-                const servingUnitInput = document.getElementById('servingUnit');
-                
-                if (servingSizeInput && servingUnitInput) {
-                    // Set default serving size to 1 if not provided, or use the food data
-                    const defaultServingSize = foodData.serving_size || 1;
-                    const defaultServingUnit = foodData.serving_unit || 'serving';
-                    
-                    servingSizeInput.value = defaultServingSize;
-                    
-                    // Set the serving unit dropdown
-                    servingUnitInput.value = defaultServingUnit;
-                    
-                    // If the unit is not in the dropdown options, add it
-                    const unitExists = Array.from(servingUnitInput.options).some(option => option.value === defaultServingUnit);
-                    if (!unitExists && defaultServingUnit !== 'serving') {
-                        const newOption = document.createElement('option');
-                        newOption.value = defaultServingUnit;
-                        newOption.textContent = defaultServingUnit;
-                        servingUnitInput.appendChild(newOption);
-                    }
-                }
-                
-                // Display nutrition info if available
-                if (foodData.calories !== undefined) {
-                    displayNutritionInfo(foodData, foodData.source || 'barcode_scan');
-                }
-            }
-        }
-        
-        function proceedToStep3() {
-            console.log('proceedToStep3 called');
-            
-            // Validate required fields
-            const servingSize = document.getElementById('servingSize').value;
-            const servingUnit = document.getElementById('servingUnit').value;
-            
-            console.log('servingSize:', servingSize, 'servingUnit:', servingUnit);
-            
-            if (!servingSize || !servingUnit) {
-                showModal('Please fill in serving size and unit', 'Required Fields Missing');
-                return;
-            }
-            
-            // Update step indicator
-            document.getElementById('step2').classList.add('opacity-50');
-            document.getElementById('step3').classList.remove('opacity-50');
-            document.getElementById('step3').querySelector('div').classList.remove('bg-gray-300', 'text-gray-600');
-            document.getElementById('step3').querySelector('div').classList.add('bg-mint-green', 'text-white');
-            
-            // Hide step 2, show step 3
-            document.getElementById('step2Content').classList.add('hidden');
-            document.getElementById('step3Content').classList.remove('hidden');
-            
-            // Simple visibility check
-            const step3ContentElement = document.getElementById('step3Content');
-            console.log('Step 3 content after show:', step3ContentElement);
-            console.log('Step 3 hidden class:', step3ContentElement ? step3ContentElement.classList.contains('hidden') : 'Element not found');
-            console.log('Step 3 display style:', step3ContentElement ? step3ContentElement.style.display : 'Element not found');
-            
-            // Check if Step 3 has any content
-            if (step3ContentElement) {
-                console.log('Step 3 children count:', step3ContentElement.children.length);
-                console.log('Step 3 innerHTML length:', step3ContentElement.innerHTML.length);
-            }
-            
-
-            
-            console.log('Step 3 content should now be visible');
-            
-            // Check if Step 3 content is actually visible
-            const step3Content = document.getElementById('step3Content');
-            console.log('Step 3 content element:', step3Content);
-            console.log('Step 3 content classes:', step3Content ? step3Content.className : 'Element not found');
-            console.log('Step 3 content hidden:', step3Content ? step3Content.classList.contains('hidden') : 'Element not found');
-            
-            // Generate review summary
-            generateReviewSummary();
-            
-            // Check if the Add to Journal button exists
-            const addFoodBtn = document.getElementById('addFoodBtn');
-            console.log('Add to Journal button element:', addFoodBtn);
-            console.log('Add to Journal button visible:', addFoodBtn ? addFoodBtn.offsetParent !== null : 'Button not found');
-            console.log('Add to Journal button classes:', addFoodBtn ? addFoodBtn.className : 'Button not found');
-        }
-        
-        function backToStep1() {
-            // Reset step indicators
-            document.getElementById('step1').classList.remove('opacity-50');
-            document.getElementById('step2').classList.add('opacity-50');
-            document.getElementById('step2').querySelector('div').classList.remove('bg-mint-green', 'text-white');
-            document.getElementById('step2').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
-            
-            // Show step 1, hide step 2
-            document.getElementById('step1Content').classList.remove('hidden');
-            document.getElementById('step2Content').classList.add('hidden');
-        }
-        
-        function backToStep2() {
-            // Reset step indicators
-            document.getElementById('step2').classList.remove('opacity-50');
-            document.getElementById('step3').classList.add('opacity-50');
-            document.getElementById('step3').querySelector('div').classList.remove('bg-mint-green', 'text-white');
-            document.getElementById('step3').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
-            
-            // Show step 2, hide step 3
-            document.getElementById('step2Content').classList.remove('hidden');
-            document.getElementById('step3Content').classList.add('hidden');
-        }
-        
-        function resetFormToStep1() {
-            console.log('resetFormToStep1 called');
-            
-            // Reset all form inputs
-            const foodNameInput = document.getElementById('foodName');
-            const servingSizeInput = document.getElementById('servingSize');
-            const servingUnitInput = document.getElementById('servingUnit');
-            const timeOfDayInput = document.getElementById('timeOfDay');
-            const waterAmountInput = document.getElementById('waterAmount');
-            const waterUnitInput = document.getElementById('waterUnit');
-            const moodInput = document.getElementById('mood');
-            const notesInput = document.getElementById('notes');
-            
-            if (foodNameInput) foodNameInput.value = '';
-            if (servingSizeInput) servingSizeInput.value = '';
-            if (servingUnitInput) servingUnitInput.value = 'serving';
-            if (timeOfDayInput) timeOfDayInput.value = '';
-            if (waterAmountInput) waterAmountInput.value = '';
-            if (waterUnitInput) waterUnitInput.value = 'oz';
-            if (moodInput) moodInput.value = '';
-            if (notesInput) notesInput.value = '';
-            
-            // Reset step indicators
-            document.getElementById('step1').classList.remove('opacity-50');
-            document.getElementById('step2').classList.add('opacity-50');
-            document.getElementById('step3').classList.add('opacity-50');
-            
-            // Reset step 2 and 3 styling
-            document.getElementById('step2').querySelector('div').classList.remove('bg-mint-green', 'text-white');
-            document.getElementById('step2').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
-            document.getElementById('step3').querySelector('div').classList.remove('bg-mint-green', 'text-white');
-            document.getElementById('step3').querySelector('div').classList.add('bg-gray-300', 'text-gray-600');
-            
-            // Show step 1, hide step 2 and 3
-            document.getElementById('step1Content').classList.remove('hidden');
-            document.getElementById('step2Content').classList.add('hidden');
-            document.getElementById('step3Content').classList.add('hidden');
-            
-            // Reset selected food display
-            document.getElementById('selectedFoodName').textContent = 'No food selected';
-            document.getElementById('selectedFoodDetails').textContent = 'Select a food from step 1';
-            
-            // Hide nutrition info
-            const nutritionInfo = document.getElementById('nutritionInfo');
-            if (nutritionInfo) nutritionInfo.classList.add('hidden');
-            
-            // Clear current nutrition data
-            currentNutritionData = null;
-            
-            console.log('Form reset to step 1');
-        }
-        
-        function generateReviewSummary() {
-            console.log('generateReviewSummary called');
-            
-            const summary = document.getElementById('reviewSummary');
-            const foodName = document.getElementById('selectedFoodName').textContent;
-            const servingSize = document.getElementById('servingSize').value;
-            const servingUnit = document.getElementById('servingUnit').value;
-            const timeOfDay = document.getElementById('timeOfDay').value;
-            const mood = document.getElementById('mood').value;
-            const waterAmount = document.getElementById('waterAmount').value;
-            const waterUnit = document.getElementById('waterUnit').value;
-            const notes = document.getElementById('notes').value;
-            
-            console.log('Summary data:', {
-                foodName, servingSize, servingUnit, timeOfDay, mood, waterAmount, waterUnit, notes
-            });
-            
-            let summaryHTML = `
-                <div><strong>Food:</strong> ${foodName}</div>
-                <div><strong>Serving:</strong> ${servingSize} ${servingUnit}</div>
-            `;
-            
-            if (timeOfDay) {
-                summaryHTML += `<div><strong>Meal Time:</strong> ${timeOfDay}</div>`;
-            }
-            
-            if (mood) {
-                summaryHTML += `<div><strong>Mood:</strong> ${mood}</div>`;
-            }
-            
-            if (waterAmount && waterAmount > 0) {
-                summaryHTML += `<div><strong>Water:</strong> ${waterAmount} ${waterUnit}</div>`;
-            }
-            
-            if (notes) {
-                summaryHTML += `<div><strong>Notes:</strong> ${notes}</div>`;
-            }
-            
-            console.log('Generated summary HTML:', summaryHTML);
-            summary.innerHTML = summaryHTML;
-            
-            // Show nutrition info if available
-            if (currentNutritionData) {
-                document.getElementById('nutritionInfo').classList.remove('hidden');
-                displayNutritionInfo(currentNutritionData, currentNutritionData.source || 'barcode_scan');
-            }
-        }
-        
-        function updateButtonStates() {
-            const now = Date.now();
-            const searchBtn = document.getElementById('searchFoodBtn');
-            const addBtn = document.getElementById('addFoodBtn');
-            
-            // Update search button state
-            if (now - lastSearchTime < SEARCH_COOLDOWN) {
-                const remainingTime = Math.ceil((SEARCH_COOLDOWN - (now - lastSearchTime)) / 1000);
-                searchBtn.disabled = true;
-                searchBtn.textContent = `Wait ${remainingTime}s`;
-                searchBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed text-sm';
-            } else {
-                searchBtn.disabled = false;
-                searchBtn.textContent = '🔍 Search';
-                searchBtn.className = 'px-4 py-2 bg-calm-blue text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200 text-sm';
-            }
-            
-            // Update add button state
-            if (now - lastAddTime < ADD_COOLDOWN) {
-                const remainingTime = Math.ceil((ADD_COOLDOWN - (now - lastAddTime)) / 1000);
-                addBtn.disabled = true;
-                addBtn.textContent = `Wait ${remainingTime}s`;
-                addBtn.className = 'px-6 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed font-medium';
-            } else {
-                addBtn.disabled = false;
-                addBtn.textContent = 'Add to Journal';
-                addBtn.className = 'px-6 py-2 bg-calm-blue text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-calm-blue focus:ring-offset-2 transition-colors duration-200 font-medium';
-            }
-        }
-
-        function handleEntrySelection() {
-            const checkboxes = document.querySelectorAll('.entry-checkbox');
-            selectedEntries.clear();
-            
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    selectedEntries.add(parseInt(checkbox.dataset.entryId));
-                }
-            });
-            
-            updateDeleteButton();
-        }
-
-        function handleSelectAll() {
-            const checkboxes = document.querySelectorAll('.entry-checkbox');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
-            });
-            
-            if (selectAll.checked) {
-                checkboxes.forEach(checkbox => {
-                    selectedEntries.add(parseInt(checkbox.dataset.entryId));
-                });
-            } else {
-                selectedEntries.clear();
-            }
-            
-            updateDeleteButton();
-        }
-
-        function updateDeleteButton() {
-            if (selectedEntries.size > 0) {
-                deleteSelectedBtn.classList.remove('hidden');
-                deleteSelectedBtn.textContent = `Delete Selected (${selectedEntries.size})`;
-            } else {
-                deleteSelectedBtn.classList.add('hidden');
-            }
-        }
-
-        async function handleDeleteSelected() {
-            // Rate limiting check
-            const now = Date.now();
-            if (now - lastDeleteTime < DELETE_COOLDOWN) {
-                const remainingTime = Math.ceil((DELETE_COOLDOWN - (now - lastDeleteTime)) / 1000);
-                showRateLimitStatus(`⏱️ Please wait ${remainingTime} seconds before deleting again`);
-                return;
-            }
-            
-            if (selectedEntries.size === 0) {
-                alert('Please select entries to delete');
-                return;
-            }
-            
-            if (!confirm(`Are you sure you want to delete ${selectedEntries.size} entries?`)) {
-                return;
-            }
-            
-            lastDeleteTime = now;
-            
-            try {
-                const response = await fetch('/food-journal/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        entry_ids: Array.from(selectedEntries)
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    selectedEntries.clear();
-                    selectAll.checked = false;
-                    updateDeleteButton();
-                    loadFoodJournal();
-                    alert(data.message);
-                } else {
-                    if (data.error && data.error.includes('rate limit')) {
-                        alert('Too many delete requests. Please wait a moment before trying again.');
-                    } else {
-                        alert('Error deleting entries: ' + data.error);
-                    }
-                }
-            } catch (error) {
-                console.error('Error deleting entries:', error);
-                alert('Error deleting entries. Please try again.');
-            }
-        }
-
-        async function handleImportFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!file.name.endsWith('.csv')) {
-                alert('Please select a CSV file');
-                return;
-            }
-            
-            // Store file data for field mapping
-            csvFileData = file;
-            
-            // Read CSV headers and show field mapping modal
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvContent = e.target.result;
-                const lines = csvContent.split('\n');
-                if (lines.length > 0) {
-                    csvHeaders = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
-                    showFieldMappingModal();
-                }
-            };
-            reader.readAsText(file);
-            
-            // Reset file input
-            event.target.value = '';
-        }
-        
-        function showFieldMappingModal() {
-            // Show CSV preview
-            const csvPreview = document.getElementById('csvPreview');
-            csvPreview.innerHTML = `<strong>Headers:</strong> ${csvHeaders.join(', ')}`;
-            
-            // Generate field mappings
-            generateFieldMappings();
-            
-            // Show modal
-            fieldMappingModal.classList.remove('hidden');
-        }
-        
-        function hideFieldMappingModal() {
-            fieldMappingModal.classList.add('hidden');
-            csvFileData = null;
-            csvHeaders = [];
-            fieldMappings = {};
-        }
-        
-        // Simple modal function for alerts
-        function showModal(message, title = 'Notice') {
-            // Create modal HTML
-            const modalHTML = `
-                <div id="alertModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                        <div class="mt-3">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-medium text-forest-green">${title}</h3>
-                                <button id="closeAlertModal" class="text-gray-400 hover:text-gray-600">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="text-sm text-gray-600 mb-4">
-                                ${message}
-                            </div>
-                            <div class="flex justify-end">
-                                <button id="okAlertModal" class="px-4 py-2 bg-mint-green text-white rounded-md hover:bg-forest-green focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2">
-                                    OK
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing modal if any
-            const existingModal = document.getElementById('alertModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-            
-            // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Add event listeners
-            const modal = document.getElementById('alertModal');
-            const closeBtn = document.getElementById('closeAlertModal');
-            const okBtn = document.getElementById('okAlertModal');
-            
-            const closeModal = () => {
-                modal.remove();
-            };
-            
-            closeBtn.addEventListener('click', closeModal);
-            okBtn.addEventListener('click', closeModal);
-            
-            // Close on outside click
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    closeModal();
-                }
-            });
-            
-            // Close on Escape key
-            document.addEventListener('keydown', function escapeHandler(e) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                    document.removeEventListener('keydown', escapeHandler);
-                }
-            });
-        }
-        
-        function generateFieldMappings() {
-            const fieldMappingsContainer = document.getElementById('fieldMappings');
-            const expectedFields = [
-                { key: 'food_name', label: 'Food Name', required: true },
-                { key: 'brand', label: 'Brand', required: false },
-                { key: 'serving_size', label: 'Serving Size', required: true },
-                { key: 'serving_unit', label: 'Serving Unit', required: true },
-                { key: 'calories', label: 'Calories', required: false },
-                { key: 'protein', label: 'Protein (g)', required: false },
-                { key: 'carbs', label: 'Carbs (g)', required: false },
-                { key: 'fat', label: 'Fat (g)', required: false },
-                { key: 'fiber', label: 'Fiber (g)', required: false },
-                { key: 'sugar', label: 'Sugar (g)', required: false },
-                { key: 'sodium', label: 'Sodium (mg)', required: false },
-                { key: 'water_amount', label: 'Water Amount', required: false },
-                { key: 'water_unit', label: 'Water Unit', required: false },
-                { key: 'mood', label: 'Mood', required: false },
-                { key: 'notes', label: 'Notes', required: false },
-                { key: 'date', label: 'Date', required: true },
-                { key: 'time', label: 'Time', required: false }
-            ];
-            
-            fieldMappingsContainer.innerHTML = '';
-            
-            expectedFields.forEach(field => {
-                const fieldDiv = document.createElement('div');
-                fieldDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded';
-                
-                const labelSpan = document.createElement('span');
-                labelSpan.className = 'text-sm font-medium text-gray-700';
-                labelSpan.textContent = field.label;
-                if (field.required) {
-                    labelSpan.innerHTML += ' <span class="text-red-500">*</span>';
-                }
-                
-                const select = document.createElement('select');
-                select.className = 'ml-4 px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-mint-green focus:border-transparent';
-                select.dataset.fieldKey = field.key;
-                
-                // Add "Not Used" option
-                const notUsedOption = document.createElement('option');
-                notUsedOption.value = '';
-                notUsedOption.textContent = 'Not Used';
-                select.appendChild(notUsedOption);
-                
-                // Add CSV headers as options
-                csvHeaders.forEach(header => {
-                    const option = document.createElement('option');
-                    option.value = header;
-                    option.textContent = header;
-                    select.appendChild(option);
-                });
-                
-                // Auto-map common field names
-                const headerLower = csvHeaders.map(h => h.toLowerCase());
-                const fieldLower = field.label.toLowerCase();
-                
-                if (fieldLower.includes('food') && headerLower.some(h => h.includes('food') || h.includes('name'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('food') || h.toLowerCase().includes('name'));
-                } else if (fieldLower.includes('brand') && headerLower.some(h => h.includes('brand'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('brand'));
-                } else if (fieldLower.includes('serving') && headerLower.some(h => h.includes('serving'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('serving'));
-                } else if (fieldLower.includes('calories') && headerLower.some(h => h.includes('calorie'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('calorie'));
-                } else if (fieldLower.includes('protein') && headerLower.some(h => h.includes('protein'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('protein'));
-                } else if (fieldLower.includes('carbs') && headerLower.some(h => h.includes('carb'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('carb'));
-                } else if (fieldLower.includes('fat') && headerLower.some(h => h.includes('fat'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('fat'));
-                } else if (fieldLower.includes('date') && headerLower.some(h => h.includes('date'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('date'));
-                } else if (fieldLower.includes('time') && headerLower.some(h => h.includes('time'))) {
-                    select.value = csvHeaders.find(h => h.toLowerCase().includes('time'));
-                }
-                
-                fieldDiv.appendChild(labelSpan);
-                fieldDiv.appendChild(select);
-                fieldMappingsContainer.appendChild(fieldDiv);
-            });
-        }
-        
-        async function handleConfirmFieldMapping() {
-            // Collect field mappings
-            const mappingSelects = document.querySelectorAll('#fieldMappings select');
-            fieldMappings = {};
-            
-            mappingSelects.forEach(select => {
-                const fieldKey = select.dataset.fieldKey;
-                const csvHeader = select.value;
-                if (csvHeader) {
-                    fieldMappings[fieldKey] = csvHeader;
-                }
-            });
-            
-            // Validate required fields
-            const requiredFields = ['food_name', 'serving_size', 'serving_unit', 'date'];
-            const missingFields = requiredFields.filter(field => !fieldMappings[field]);
-            
-            if (missingFields.length > 0) {
-                alert(`Please map the following required fields: ${missingFields.join(', ')}`);
-                return;
-            }
-            
-            // Hide modal
-            hideFieldMappingModal();
-            
-            // Import with field mappings
-            await importWithFieldMappings();
-        }
-        
-        async function importWithFieldMappings() {
-            const formData = new FormData();
-            formData.append('file', csvFileData);
-            formData.append('field_mappings', JSON.stringify(fieldMappings));
-            
-            try {
-                const response = await fetch('/food-journal/import', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert(`${data.message}\nImported: ${data.imported_count} entries`);
-                    if (data.errors.length > 0) {
-                        console.log('Import errors:', data.errors);
-                    }
-                    loadFoodJournal();
-                } else {
-                    alert('Error importing file: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Error importing file:', error);
-                alert('Error importing file. Please try again.');
-            }
-        }
     </script>
-    
-    <!-- Barcode Scanner Modal -->
-    <div id="scannerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">📷 Barcode Scanner</h3>
-                <button id="closeScannerBtn" class="text-gray-500 hover:text-gray-700" onclick="console.log('closeScannerBtn clicked directly'); closeBarcodeScanner();">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="text-center mb-4">
-                <p class="text-sm text-gray-600 mb-2">Position the barcode within the camera view</p>
-                <div id="scannerStatus" class="text-sm text-blue-600">Initializing camera...</div>
-                <div id="scannerDebug" class="text-xs text-gray-500 mt-1 hidden">
-                    Debug: <span id="debugInfo">Initializing...</span>
-                </div>
-            </div>
-            
-            <div id="scannerContainer" class="relative bg-gray-100 rounded-lg overflow-hidden mb-4" style="height: 300px;">
-                <div id="scannerVideo" class="w-full h-full"></div>
-                <div id="scannerOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="border-2 border-white rounded-lg" style="width: 250px; height: 150px;">
-                        <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-blue-500"></div>
-                        <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-blue-500"></div>
-                        <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-blue-500"></div>
-                        <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-500"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex space-x-2">
-                <button id="startScannerBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-colors duration-200" onclick="console.log('startScannerBtn clicked directly'); startBarcodeScanner();">
-                    Start Scanner
-                </button>
-                <button id="stopScannerBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition-colors duration-200 hidden">
-                    Stop Scanner
-                </button>
-            </div>
-            
-            <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <div class="text-sm text-yellow-800 mb-2">
-                    <strong>💡 Tips for better scanning:</strong>
-                </div>
-                <ul class="text-xs text-yellow-700 space-y-1">
-                    <li>• Ensure good lighting</li>
-                    <li>• Hold barcode steady 10-20cm from camera</li>
-                    <li>• Keep barcode within the blue frame</li>
-                    <li>• Try different angles if not detected</li>
-                </ul>
-            </div>
-            
-            <div id="scannedBarcode" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-md hidden">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="text-sm font-medium text-green-800">Barcode Detected!</div>
-                        <div id="barcodeValue" class="text-lg font-mono text-green-900"></div>
-                    </div>
-                                            <button id="useBarcodeBtn" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
-                            Use This
-                        </button>
-                </div>
-            </div>
-            
-            <!-- Manual Entry Fallback -->
-            <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
-                <div class="text-sm font-medium text-gray-800 mb-2">Manual Entry</div>
-                <div class="flex space-x-2">
-                    <input type="text" id="manualBarcode" 
-                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           placeholder="Enter barcode manually">
-                    <button id="manualBarcodeBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 transition-colors duration-200 text-sm">
-                        Search
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- AI Chat Box for logged-in users -->
-    {% include 'includes/ai_chat.html' %}
 </body>
 </html>
