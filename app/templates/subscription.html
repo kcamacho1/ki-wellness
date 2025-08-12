@@ -66,13 +66,13 @@
                         <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="text-gray-700">600 AI sessions per month</span>
+                        <span class="text-gray-700">600 AI questions per month</span>
                     </li>
                     <li class="flex items-center">
                         <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="text-gray-700">Up to 1,500 tokens per session</span>
+                        <span class="text-gray-700">Up to 1,500 tokens per question</span>
                     </li>
                     <li class="flex items-center">
                         <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@
             <div class="bg-white rounded-lg shadow-lg border-2 border-purple-300 p-8">
                 <div class="text-center mb-6">
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Pay-as-you-go</h3>
-                    <div class="text-4xl font-bold text-purple-600 mb-2">$1<span class="text-lg text-gray-500">/session</span></div>
+                    <div class="text-4xl font-bold text-purple-600 mb-2">$1<span class="text-lg text-gray-500">/question</span></div>
                     <p class="text-gray-600">Perfect for occasional AI usage</p>
                 </div>
                 
@@ -112,7 +112,7 @@
                         <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <span class="text-gray-700">Up to 1,500 tokens per session</span>
+                        <span class="text-gray-700">Up to 1,500 tokens per question</span>
                     </li>
                     <li class="flex items-center">
                         <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,15 +126,24 @@
                         </svg>
                         <span class="text-gray-700">Credits never expire</span>
                     </li>
+                    <li class="flex items-center">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span class="text-gray-700">Custom quantity selection</span>
+                    </li>
                 </ul>
                 
                 <div class="space-y-4">
                     <div class="flex items-center space-x-4">
-                        <input type="number" id="creditQuantity" min="1" max="100" value="1" class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                        <span class="text-gray-700">session credits</span>
+                        <input type="number" id="creditQuantity" min="1" max="1000" value="1" class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <span class="text-gray-700">questions</span>
+                    </div>
+                    <div class="text-sm text-gray-600 text-center">
+                        Total: $<span id="totalCost">1.00</span>
                     </div>
                     <button onclick="purchaseCredits()" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-200">
-                        🎯 Buy Session Credits
+                        🎯 Buy Questions
                     </button>
                 </div>
             </div>
@@ -157,23 +166,23 @@
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
             <div class="space-y-4">
                 <div class="border-b border-gray-200 pb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">What happens when I run out of sessions?</h3>
-                    <p class="text-gray-600">When you reach your monthly limit, you can either wait for the next billing cycle or purchase additional session credits to continue using AI features immediately.</p>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">What happens when I run out of questions?</h3>
+                    <p class="text-gray-600">When you reach your monthly limit, you can either wait for the next billing cycle or purchase additional question credits to continue using AI features immediately.</p>
                 </div>
                 
                 <div class="border-b border-gray-200 pb-4">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">Can I switch between plans?</h3>
-                    <p class="text-gray-600">Yes! You can upgrade to a monthly subscription at any time, or use pay-as-you-go credits alongside your subscription. Your subscription will automatically use monthly sessions first, then credits.</p>
+                    <p class="text-gray-600">Yes! You can upgrade to a monthly subscription at any time, or use pay-as-you-go credits alongside your subscription. Your subscription will automatically use monthly questions first, then credits.</p>
                 </div>
                 
                 <div class="border-b border-gray-200 pb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Do session credits expire?</h3>
-                    <p class="text-gray-600">No, session credits never expire. You can use them whenever you need them, even if you switch between plans.</p>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Do question credits expire?</h3>
+                    <p class="text-gray-600">No, question credits never expire. You can use them whenever you need them, even if you switch between plans.</p>
                 </div>
                 
                 <div class="border-b border-gray-200 pb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">What counts as an AI session?</h3>
-                    <p class="text-gray-600">Each AI-powered analysis, chat interaction, or pattern recognition counts as one session. Sessions are limited to 1,500 tokens (input + output) for cost control.</p>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">What counts as an AI question?</h3>
+                    <p class="text-gray-600">Each AI-powered analysis, chat interaction, or pattern recognition counts as one question. Questions are limited to 1,500 tokens (input + output) for cost control.</p>
                 </div>
                 
                 <div class="pb-4">
@@ -241,9 +250,9 @@
                         <p class="text-lg font-semibold text-gray-900">$${subInfo.monthly_fee}</p>
                     </div>
                     
-                    <!-- Sessions Remaining -->
+                    <!-- Questions Remaining -->
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <h4 class="text-sm font-medium text-gray-500 mb-1">Sessions Left</h4>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Questions Left</h4>
                         <p class="text-lg font-semibold ${subInfo.sessions_remaining > 0 ? 'text-green-600' : 'text-red-600'}">${subInfo.sessions_remaining}</p>
                     </div>
                     
@@ -259,6 +268,31 @@
                     <span class="px-4 py-2 rounded-full text-sm font-medium ${statusBg} ${statusColor}">
                         ${statusText}
                     </span>
+                </div>
+                
+                <!-- Subscription Management -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="https://billing.stripe.com/p/login/aFa14n5ldbvN7idege3Je00" 
+                           target="_blank"
+                           class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Manage Subscription
+                        </a>
+                        <button onclick="loadCurrentStatus()" 
+                                class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh Status
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-500 text-center mt-3">
+                        Manage your subscription, update payment methods, or cancel your plan
+                    </p>
                 </div>
             `;
             
@@ -335,12 +369,36 @@
             }
         };
 
-        // Purchase session credits
+        // Update total cost when quantity changes
+        const updateTotalCost = () => {
+            const quantity = document.getElementById('creditQuantity').value;
+            const totalCost = document.getElementById('totalCost');
+            if (quantity && !isNaN(quantity) && quantity > 0) {
+                const cost = (parseInt(quantity) * 1).toFixed(2);
+                totalCost.textContent = cost;
+            } else {
+                totalCost.textContent = '0.00';
+            }
+        };
+
+        // Purchase questions
         const purchaseCredits = async () => {
             try {
                 const quantity = document.getElementById('creditQuantity').value;
                 if (!quantity || isNaN(quantity) || quantity < 1) {
-                    alert('Please enter a valid quantity');
+                    alert('Please enter a valid quantity (1-1000)');
+                    return;
+                }
+                
+                if (quantity > 1000) {
+                    alert('Maximum quantity is 1000 questions per purchase');
+                    return;
+                }
+                
+                const totalCost = (parseInt(quantity) * 1).toFixed(2);
+                const confirmPurchase = confirm(`Purchase ${quantity} questions for $${totalCost}?`);
+                
+                if (!confirmPurchase) {
                     return;
                 }
                 
@@ -352,7 +410,7 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert(data.message);
+                    alert(`Redirecting to Stripe to purchase ${quantity} questions for $${totalCost}`);
                     window.open(data.redirect_url, '_blank');
                     // Refresh status after purchase
                     setTimeout(loadCurrentStatus, 2000);
@@ -389,6 +447,15 @@
         // Load status on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadCurrentStatus();
+            
+            // Add event listener for quantity input
+            const creditQuantity = document.getElementById('creditQuantity');
+            if (creditQuantity) {
+                creditQuantity.addEventListener('input', updateTotalCost);
+                creditQuantity.addEventListener('change', updateTotalCost);
+                // Initialize total cost
+                updateTotalCost();
+            }
         });
     </script>
 </body>

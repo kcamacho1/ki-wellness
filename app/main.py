@@ -57,7 +57,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# Cloudflare Turnstile Configuration is now handled in config.py
+
 
 # Ensure database URL is properly set
 if not app.config.get('SQLALCHEMY_DATABASE_URI'):
@@ -879,29 +879,7 @@ def is_localhost_environment():
     print("🔧 No request context, assuming not localhost")
     return False
 
-def should_enable_turnstile():
-    """Determine if Turnstile should be enabled"""
-    # Check if explicitly disabled via environment variable
-    if os.getenv('TURNSTILE_ENABLED', '').lower() == 'false':
-        print("🔧 Turnstile explicitly disabled via environment variable")
-        return False
-    
-    # Check if running on localhost
-    if is_localhost_environment():
-        print("🔧 Localhost detected, disabling Turnstile")
-        return False
-    
-    # Check if running on kiwellness.org domain
-    try:
-        if request and 'kiwellness.org' in request.host:
-            print("🌐 kiwellness.org domain detected, enabling Turnstile")
-            return True
-    except RuntimeError:
-        pass
-    
-    # Default to enabled for production safety
-    print("🌐 Default production mode, enabling Turnstile")
-    return True
+
 
 @app.context_processor
 def inject_functions():
@@ -909,8 +887,6 @@ def inject_functions():
         'get_current_user': get_current_user,
         'is_admin_user': is_admin_user,
         'ADMIN_EMAIL': os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org'),
-        'TURNSTILE_SITE_KEY': app.config.get('TURNSTILE_SITE_KEY'),
-        'TURNSTILE_ENABLED': should_enable_turnstile(),
         'IS_LOCALHOST': is_localhost_environment(),
         'datetime': datetime,
         'utcnow': datetime.utcnow
@@ -2086,16 +2062,37 @@ def purchase_session_credits():
         data = request.get_json()
         quantity = data.get('quantity', 1)
         
-        if quantity < 1 or quantity > 100:
-            return jsonify({'success': False, 'error': 'Invalid quantity'}), 400
+        if quantity < 1 or quantity > 1000:  # Increased limit for bulk purchases
+            return jsonify({'success': False, 'error': 'Invalid quantity (1-1000)'}), 400
         
-        # Redirect to Stripe checkout for $1 per session credit
-        stripe_url = "https://buy.stripe.com/3cIaEX8xpbvNbyt7RQ3Je04"
+        # Use the new Stripe link that allows custom quantities
+        # The link will handle the quantity parameter and calculate total price
+        stripe_url = "https://buy.stripe.com/bJe14naFxdDVdGB9ZY3Je06"
+        
+        # Add user metadata to track the purchase
+        current_user = get_current_user()
+        if current_user:
+            # Store pending purchase in database for tracking
+            pending_purchase = SessionCredits(
+                user_id=current_user.id,
+                credits_purchased=quantity,
+                credits_used=0,
+                credits_remaining=0,  # Will be updated after payment
+                payment_amount_usd=quantity,  # $1 per credit
+                payment_status='pending',
+                stripe_payment_intent_id=None  # Will be updated after payment
+            )
+            db.session.add(pending_purchase)
+            db.session.commit()
+            
+            print(f"📝 Created pending purchase record: {quantity} credits for user {current_user.id}")
         
         return jsonify({
             'success': True,
             'redirect_url': stripe_url,
-            'message': f'Redirecting to purchase {quantity} session credit(s) for ${quantity:.2f}'
+            'message': f'Redirecting to purchase {quantity} session credit(s) for ${quantity:.2f}',
+            'quantity': quantity,
+            'total_cost': quantity
         })
     except Exception as e:
         print(f"❌ Error processing credit purchase: {e}")

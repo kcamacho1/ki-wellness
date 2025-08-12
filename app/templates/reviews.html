@@ -53,6 +53,11 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
     </style>
+    
+    <!-- Load reCAPTCHA v3 if enabled -->
+    {% if config.RECAPTCHA_ENABLED %}
+    <script src="https://www.google.com/recaptcha/api.js?render={{ config.RECAPTCHA_SITE_KEY }}" async defer></script>
+    {% endif %}
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -203,14 +208,13 @@
                                     </div>
                                 </div>
                     
-                                                    <!-- Turnstile Verification -->
+                                                    <!-- reCAPTCHA Verification -->
                                 <div class="text-center mb-6">
-                                    <div id="turnstile-container" class="flex justify-center">
-                                        <!-- Turnstile will be loaded here -->
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                        <p class="text-sm text-blue-800 text-center">
+                                            <strong>Security Verification:</strong> This form is protected by reCAPTCHA v3.
+                                        </p>
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-2">
-                                        Please complete the security verification to submit your review
-                                    </p>
                                 </div>
                                 
                                 <div class="text-center">
@@ -284,131 +288,31 @@
         // Check verification status on page load
         document.addEventListener('DOMContentLoaded', checkVerificationStatus);
         
-        // Turnstile integration
-        let turnstileToken = null;
+        // reCAPTCHA integration
+        let recaptchaToken = null;
         
-        // Load Turnstile based on environment with enhanced error handling
-        fetch('/api/turnstile-status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.enabled) {
-                    // Load production Turnstile
-                    document.getElementById('turnstile-container').innerHTML = 
-                        '<div class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm">Loading security verification...</div>';
-                    
-                    const turnstileScript = document.createElement('script');
-                    turnstileScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-                    turnstileScript.async = true;
-                    turnstileScript.defer = true;
-                    turnstileScript.onload = function() {
-                        try {
-                            const widgetId = turnstile.render('#turnstile-container', {
-                                sitekey: '{{ config.TURNSTILE_SITE_KEY }}',
-                                callback: function(token) {
-                                    if (token) {
-                                        turnstileToken = token;
-                                        console.log('Turnstile completed:', token ? 'TOKEN_PRESENT' : 'NO_TOKEN');
-                                        
-                                        // Store token in multiple locations for reliability
-                                        localStorage.setItem('turnstileToken', token);
-                                        window.turnstileToken = token;
-                                        
-                                        // Update the instruction text
-                                        const instructionText = document.querySelector('#turnstile-container + p');
-                                        if (instructionText) {
-                                            instructionText.textContent = '✅ Security verification completed';
-                                            instructionText.className = 'text-green-600 text-sm mt-2 text-center';
-                                        }
-                                        
-                                        // Update container status
-                                        const container = document.getElementById('turnstile-container');
-                                        if (container) {
-                                            container.setAttribute('data-completed', 'true');
-                                            container.setAttribute('data-token', token);
-                                            container.setAttribute('data-status', 'success');
-                                        }
-                                    } else {
-                                        console.warn('Turnstile: Callback received but no token provided');
-                                        turnstileToken = null;
-                                    }
-                                },
-                                'expired-callback': function() {
-                                    turnstileToken = null;
-                                    console.log('Turnstile expired');
-                                    
-                                    // Clear stored tokens
-                                    localStorage.removeItem('turnstileToken');
-                                    window.turnstileToken = null;
-                                    
-                                    // Update the instruction text
-                                    const instructionText = document.querySelector('#turnstile-container + p');
-                                    if (instructionText) {
-                                        instructionText.textContent = '⚠️ Security verification expired. Please complete it again.';
-                                        instructionText.className = 'text-orange-600 text-sm mt-2 text-center';
-                                    }
-                                    
-                                    // Update container status
-                                    const container = document.getElementById('turnstile-container');
-                                    if (container) {
-                                        container.setAttribute('data-completed', 'false');
-                                        container.removeAttribute('data-token');
-                                        container.setAttribute('data-status', 'expired');
-                                    }
-                                },
-                                'error-callback': function() {
-                                    turnstileToken = null;
-                                    console.error('Turnstile error');
-                                    
-                                    // Clear stored tokens
-                                    localStorage.removeItem('turnstileToken');
-                                    window.turnstileToken = null;
-                                    
-                                    // Update the instruction text
-                                    const instructionText = document.querySelector('#turnstile-container + p');
-                                    if (instructionText) {
-                                        instructionText.textContent = '❌ Security verification error. Please refresh and try again.';
-                                        instructionText.className = 'text-red-600 text-sm mt-2 text-center';
-                                    }
-                                    
-                                    // Update container status
-                                    const container = document.getElementById('turnstile-container');
-                                    if (container) {
-                                        container.setAttribute('data-completed', 'false');
-                                        container.removeAttribute('data-token');
-                                        container.setAttribute('data-status', 'error');
-                                    }
-                                }
-                            });
-                            
-                            console.log('Turnstile widget rendered with ID:', widgetId);
-                        } catch (error) {
-                            console.error('Error rendering Turnstile widget:', error);
-                            document.getElementById('turnstile-container').innerHTML = 
-                                '<div class="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-sm">❌ Error loading security verification</div>';
-                        }
-                    };
-                    
-                    turnstileScript.onerror = function() {
-                        console.error('Failed to load Turnstile script');
-                        document.getElementById('turnstile-container').innerHTML = 
-                            '<div class="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-sm">❌ Failed to load security verification</div>';
-                    };
-                    
-                    document.head.appendChild(turnstileScript);
-                } else {
-                    // Development mode - show bypass message
-                    document.getElementById('turnstile-container').innerHTML = 
-                        '<div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm">🔧 Development Mode: Security verification bypassed</div>';
-                    turnstileToken = 'dev-bypass-token';
+        // Function to get reCAPTCHA token
+        async function getRecaptchaToken() {
+            {% if config.RECAPTCHA_ENABLED %}
+            if (typeof grecaptcha !== 'undefined') {
+                try {
+                    const token = await grecaptcha.execute('{{ config.RECAPTCHA_SITE_KEY }}', {action: 'review_submit'});
+                    recaptchaToken = token;
+                    console.log('reCAPTCHA token obtained');
+                    return token;
+                } catch (error) {
+                    console.error('reCAPTCHA error:', error);
+                    return null;
                 }
-            })
-            .catch(error => {
-                console.error('Error loading Turnstile status:', error);
-                // Fallback to development mode
-                document.getElementById('turnstile-container').innerHTML = 
-                    '<div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm">🔧 Development Mode: Security verification bypassed</div>';
-                turnstileToken = 'dev-bypass-token';
-            });
+            } else {
+                console.warn('reCAPTCHA not available');
+                return null;
+            }
+            {% else %}
+            console.log('🔧 reCAPTCHA disabled in configuration');
+            return 'dev-bypass-token';
+            {% endif %}
+        }
         
         // Character counter for content field
         const contentField = document.getElementById('content');
@@ -499,25 +403,11 @@
                 return;
             }
             
-            // Validate Turnstile completion with enhanced fallback
-            if (!turnstileToken) {
-                // Try to get token from multiple sources
-                const fallbackToken = window.turnstileToken || localStorage.getItem('turnstileToken');
-                if (fallbackToken) {
-                    turnstileToken = fallbackToken;
-                    console.log('Turnstile: Using fallback token');
-                } else {
-                    // Check container status for debugging
-                    const container = document.getElementById('turnstile-container');
-                    if (container) {
-                        const status = container.getAttribute('data-status');
-                        const completed = container.getAttribute('data-completed');
-                        console.warn('Turnstile: No token available. Status:', status, 'Completed:', completed);
-                    }
-                    
-                    showMessage('Please complete the security verification', 'error');
-                    return;
-                }
+            // Get reCAPTCHA token
+            const recaptchaToken = await getRecaptchaToken();
+            if (!recaptchaToken) {
+                showMessage('Security verification failed. Please try again.', 'error');
+                return;
             }
             
             // Disable submit button
@@ -530,7 +420,7 @@
                     title: title,
                     rating: parseInt(ratingField.value),
                     content: content,
-                    'cf-turnstile-response': turnstileToken,
+                    'g-recaptcha-response': recaptchaToken,
                     website: document.getElementById('website').value // Honeypot field
                 };
                 
@@ -550,11 +440,7 @@
                     ratingField.value = '';
                     stars.forEach(star => star.classList.remove('active'));
                     
-                    // Reset Turnstile if in production mode
-                    if (turnstileToken && turnstileToken !== 'dev-bypass-token') {
-                        turnstile.reset('#turnstile-container');
-                        turnstileToken = null;
-                    }
+
                 } else {
                     showMessage(result.error, 'error');
                 }

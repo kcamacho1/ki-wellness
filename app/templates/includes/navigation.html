@@ -19,34 +19,27 @@
                     <a href="/contact" class="nav-link {{ 'nav-active' if request.endpoint == 'contact' else '' }}" data-endpoint="contact">Contact</a>
                 {% endif %}
                 
-                <!-- AI Self Health link - always visible, leads to login -->
-                <a href="/ai-self-health" class="nav-link {{ 'nav-active' if request.endpoint == 'ai_self_health' else '' }}" data-endpoint="ai_self_health">
-                    <div class="flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                        AI Self Health
-                    </div>
-                </a>
-                
+                <!-- Login-required links - only visible when logged in -->
+                {% if session.get('user_id') %}
+                    <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
+                    <a href="/food-journal" class="nav-link {{ 'nav-active' if request.endpoint == 'food_journal' else '' }}" data-endpoint="food_journal">Journal</a>
+                {% else %}
+                    <!-- Public page navigation items -->
+                    <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+                    <a href="{{ url_for('register') }}" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-sage-green transition-colors duration-200 font-medium">
+                        Get Started
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Right Side Navigation -->
+            <div class="hidden md:flex items-center space-x-4">
                 <!-- Subscription Status Indicator - only visible when logged in -->
                 {% if session.get('user_id') %}
                     <div id="navSubscriptionStatus" class="flex items-center">
                         <div class="animate-pulse bg-blue-200 rounded-full w-3 h-3 mr-2"></div>
                         <span class="text-sm text-blue-600">Loading...</span>
                     </div>
-                {% endif %}
-                
-                                                <!-- Login-required links - only visible when logged in -->
-                                {% if session.get('user_id') %}
-                                    <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
-                                    <a href="/food-journal" class="nav-link {{ 'nav-active' if request.endpoint == 'food_journal' else '' }}" data-endpoint="food_journal">Journal</a>
-                                {% else %}
-                    <!-- Public page navigation items -->
-                    <a href="{{ url_for('login') }}" class="nav-link">Login</a>
-                    <a href="{{ url_for('register') }}" class="bg-mint-green text-white px-6 py-2 rounded-lg hover:bg-sage-green transition-colors duration-200 font-medium">
-                        Get Started
-                    </a>
                 {% endif %}
             </div>
 
@@ -135,15 +128,6 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="md:hidden hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
-                <!-- AI Self Health link - always visible -->
-                <a href="/ai-self-health" class="block px-3 py-2 rounded-md text-base font-medium {{ 'bg-mint-green text-white' if request.endpoint == 'ai_self_health' else 'text-gray-700 hover:bg-gray-100' }}">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                        </svg>
-                        AI Self Health
-                    </div>
-                </a>
                 
                                                 <!-- Login-required links - only visible when logged in -->
                                 {% if session.get('user_id') %}
@@ -380,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 navSubscriptionStatus.innerHTML = `
                     <div class="flex items-center">
                         <div class="${statusBg} rounded-full w-3 h-3 mr-2"></div>
-                        <span class="text-sm ${statusColor} font-medium">${subInfo.sessions_remaining} sessions</span>
+                        <span class="text-sm ${statusColor} font-medium">${subInfo.sessions_remaining} questions</span>
                     </div>
                 `;
             } else {
