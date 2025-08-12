@@ -1883,6 +1883,10 @@ def recaptcha_status():
     print(f"  - Site key present: {bool(site_key)}")
     print(f"  - Secret key present: {bool(secret_key)}")
     print(f"  - Final enabled status: {recaptcha_enabled}")
+    print(f"  - Request host: {request.host}")
+    print(f"  - Request URL: {request.url}")
+    print(f"  - Site key value: {site_key[:10] + '...' if site_key and len(site_key) > 10 else site_key}")
+    print(f"  - Secret key value: {secret_key[:10] + '...' if secret_key and len(secret_key) > 10 else secret_key}")
     
     return jsonify({
         'enabled': recaptcha_enabled,
@@ -1890,7 +1894,8 @@ def recaptcha_status():
         'host': request.host,
         'keys_configured': keys_configured,
         'site_key_present': bool(site_key),
-        'secret_key_present': bool(secret_key)
+        'secret_key_present': bool(secret_key),
+        'request_url': request.url
     })
 
 @app.route('/contact', methods=['GET', 'POST'])
@@ -1940,18 +1945,33 @@ def login():
         password = request.form.get('password')
         recaptcha_response = request.form.get('g-recaptcha-response')
         
+        print(f"🔍 Login attempt for username: {username}")
+        print(f"🔍 Login: Request host: {request.host}")
+        print(f"🔍 Login: Request URL: {request.url}")
+        print(f"🔍 Login: Request method: {request.method}")
+        
         if not username or not password:
+            print("❌ Login: Missing username or password")
             flash('Username and password are required', 'error')
             return render_template('login.html')
         
         # reCAPTCHA validation (only if enabled)
         # Check if running on localhost
         is_localhost = request.host in ['127.0.0.1:5001', 'localhost:5001', '0.0.0.0:5001']
-        recaptcha_enabled = not is_localhost
+        
+        # Check reCAPTCHA configuration
+        recaptcha_site_key = app.config.get('RECAPTCHA_SITE_KEY')
+        recaptcha_secret_key = app.config.get('RECAPTCHA_SECRET_KEY')
+        keys_configured = bool(recaptcha_site_key and recaptcha_secret_key)
+        
+        recaptcha_enabled = not is_localhost and keys_configured
         
         print(f"🔍 Login: reCAPTCHA enabled: {recaptcha_enabled}")
         print(f"🔍 Login: Is localhost: {is_localhost}")
+        print(f"🔍 Login: Keys configured: {keys_configured}")
         print(f"🔍 Login: reCAPTCHA response present: {bool(recaptcha_response)}")
+        print(f"🔍 Login: Site key present: {bool(recaptcha_site_key)}")
+        print(f"🔍 Login: Secret key present: {bool(recaptcha_secret_key)}")
         
         if recaptcha_enabled:
             if not recaptcha_response:
@@ -1970,6 +1990,8 @@ def login():
                 return render_template('login.html')
             
             print("✅ Login: reCAPTCHA verification successful")
+        else:
+            print("🔧 Login: reCAPTCHA disabled or not configured")
         
         # Ensure database tables exist before querying
         ensure_tables_exist()
@@ -1977,17 +1999,39 @@ def login():
         try:
             user = User.query.filter(User.username.ilike(username)).first()
             
-            if user and user.check_password(password):
-                # SECURITY: Set up session with timeout
-                session['user_id'] = user.id
-                session['last_activity'] = datetime.utcnow().isoformat()
-                session.permanent = True  # Enable session timeout
+            if user:
+                print(f"🔍 Login: User found - ID: {user.id}, Admin: {user.is_admin}, Active: {user.is_active}")
                 
-                flash('Login successful!', 'success')
-                return redirect(url_for('dashboard'))
+                if user.check_password(password):
+                    print(f"✅ Login: Password verification successful for user {user.id}")
+                    
+                    # SECURITY: Set up session with timeout
+                    session['user_id'] = user.id
+                    session['last_activity'] = datetime.utcnow().isoformat()
+                    session.permanent = True  # Enable session timeout
+                    
+                    # Verify session was set
+                    session_user_id = session.get('user_id')
+                    print(f"🔍 Login: Session user_id set: {session_user_id}")
+                    
+                    flash('Login successful!', 'success')
+                    
+                    # Redirect based on user type
+                    if user.is_admin:
+                        print(f"🔍 Login: Admin user, redirecting to admin dashboard")
+                        return redirect(url_for('admin_dashboard'))
+                    else:
+                        print(f"🔍 Login: Regular user, redirecting to dashboard")
+                        return redirect(url_for('dashboard'))
+                else:
+                    print(f"❌ Login: Password verification failed for user {user.id}")
+                    flash('Invalid username or password', 'error')
+                    return render_template('login.html')
             else:
+                print(f"❌ Login: User not found for username: {username}")
                 flash('Invalid username or password', 'error')
                 return render_template('login.html')
+                
         except Exception as e:
             print(f"❌ Login database error: {e}")
             import traceback
