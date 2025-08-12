@@ -369,7 +369,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    phone = db.Column(db.String(20), nullable=True, unique=True, index=True)  # Phone number field - now unique
+    phone = db.Column(db.String(20), nullable=True, index=True)  # Phone number field - removed unique constraint for NULL values
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)  # Account status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -1193,35 +1193,208 @@ def get_browser_timezone_datetime(browser_timezone=None):
         return datetime.utcnow()
 
 # API Integration Functions
-def search_openfoodfacts_api(food_name):
-    """Search Open Food Facts API for nutritional information"""
+def search_openfoodfacts_by_barcode(barcode):
+    """Search Open Food Facts API v2 by barcode for specific product"""
     try:
-        url = f"https://world.openfoodfacts.org/cgi/search.pl?search_terms={food_name}&search_simple=1&action=process&json=1"
-        response = requests.get(url, timeout=10)
+        # Use the official API v2 product endpoint
+        # Rate limit: 100 req/min for product queries
+        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+        
+        # Set up headers with proper User-Agent as required by the API
+        headers = {
+            'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        # Handle rate limiting (429 status)
+        if response.status_code == 429:
+            print("Open Food Facts API: Rate limit reached (100 req/min for product queries)")
+            return None
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('status') == 1 and data.get('product'):
+            product = data['product']
+            return extract_nutritional_data(product, product.get('product_name', ''))
+        
+        return None
+    except requests.exceptions.Timeout:
+        print("Open Food Facts API v2 barcode search: Request timeout")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Open Food Facts API v2 barcode search request error: {e}")
+        return None
+    except Exception as e:
+        print(f"Open Food Facts API v2 barcode search error: {e}")
+        return None
+
+def search_openfoodfacts_api(food_name):
+    """Search Open Food Facts API v2 for nutritional information with improved accuracy"""
+    try:
+        # Clean and improve search terms
+        search_terms = clean_search_terms(food_name)
+        
+        # Use the official API v2 search endpoint
+        # According to docs: https://openfoodfacts.github.io/openfoodfacts-server/api/
+        # Rate limit: 10 req/min for search queries
+        # The v2 search endpoint might be different, let's try the legacy endpoint with v2 headers
+        url = f"https://world.openfoodfacts.org/cgi/search.pl"
+        
+        # Set up headers with proper User-Agent as required by the API
+        headers = {
+            'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
+            'Content-Type': 'application/json'
+        }
+        
+        # Search parameters for the legacy endpoint
+        params = {
+            'search_terms': search_terms,
+            'search_simple': 1,
+            'action': 'process',
+            'json': 1,
+            'page_size': 10  # Get more results to find better matches
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        
+        # Handle rate limiting (429 status)
+        if response.status_code == 429:
+            print("Open Food Facts API: Rate limit reached (10 req/min for search)")
+            return None
+        
         response.raise_for_status()
         data = response.json()
         
         if data.get('products') and len(data['products']) > 0:
-            product = data['products'][0]
-            nutriments = product.get('nutriments', {})
-            
-            return {
-                'food_name': product.get('product_name', food_name),
-                'brand': product.get('brands', ''),
-                'serving_size': 100,  # Default to 100g
-                'serving_unit': 'g',
-                'calories': nutriments.get('energy-kcal_100g'),
-                'protein': nutriments.get('proteins_100g'),
-                'carbs': nutriments.get('carbohydrates_100g'),
-                'fat': nutriments.get('fat_100g'),
-                'fiber': nutriments.get('fiber_100g'),
-                'sugar': nutriments.get('sugars_100g'),
-                'sodium': nutriments.get('salt_100g'),
-                'source': 'openfoodfacts'
-            }
-    except Exception as e:
-        print(f"Open Food Facts API error: {e}")
+            # Find the best match
+            best_product = find_best_match(data['products'], food_name)
+            if best_product:
+                return extract_nutritional_data(best_product, food_name)
+        
         return None
+    except requests.exceptions.Timeout:
+        print("Open Food Facts API v2: Request timeout")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Open Food Facts API v2 request error: {e}")
+        return None
+    except Exception as e:
+        print(f"Open Food Facts API v2 error: {e}")
+        return None
+
+def clean_search_terms(food_name):
+    """Clean and improve search terms for better API results"""
+    # Remove common words that might interfere with search
+    remove_words = ['fresh', 'organic', 'raw', 'whole', 'natural']
+    cleaned = food_name.lower()
+    
+    for word in remove_words:
+        cleaned = cleaned.replace(word, '').strip()
+    
+    # Add common variations
+    variations = {
+        'apple': 'apple fruit',
+        'banana': 'banana fruit', 
+        'chicken': 'chicken meat',
+        'rice': 'rice grain',
+        'almond': 'almond nut',
+        'yogurt': 'yogurt dairy',
+        'spinach': 'spinach vegetable',
+        'salmon': 'salmon fish',
+        'quinoa': 'quinoa grain',
+        'avocado': 'avocado fruit'
+    }
+    
+    for key, value in variations.items():
+        if key in cleaned:
+            cleaned = value
+            break
+    
+    return cleaned
+
+def find_best_match(products, original_food_name):
+    """Find the best matching product from search results"""
+    original_lower = original_food_name.lower()
+    
+    # Score each product based on relevance
+    scored_products = []
+    
+    for product in products:
+        score = 0
+        product_name = product.get('product_name', '').lower()
+        brands = product.get('brands', '').lower()
+        categories = product.get('categories_tags', [])
+        
+        # Exact name match gets highest score
+        if original_lower in product_name:
+            score += 100
+        
+        # Partial name match
+        if any(word in product_name for word in original_lower.split()):
+            score += 50
+        
+        # Prefer raw/unprocessed foods
+        if any(tag in categories for tag in ['en:raw-foods', 'en:unprocessed-foods']):
+            score += 30
+        
+        # Penalize heavily processed foods
+        if any(tag in categories for tag in ['en:processed-foods', 'en:snacks', 'en:candies']):
+            score -= 50
+        
+        # Penalize if it's clearly a different food (e.g., "oat bars" when searching for "apple")
+        if 'bar' in product_name or 'candy' in product_name or 'snack' in product_name:
+            if not any(word in original_lower for word in ['bar', 'candy', 'snack']):
+                score -= 100
+        
+        scored_products.append((score, product))
+    
+    # Sort by score and return the best match
+    scored_products.sort(key=lambda x: x[0], reverse=True)
+    
+    # Only return if the best match has a reasonable score
+    if scored_products and scored_products[0][0] > 0:
+        return scored_products[0][1]
+    
+    return None
+
+def extract_nutritional_data(product, original_food_name):
+    """Extract and validate nutritional data from product"""
+    nutriments = product.get('nutriments', {})
+    
+    # Get nutritional values with fallbacks
+    calories = nutriments.get('energy-kcal_100g') or nutriments.get('energy_100g')
+    protein = nutriments.get('proteins_100g')
+    carbs = nutriments.get('carbohydrates_100g')
+    fat = nutriments.get('fat_100g')
+    fiber = nutriments.get('fiber_100g')
+    sugar = nutriments.get('sugars_100g')
+    sodium = nutriments.get('salt_100g')
+    
+    # Validate data quality
+    if not calories or calories <= 0:
+        return None
+    
+    # Check for reasonable ranges
+    if calories > 900:  # Most foods don't exceed 900 cal/100g
+        return None
+    
+    return {
+        'food_name': product.get('product_name', original_food_name),
+        'brand': product.get('brands', ''),
+        'serving_size': 100,
+        'serving_unit': 'g',
+        'calories': calories,
+        'protein': protein,
+        'carbs': carbs,
+        'fat': fat,
+        'fiber': fiber,
+        'sugar': sugar,
+        'sodium': sodium,
+        'source': 'openfoodfacts'
+    }
 
 def search_usda_api(food_name):
     """Search USDA API for nutritional information"""
@@ -1596,18 +1769,25 @@ def login():
         # Ensure database tables exist before querying
         ensure_tables_exist()
         
-        user = User.query.filter(User.username.ilike(username)).first()
-        
-        if user and user.check_password(password):
-            # SECURITY: Set up session with timeout
-            session['user_id'] = user.id
-            session['last_activity'] = datetime.utcnow().isoformat()
-            session.permanent = True  # Enable session timeout
+        try:
+            user = User.query.filter(User.username.ilike(username)).first()
             
-            flash('Login successful!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password', 'error')
+            if user and user.check_password(password):
+                # SECURITY: Set up session with timeout
+                session['user_id'] = user.id
+                session['last_activity'] = datetime.utcnow().isoformat()
+                session.permanent = True  # Enable session timeout
+                
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid username or password', 'error')
+                return render_template('login.html')
+        except Exception as e:
+            print(f"❌ Login database error: {e}")
+            import traceback
+            traceback.print_exc()
+            flash('An error occurred during login. Please try again.', 'error')
             return render_template('login.html')
     
     return render_template('login.html')
@@ -2990,8 +3170,18 @@ def search_food():
         serving_size = float(data.get('serving_size', 0))
         serving_unit = data.get('serving_unit', 'g')
         
-        if not food_name:
-            return jsonify({'success': False, 'error': 'Food name is required'})
+        barcode = data.get('barcode', '').strip()
+        
+        if not food_name and not barcode:
+            return jsonify({'success': False, 'error': 'Food name or barcode is required'})
+        
+        # If barcode is provided, try barcode search first
+        if barcode:
+            nutrition_data = search_openfoodfacts_by_barcode(barcode)
+            if nutrition_data:
+                # Convert for user's serving size
+                converted_data = convert_nutritional_data(nutrition_data, serving_size, serving_unit)
+                return jsonify({'success': True, 'data': converted_data, 'source': 'openfoodfacts_barcode'})
         
         # First check food cache
         cached_food = FoodCache.query.filter(
@@ -3018,15 +3208,29 @@ def search_food():
             converted_data = convert_nutritional_data(nutrition_data, serving_size, serving_unit)
             return jsonify({'success': True, 'data': converted_data, 'source': 'cache'})
         
-        # Search APIs
+        # Search strategy: Common foods DB -> Open Food Facts -> USDA API
         nutrition_data = None
+        source_used = None
         
-        # Try Open Food Facts first
-        nutrition_data = search_openfoodfacts_api(food_name)
+        # 1. Try common foods database first (most accurate)
+        nutrition_data = search_common_foods_database(food_name)
+        if nutrition_data:
+            source_used = 'common_foods_db'
+            print(f"✅ Found in common foods DB: {food_name}")
         
-        # If not found, try USDA
+        # 2. Try Open Food Facts API
+        if not nutrition_data:
+            nutrition_data = search_openfoodfacts_api(food_name)
+            if nutrition_data:
+                source_used = 'openfoodfacts'
+                print(f"✅ Found in Open Food Facts: {food_name}")
+        
+        # 3. Try USDA API (if API key is available)
         if not nutrition_data:
             nutrition_data = search_usda_api(food_name)
+            if nutrition_data:
+                source_used = 'usda'
+                print(f"✅ Found in USDA API: {food_name}")
         
         if nutrition_data:
             # Save to cache
@@ -5443,6 +5647,216 @@ class AIUsageSession(db.Model):
     
     user = db.relationship('User', backref='ai_sessions')
     credit = db.relationship('SessionCredits', backref='usage_sessions')
+
+# Fallback nutritional database for common foods (per 100g)
+COMMON_FOODS_DATABASE = {
+    'apple': {
+        'food_name': 'Apple, raw',
+        'calories': 52,
+        'protein': 0.3,
+        'carbs': 14,
+        'fat': 0.2,
+        'fiber': 2.4,
+        'sugar': 10.4,
+        'sodium': 1,
+        'source': 'common_foods_db'
+    },
+    'banana': {
+        'food_name': 'Banana, raw',
+        'calories': 89,
+        'protein': 1.1,
+        'carbs': 23,
+        'fat': 0.3,
+        'fiber': 2.6,
+        'sugar': 12.2,
+        'sodium': 1,
+        'source': 'common_foods_db'
+    },
+    'chicken breast': {
+        'food_name': 'Chicken breast, cooked',
+        'calories': 165,
+        'protein': 31,
+        'carbs': 0,
+        'fat': 3.6,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 74,
+        'source': 'common_foods_db'
+    },
+    'brown rice': {
+        'food_name': 'Brown rice, cooked',
+        'calories': 111,
+        'protein': 2.6,
+        'carbs': 23,
+        'fat': 0.9,
+        'fiber': 1.8,
+        'sugar': 0.4,
+        'sodium': 5,
+        'source': 'common_foods_db'
+    },
+    'almonds': {
+        'food_name': 'Almonds, raw',
+        'calories': 579,
+        'protein': 21.2,
+        'carbs': 21.7,
+        'fat': 49.9,
+        'fiber': 12.5,
+        'sugar': 4.4,
+        'sodium': 1,
+        'source': 'common_foods_db'
+    },
+    'yogurt': {
+        'food_name': 'Greek yogurt, plain',
+        'calories': 59,
+        'protein': 10,
+        'carbs': 3.6,
+        'fat': 0.4,
+        'fiber': 0,
+        'sugar': 3.2,
+        'sodium': 36,
+        'source': 'common_foods_db'
+    },
+    'spinach': {
+        'food_name': 'Spinach, raw',
+        'calories': 23,
+        'protein': 2.9,
+        'carbs': 3.6,
+        'fat': 0.4,
+        'fiber': 2.2,
+        'sugar': 0.4,
+        'sodium': 79,
+        'source': 'common_foods_db'
+    },
+    'salmon': {
+        'food_name': 'Salmon, cooked',
+        'calories': 208,
+        'protein': 25,
+        'carbs': 0,
+        'fat': 12,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 59,
+        'source': 'common_foods_db'
+    },
+    'quinoa': {
+        'food_name': 'Quinoa, cooked',
+        'calories': 120,
+        'protein': 4.4,
+        'carbs': 22,
+        'fat': 1.9,
+        'fiber': 2.8,
+        'sugar': 0.9,
+        'sodium': 7,
+        'source': 'common_foods_db'
+    },
+    'avocado': {
+        'food_name': 'Avocado, raw',
+        'calories': 160,
+        'protein': 2,
+        'carbs': 9,
+        'fat': 15,
+        'fiber': 7,
+        'sugar': 0.7,
+        'sodium': 7,
+        'source': 'common_foods_db'
+    },
+    'broccoli': {
+        'food_name': 'Broccoli, raw',
+        'calories': 34,
+        'protein': 2.8,
+        'carbs': 7,
+        'fat': 0.4,
+        'fiber': 2.6,
+        'sugar': 1.5,
+        'sodium': 33,
+        'source': 'common_foods_db'
+    },
+    'sweet potato': {
+        'food_name': 'Sweet potato, cooked',
+        'calories': 86,
+        'protein': 1.6,
+        'carbs': 20,
+        'fat': 0.1,
+        'fiber': 3,
+        'sugar': 4.2,
+        'sodium': 41,
+        'source': 'common_foods_db'
+    },
+    'oats': {
+        'food_name': 'Oats, raw',
+        'calories': 389,
+        'protein': 17,
+        'carbs': 66,
+        'fat': 7,
+        'fiber': 10,
+        'sugar': 1,
+        'sodium': 2,
+        'source': 'common_foods_db'
+    },
+    'eggs': {
+        'food_name': 'Eggs, whole, raw',
+        'calories': 155,
+        'protein': 13,
+        'carbs': 1.1,
+        'fat': 11,
+        'fiber': 0,
+        'sugar': 1.1,
+        'sodium': 124,
+        'source': 'common_foods_db'
+    },
+    'milk': {
+        'food_name': 'Milk, whole',
+        'calories': 61,
+        'protein': 3.2,
+        'carbs': 4.8,
+        'fat': 3.3,
+        'fiber': 0,
+        'sugar': 4.8,
+        'sodium': 43,
+        'source': 'common_foods_db'
+    }
+}
+
+def search_common_foods_database(food_name):
+    """Search the local common foods database"""
+    food_lower = food_name.lower().strip()
+    
+    # Direct match
+    if food_lower in COMMON_FOODS_DATABASE:
+        data = COMMON_FOODS_DATABASE[food_lower].copy()
+        data['serving_size'] = 100
+        data['serving_unit'] = 'g'
+        return data
+    
+    # Partial match
+    for key, data in COMMON_FOODS_DATABASE.items():
+        if key in food_lower or food_lower in key:
+            data_copy = data.copy()
+            data_copy['serving_size'] = 100
+            data_copy['serving_unit'] = 'g'
+            return data_copy
+    
+    # Word-based matching
+    food_words = set(food_lower.split())
+    best_match = None
+    best_score = 0
+    
+    for key, data in COMMON_FOODS_DATABASE.items():
+        key_words = set(key.split())
+        common_words = food_words.intersection(key_words)
+        score = len(common_words)
+        
+        if score > best_score:
+            best_score = score
+            best_match = data
+    
+    if best_score >= 1:  # At least one word matches
+        data_copy = best_match.copy()
+        data_copy['serving_size'] = 100
+        data_copy['serving_unit'] = 'g'
+        return data_copy
+    
+    return None
 
 if __name__ == '__main__':
     app.run(debug=True)

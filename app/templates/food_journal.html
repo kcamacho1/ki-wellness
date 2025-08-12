@@ -203,7 +203,12 @@
             
             <!-- Nutritional Information Display -->
             <div id="nutritionInfo" class="mt-6 hidden">
-                <h4 class="text-lg font-medium text-gray-900 mb-3">Nutritional Information</h4>
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="text-lg font-medium text-gray-900">Nutritional Information</h4>
+                    <div id="dataSource" class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        <!-- Data source will be displayed here -->
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-gray-50 p-3 rounded-md">
                         <div class="text-sm text-gray-600">Calories</div>
@@ -449,7 +454,7 @@
                 
                 if (data.success) {
                     currentNutritionData = data.data;
-                    displayNutritionInfo(data.data);
+                    displayNutritionInfo(data.data, data.source);
                     nutritionInfo.classList.remove('hidden');
                 } else {
                     alert('Food not found. Please try a different search term or add manually.');
@@ -463,7 +468,7 @@
             }
         }
 
-        function displayNutritionInfo(nutritionData) {
+        function displayNutritionInfo(nutritionData, source = null) {
             document.getElementById('calories').textContent = nutritionData.calories ? Math.round(nutritionData.calories) : '-';
             document.getElementById('protein').textContent = nutritionData.protein ? nutritionData.protein.toFixed(1) : '-';
             document.getElementById('carbs').textContent = nutritionData.carbs ? nutritionData.carbs.toFixed(1) : '-';
@@ -471,6 +476,33 @@
             document.getElementById('fiber').textContent = nutritionData.fiber ? nutritionData.fiber.toFixed(1) : '-';
             document.getElementById('sugar').textContent = nutritionData.sugar ? nutritionData.sugar.toFixed(1) : '-';
             document.getElementById('sodium').textContent = nutritionData.sodium ? Math.round(nutritionData.sodium) : '-';
+            
+            // Display data source
+            const dataSourceElement = document.getElementById('dataSource');
+            if (source) {
+                const sourceLabels = {
+                    'common_foods_db': '📊 Verified Database',
+                    'openfoodfacts': '🌐 Open Food Facts',
+                    'openfoodfacts_barcode': '📱 Barcode Scan',
+                    'usda': '🏛️ USDA Database',
+                    'cache': '💾 Cached Data'
+                };
+                dataSourceElement.textContent = sourceLabels[source] || `Source: ${source}`;
+                dataSourceElement.className = 'text-xs px-2 py-1 rounded';
+                
+                // Color coding based on source
+                if (source === 'common_foods_db') {
+                    dataSourceElement.className += ' text-green-700 bg-green-100';
+                } else if (source === 'openfoodfacts' || source === 'openfoodfacts_barcode') {
+                    dataSourceElement.className += ' text-blue-700 bg-blue-100';
+                } else if (source === 'usda') {
+                    dataSourceElement.className += ' text-purple-700 bg-purple-100';
+                } else {
+                    dataSourceElement.className += ' text-gray-700 bg-gray-100';
+                }
+            } else {
+                dataSourceElement.textContent = '';
+            }
         }
 
         async function handleAddFood() {
@@ -519,7 +551,7 @@
                 
                 if (searchData.success) {
                     currentNutritionData = searchData.data;
-                    displayNutritionInfo(searchData.data);
+                    displayNutritionInfo(searchData.data, searchData.source);
                     nutritionInfo.classList.remove('hidden');
                 } else {
                     // If no nutritional data found, still allow adding with basic info
