@@ -66,10 +66,6 @@ class User(db.Model):
     oauth_name = db.Column(db.String(255), nullable=True)
     oauth_picture = db.Column(db.String(500), nullable=True)
     
-    # Stripe integration
-    stripe_customer_id = db.Column(db.String(100), nullable=True)
-    credits_remaining = db.Column(db.Integer, default=0)
-    
     def set_password(self, password: str) -> None:
         """Set user password with secure hashing"""
         self.password_hash = generate_password_hash(password)
@@ -105,8 +101,10 @@ class UserProfile(db.Model):
     # Basic profile information
     date_of_birth = db.Column(db.Date, nullable=True)
     age = db.Column(db.Integer, nullable=True)
+    gender = db.Column(db.String(20), nullable=True)  # male, female, self-described
     weight = db.Column(db.Float, nullable=True)
     height = db.Column(db.Float, nullable=True)
+    height_ft = db.Column(db.Float, nullable=True)  # Height in feet (e.g., 5.6 for 5'6")
     
     # Wellness goals and preferences
     goal = db.Column(db.String(100), nullable=True)

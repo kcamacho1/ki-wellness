@@ -35,10 +35,6 @@ def login():
         if not username or not password:
             return jsonify({'success': False, 'error': 'Username and password are required'}), 400
         
-        # Check if new accounts are enabled
-        if not SystemService.are_new_accounts_enabled():
-            return jsonify({'success': False, 'error': 'New account creation is currently disabled'}), 403
-        
         # Find user by username or email
         user = User.query.filter(
             (User.username == username) | (User.email == username)
@@ -59,7 +55,7 @@ def login():
             
             return jsonify({
                 'success': True,
-                'redirect_url': url_for('dashboard'),
+                'redirect_url': url_for('dashboard.dashboard'),
                 'message': 'Login successful!'
             })
         else:
@@ -73,7 +69,7 @@ def google_login():
     """Initiate Google OAuth login"""
     if not OAUTH_AVAILABLE:
         flash('OAuth is not available', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     return google_oauth.authorize(callback=url_for('auth.google_authorized', _external=True))
 
@@ -83,7 +79,7 @@ def google_authorized():
     """Handle Google OAuth callback"""
     if not OAUTH_AVAILABLE:
         flash('OAuth is not available', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     resp = google_oauth.authorized_response()
     if resp is None or resp.get('access_token') is None:
@@ -91,7 +87,7 @@ def google_authorized():
             request.args['error_reason'],
             request.args['error_description']
         ), 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     session['google_token'] = (resp['access_token'], '')
     me = google_oauth.get('userinfo')
@@ -132,7 +128,7 @@ def google_authorized():
     session['user_id'] = user.id
     session['last_activity'] = datetime.utcnow().isoformat()
     
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard.dashboard'))
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -220,7 +216,7 @@ def logout():
     """Handle user logout"""
     session.clear()
     flash('You have been logged out successfully.', 'success')
-    return redirect(url_for('login'))
+    return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/verify-email/<token>')
@@ -234,10 +230,10 @@ def verify_email(token):
         db.session.commit()
         
         flash('Email verified successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard.dashboard'))
     else:
         flash('Invalid or expired verification token.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
 
 
 @auth_bp.route('/verify-phone', methods=['GET', 'POST'])
@@ -326,7 +322,7 @@ def reset_password(token):
     
     if not user:
         flash('Invalid or expired reset token.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     if request.method == 'POST':
         data = request.get_json()

@@ -177,15 +177,21 @@ class UserService:
         if user:
             profile = UserProfile.query.filter_by(user_id=user.id).first()
             if not profile:
-                # Create a default profile if it doesn't exist
-                profile = UserProfile(
-                    user_id=user.id,
-                    name=user.username,
-                    avatar='default-avatar.png',
-                    weight_unit='kg'
-                )
-                db.session.add(profile)
-                db.session.commit()
+                # Create a default profile if it doesn't exist (but preserve admin profiles)
+                if user.is_admin:
+                    # For admin users, don't create a new profile if one doesn't exist
+                    # This allows the admin creation function to handle it
+                    return None
+                else:
+                    # Create a default profile for regular users
+                    profile = UserProfile(
+                        user_id=user.id,
+                        name=user.username,
+                        avatar='default-avatar.png',
+                        weight_unit='kg'
+                    )
+                    db.session.add(profile)
+                    db.session.commit()
             return profile
         return None
     

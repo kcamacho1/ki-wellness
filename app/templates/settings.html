@@ -88,11 +88,11 @@
                             Not Verified
                         </span>
                         {% if current_user.phone %}
-                        <a href="{{ url_for('verify_phone') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                        <a href="{{ url_for('auth.verify_phone') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                             Verify Now
                         </a>
                         {% else %}
-                        <a href="{{ url_for('profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                        <a href="{{ url_for('profile.profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                             Add Phone
                         </a>
                         {% endif %}
@@ -122,7 +122,7 @@
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             Limited Access
                         </span>
-                        <a href="{{ url_for('profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                        <a href="{{ url_for('profile.profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                             Complete Setup
                         </a>
                         {% endif %}
@@ -194,7 +194,7 @@
                             <p class="text-sm text-gray-500">Update your personal details and preferences</p>
                         </div>
                     </div>
-                    <a href="{{ url_for('profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                    <a href="{{ url_for('profile.profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                         Edit Profile
                     </a>
                 </div>
@@ -211,7 +211,7 @@
                             <p class="text-sm text-gray-500">Update your account password</p>
                         </div>
                     </div>
-                    <a href="{{ url_for('profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                    <a href="{{ url_for('profile.profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                         Update
                     </a>
                 </div>
@@ -228,7 +228,7 @@
                             <p class="text-sm text-gray-500">Manage your privacy settings</p>
                         </div>
                     </div>
-                    <a href="{{ url_for('profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
+                    <a href="{{ url_for('profile.profile') }}" class="text-sm text-mint-green hover:text-green-700 font-medium">
                         Configure
                     </a>
                 </div>
@@ -243,7 +243,7 @@
                     // Resend email verification
                     async function resendEmailVerification() {
                         try {
-                            const response = await fetch('/resend-verification', {
+                            const response = await fetch('{{ url_for("auth.resend_verification") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -264,7 +264,7 @@
                     // Create Stripe customer portal session
                     async function createPortalSession() {
                         try {
-                            const response = await fetch('/api/stripe/create-portal-session', {
+                            const response = await fetch('{{ url_for("subscription.create_portal_session") }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',

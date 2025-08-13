@@ -176,7 +176,15 @@ def contact():
 @static_bp.route('/api/recaptcha-status')
 def recaptcha_status():
     """Get reCAPTCHA configuration status"""
+    from flask import current_app
+    
+    # Check if we're on localhost/development
+    is_localhost = request.host in ['localhost', '127.0.0.1', '0.0.0.0'] or request.host.startswith('localhost:')
+    
+    # Disable reCAPTCHA on localhost for development
+    enabled = not is_localhost
+    
     return jsonify({
-        'enabled': True,  # Set to False if you want to disable reCAPTCHA
-        'site_key': 'your_recaptcha_site_key_here'  # Replace with actual key
+        'enabled': enabled,
+        'site_key': current_app.config.get('RECAPTCHA_SITE_KEY', '') if enabled else ''
     })

@@ -29,13 +29,18 @@ def subscription_status():
         if not current_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         
-        usage_summary = UserService.get_user_usage_summary(current_user.id)
-        if not usage_summary:
-            return jsonify({'success': False, 'error': 'Unable to retrieve usage information'}), 500
+        subscription_info = UserService.get_user_subscription_info(current_user.id)
+        if not subscription_info:
+            return jsonify({'success': False, 'error': 'Unable to retrieve subscription information'}), 500
+        
+        can_use_ai = UserService.can_user_use_ai(current_user.id)
         
         return jsonify({
             'success': True,
-            'data': usage_summary
+            'data': {
+                'subscription_info': subscription_info,
+                'can_use_ai': can_use_ai
+            }
         })
     except Exception as e:
         print(f"❌ Error getting subscription status: {e}")

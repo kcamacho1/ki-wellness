@@ -1,0 +1,169 @@
+<!-- Profile Components - Reusable HTML components for profile pages -->
+<!-- Author: Ki Wellness Team -->
+<!-- Version: 2.0 -->
+
+<!-- Profile Header Component -->
+{% macro profile_header(profile, title="Wellness Profile") %}
+<div class="mb-8">
+    <div class="flex items-center justify-center space-x-6">
+        <!-- Avatar Display -->
+        <div class="text-center">
+            <div class="relative inline-block cursor-pointer group" id="avatarClickArea" onclick="openAvatarModal()">
+                <img 
+                    id="currentAvatar" 
+                    src="{{ url_for('static', filename='public/avatars/' + (profile.avatar if profile and profile.avatar else 'default-avatar.png')) }}" 
+                    alt="Current Avatar" 
+                    class="w-20 h-20 rounded-full border-4 border-mint-green shadow-lg transition-all duration-200 group-hover:scale-105 group-hover:border-forest-green"
+                >
+                <div class="absolute -bottom-2 -right-2 bg-mint-green text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                    ✓
+                </div>
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-full transition-all duration-200 flex items-center justify-center">
+                    <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm">Change</span>
+                </div>
+            </div>
+            <p class="text-sage-green mt-1 text-xs">Click to change</p>
+        </div>
+        
+        <div>
+            <h2 class="text-3xl font-bold text-forest-green mb-2">{{ profile.name + "'s " if profile and profile.name else "" }}{{ title }}</h2>
+            <p class="text-sage-green" id="profileUsername">Manage your wellness journey with mindful awareness</p>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Save Status Component -->
+{% macro save_status() %}
+<div id="saveStatus" class="hidden mb-4 p-4 rounded-lg">
+    <div class="flex items-center">
+        <div id="saveMessage" class="flex-1"></div>
+        <button onclick="document.getElementById('saveStatus').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Profile Form Field Component -->
+{% macro form_field(field_id, label, field_type="text", placeholder="", required=false, readonly=false, options=None) %}
+<div class="space-y-2">
+    <label for="{{ field_id }}" class="block text-sm font-medium text-gray-700">{{ label }}:</label>
+    {% if field_type == "select" and options %}
+        <select 
+            id="{{ field_id }}" 
+            name="{{ field_id }}" 
+            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all"
+            {% if required %}required{% endif %}
+            {% if readonly %}readonly{% endif %}
+            aria-label="{{ label }}"
+        >
+            {% for value, text in options %}
+            <option value="{{ value }}">{{ text }}</option>
+            {% endfor %}
+        </select>
+    {% elif field_type == "textarea" %}
+        <textarea 
+            id="{{ field_id }}" 
+            name="{{ field_id }}" 
+            rows="4"
+            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all resize-none"
+            placeholder="{{ placeholder }}"
+            {% if required %}required{% endif %}
+            {% if readonly %}readonly{% endif %}
+            aria-label="{{ label }}"
+        ></textarea>
+    {% else %}
+        <input 
+            type="{{ field_type }}" 
+            id="{{ field_id }}" 
+            name="{{ field_id }}" 
+            class="w-full px-4 py-3 {% if readonly %}bg-gray-100{% else %}bg-white{% endif %} border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-all {% if readonly %}cursor-not-allowed{% endif %}"
+            placeholder="{{ placeholder }}"
+            {% if required %}required{% endif %}
+            {% if readonly %}readonly{% endif %}
+            aria-label="{{ label }}"
+        >
+    {% endif %}
+    {% if readonly %}
+        <p class="text-xs text-gray-500">{{ label }} cannot be changed</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+<!-- Profile Section Component -->
+{% macro profile_section(title, icon="📋", collapsible=true) %}
+<div class="bg-white rounded-lg shadow-md p-6 border border-soft-green">
+    <h2 class="text-2xl font-bold text-forest-green mb-6 flex items-center">
+        <span class="w-2 h-8 bg-mint-green rounded-full mr-3"></span>
+        {{ icon }} {{ title }}
+        {% if collapsible %}
+        <button 
+            type="button" 
+            class="ml-auto text-gray-400 hover:text-gray-600 transition-colors"
+            onclick="toggleSection('{{ title.lower().replace(' ', '-') }}-section')"
+            aria-label="Toggle {{ title }} section"
+        >
+            <svg class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+        {% endif %}
+    </h2>
+    <div id="{{ title.lower().replace(' ', '-') }}-section" class="space-y-6">
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Save Button Component -->
+{% macro save_button(text="🌱 Save Profile") %}
+<div class="flex justify-center">
+    <button 
+        type="submit" 
+        id="saveButton"
+        class="px-8 py-4 bg-mint-green hover:bg-forest-green text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 focus:ring-offset-white"
+        aria-label="Save profile information"
+    >
+        <span id="saveButtonText">{{ text }}</span>
+        <span id="saveButtonLoading" class="hidden">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Saving...
+        </span>
+    </button>
+</div>
+{% endmacro %}
+
+<!-- Expandable Section JavaScript -->
+<script>
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const button = section.previousElementSibling.querySelector('button svg');
+    
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        button.style.transform = 'rotate(180deg)';
+    } else {
+        section.classList.add('hidden');
+        button.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Initialize expandable sections
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-collapse sections on mobile
+    if (window.innerWidth < 768) {
+        const sections = document.querySelectorAll('[id$="-section"]');
+        sections.forEach(section => {
+            if (!section.id.includes('details')) { // Keep details section open
+                section.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>

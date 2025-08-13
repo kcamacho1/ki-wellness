@@ -13,9 +13,14 @@ import os
 from datetime import timedelta
 from flask import Flask
 from config import DevelopmentConfig, ProductionConfig
+from .models import db, User, UserProfile, SystemSettings, APICosts
+from typing import Optional, Union, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flask_limiter import Limiter as FlaskLimiter
 
 # Initialize Flask extensions
-limiter = None
+limiter: Optional[Union['FlaskLimiter', 'FallbackLimiter']] = None
 oauth = None
 google_oauth = None
 
@@ -34,9 +39,10 @@ try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
     LIMITER_AVAILABLE = True
+    print("✅ Flask-Limiter available. Rate limiting features enabled.")
 except ImportError:
     # Fallback for environments where Flask-Limiter is not available
-    class Limiter:
+    class FallbackLimiter:
         def __init__(self, app=None, key_func=None, default_limits=None, storage_uri=None):
             self.app = app
             self.key_func = key_func
@@ -48,10 +54,13 @@ except ImportError:
                 return f
             return decorator
     
-    def get_remote_address():
+    def get_remote_address() -> str:
         return "127.0.0.1"  # Default fallback
     
+    # Type aliases for fallback
+    Limiter = FallbackLimiter
     LIMITER_AVAILABLE = True
+    print("⚠️  Flask-Limiter not available. Rate limiting features will be disabled.")
 
 # Stripe integration
 try:
@@ -174,6 +183,7 @@ def initialize_stripe():
 def create_admin_account():
     """Create the default admin account if it doesn't exist"""
     from .models import User, UserProfile
+    from datetime import datetime
     
     try:
         # Get admin credentials from environment variables
@@ -200,18 +210,28 @@ def create_admin_account():
             db.session.add(admin_user)
             db.session.commit()
             
-            # Try to create admin user profile, but handle gracefully if table doesn't exist
+            # Try to create admin user profile with pre-filled fields, but handle gracefully if table doesn't exist
             try:
+                # Parse the date of birth (11/10/1988)
+                dob = datetime.strptime('11/10/1988', '%m/%d/%Y').date()
+                
                 admin_profile = UserProfile(
                     user_id=admin_user.id,
                     name=admin_name,
                     avatar='default-avatar.png',
-                    weight_unit='kg'
+                    weight_unit='lbs',  # Changed to lbs as requested
+                    date_of_birth=dob,
+                    weight=120.0,  # 120 lbs
+                    height=168.0   # 168 cm
                 )
                 
                 db.session.add(admin_profile)
                 db.session.commit()
-                print("✅ Admin profile created successfully!")
+                print("✅ Admin profile created successfully with pre-filled fields!")
+                print(f"   Name: {admin_name}")
+                print(f"   Date of Birth: {dob.strftime('%m/%d/%Y')}")
+                print(f"   Weight: 120 lbs")
+                print(f"   Height: 168 cm")
             except Exception as e:
                 print(f"⚠️  Warning: Could not create admin profile: {e}")
                 # Continue without profile - not critical for admin functionality
@@ -219,9 +239,37 @@ def create_admin_account():
             print("✅ Admin account created successfully!")
             print(f"   Username: {admin_username}")
             print(f"   Email: {admin_email}")
-            print(f"   Name: {admin_name}")
         else:
             print("ℹ️  Admin account already exists")
+            
+            # Check if admin profile exists and update with pre-filled data if needed
+            admin_profile = UserProfile.query.filter_by(user_id=admin_user.id).first()
+            if admin_profile:
+                # Check if profile needs to be updated with pre-filled data
+                needs_update = (
+                    admin_profile.weight_unit != 'lbs' or
+                    admin_profile.date_of_birth is None or
+                    admin_profile.weight is None or
+                    admin_profile.height is None
+                )
+                
+                if needs_update:
+                    print("🔄 Updating admin profile with pre-filled data...")
+                    dob = datetime.strptime('11/10/1988', '%m/%d/%Y').date()
+                    admin_profile.name = admin_name
+                    admin_profile.avatar = 'default-avatar.png'
+                    admin_profile.weight_unit = 'lbs'
+                    admin_profile.date_of_birth = dob
+                    admin_profile.weight = 120.0
+                    admin_profile.height = 168.0
+                    db.session.commit()
+                    print("✅ Admin profile updated with pre-filled data!")
+                    print(f"   Name: {admin_name}")
+                    print(f"   Date of Birth: {dob.strftime('%m/%d/%Y')}")
+                    print(f"   Weight: 120 lbs")
+                    print(f"   Height: 168 cm")
+                else:
+                    print("ℹ️  Admin profile already has pre-filled data")
             
         # Initialize system settings
         initialize_system_settings(admin_user.id)
@@ -339,8 +387,8 @@ def initialize_system_settings(admin_user_id):
             for cost in default_api_costs:
                 api_cost = APICosts(
                     model_name=cost['model_name'],
-                    input_cost_per_1k=cost['input_cost_per_1k'],
-                    output_cost_per_1k=cost['output_cost_per_1k'],
+                    input_cost_per_1m=cost['input_cost_per_1k'] * 1000,  # Convert to per 1M tokens
+                    output_cost_per_1m=cost['output_cost_per_1k'] * 1000,  # Convert to per 1M tokens
                     updated_by=admin_user_id
                 )
                 db.session.add(api_cost)

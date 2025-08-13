@@ -28,6 +28,15 @@
         render: function(element, options) {
             console.log('🔧 Development mode: Mock reCAPTCHA render called');
             return 'dev-widget-id';
+        },
+        getResponse: function() {
+            console.log('🔧 Development mode: Mock reCAPTCHA getResponse called');
+            // Return a mock response token for development
+            return 'dev-bypass-response-token-' + Date.now();
+        },
+        reset: function() {
+            console.log('🔧 Development mode: Mock reCAPTCHA reset called');
+            // Mock reset function
         }
     };
     

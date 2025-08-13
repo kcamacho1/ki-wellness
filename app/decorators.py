@@ -21,7 +21,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         # SECURITY: Check if user is logged in
         if 'user_id' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         
         # SECURITY: Check if session has expired (1 hour timeout)
         if 'last_activity' in session:
@@ -30,7 +30,7 @@ def login_required(f):
                 # Session expired, clear session and redirect to login
                 session.clear()
                 flash('Your session has expired. Please log in again.', 'warning')
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
         
         # Update last activity timestamp
         session['last_activity'] = datetime.utcnow().isoformat()
@@ -46,7 +46,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         # SECURITY: Check if user is logged in
         if 'user_id' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         
         # SECURITY: Check if session has expired (1 hour timeout)
         if 'last_activity' in session:
@@ -55,12 +55,12 @@ def admin_required(f):
                 # Session expired, clear session and redirect to login
                 session.clear()
                 flash('Your session has expired. Please log in again.', 'warning')
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
         
         user = User.query.get(session['user_id'])
         if not user or not user.is_admin:
             flash('Access denied. Admin privileges required.', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('dashboard.dashboard'))
         
         # Update last activity timestamp
         session['last_activity'] = datetime.utcnow().isoformat()

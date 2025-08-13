@@ -70,7 +70,7 @@
                         Transform your wellness journey with intelligent insights, personalized nutrition tracking, and AI-driven pattern analysis that adapts to your unique needs.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <a href="{{ url_for('login') }}" 
+                        <a href="{{ url_for('auth.login') }}" 
                            class="bg-white text-forest-green px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 shadow-lg">
                             Start Your AI Journey
                         </a>
@@ -259,11 +259,11 @@
                 Join thousands of users who have transformed their health journey with intelligent insights and personalized recommendations.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ url_for('login') }}" 
+                <a href="{{ url_for('auth.login') }}" 
                    class="bg-mint-green text-forest-green px-8 py-4 rounded-lg font-bold text-xl hover:bg-sage-green transition-all duration-300 transform hover:scale-105 shadow-lg">
                     Start Your AI Journey
                 </a>
-                <a href="{{ url_for('register') }}" 
+                <a href="{{ url_for('auth.register') }}" 
                    class="border-2 border-white text-white px-8 py-4 rounded-lg text-xl font-medium hover:bg-white hover:text-forest-green transition-all duration-300">
                     Create Free Account
                 </a>

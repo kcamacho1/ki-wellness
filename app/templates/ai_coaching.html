@@ -80,7 +80,7 @@
                         Experience the future of wellness with intelligent analysis, personalized insights, and AI-driven recommendations that adapt to your unique health journey.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <a href="{{ url_for('login') }}" 
+                        <a href="{{ url_for('auth.login') }}" 
                            class="bg-white text-forest-green px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 shadow-lg">
                             Start AI Coaching
                         </a>
@@ -132,13 +132,13 @@
                             To access AI-powered coaching features, you need to verify your email and phone number. This ensures secure access and helps us provide personalized insights.
                         </p>
                         <div class="flex flex-col sm:flex-row gap-3">
-                            <a href="{{ url_for('register') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
+                            <a href="{{ url_for('auth.register') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                 </svg>
                                 Create Account
                             </a>
-                            <a href="{{ url_for('login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-forest-green hover:bg-mint-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-green transition-colors duration-200">
+                            <a href="{{ url_for('auth.login') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-forest-green hover:bg-mint-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-forest-green transition-colors duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                                 </svg>
@@ -352,7 +352,7 @@
                 Join thousands of users who are already transforming their health with AI-driven insights and personalized recommendations.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ url_for('login') }}" 
+                <a href="{{ url_for('auth.login') }}" 
                    class="bg-white text-calm-blue px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 shadow-lg">
                     Start Your AI Journey
                 </a>

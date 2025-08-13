@@ -29,8 +29,52 @@ def dashboard():
 @dashboard_bp.route('/dashboard/patterns')
 @login_required
 def dashboard_patterns():
-    """Dashboard patterns analysis page"""
-    return render_template('dashboard_patterns.html')
+    """Get patterns analysis data"""
+    try:
+        current_user = UserService.get_current_user()
+        if not current_user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        # Check if user can use AI
+        if not UserService.can_user_use_ai(current_user.id):
+            return jsonify({'success': False, 'error': 'verification_required'}), 403
+        
+        # For now, return basic patterns data structure
+        # This can be enhanced later with actual AI analysis
+        patterns_data = {
+            'success': True,
+            'is_new_user': True,  # Set to True for now to show call-to-action
+            'needs_more_data': False,
+            'call_to_action': {
+                'title': 'Start Your Wellness Journey',
+                'description': 'Begin tracking your meals and mood to unlock personalized AI insights and recommendations.',
+                'actions': [
+                    {
+                        'title': 'Add Your First Meal',
+                        'description': 'Log what you ate today to start building your nutrition profile.',
+                        'icon': '🍽️',
+                        'action': 'add_food'
+                    },
+                    {
+                        'title': 'Track Your Mood',
+                        'description': 'Record how you\'re feeling to understand your wellness patterns.',
+                        'icon': '😊',
+                        'action': 'add_mood'
+                    }
+                ]
+            },
+            'patterns': {},
+            'suggestions': {},
+            'cache_info': {
+                'seven_day_updated': False
+            }
+        }
+        
+        return jsonify(patterns_data)
+        
+    except Exception as e:
+        print(f"❌ Error getting patterns: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get patterns'}), 500
 
 
 @dashboard_bp.route('/dashboard/patterns/refresh', methods=['POST'])

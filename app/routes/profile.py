@@ -4,6 +4,7 @@ Ki Wellness - Profile Routes
 
 This module contains user profile management routes including
 profile viewing, editing, and settings management.
+Uses modular components and utilities for reusability.
 
 Author: Ki Wellness Team
 Version: 2.0
@@ -13,7 +14,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
 from ..models import db, User, UserProfile
 from ..services import UserService
-from ..utils import ValidationUtils
+from ..utils import ValidationUtils, ProfileUtils, ProfileResponseBuilder, handle_profile_operation
 from ..decorators import login_required
 
 # Create blueprint
@@ -24,7 +25,20 @@ profile_bp = Blueprint('profile', __name__)
 @login_required
 def profile():
     """User profile page"""
-    return render_template('profile.html')
+    user_profile = UserService.get_current_user_profile()
+    # If no profile exists, create a default one and save it to database
+    if not user_profile:
+        current_user = UserService.get_current_user()
+        user_profile = UserProfile(
+            user_id=current_user.id,
+            name=current_user.username,
+            avatar='default-avatar.png',
+            weight_unit='kg'
+        )
+        # Save the profile to database so it can be retrieved by other endpoints
+        db.session.add(user_profile)
+        db.session.commit()
+    return render_template('profile.html', profile=user_profile)
 
 
 @profile_bp.route('/settings')
@@ -37,95 +51,56 @@ def settings():
 @profile_bp.route('/profile/save', methods=['POST'])
 @login_required
 def save_profile():
-    """Save user profile data"""
-    try:
+    """Save user profile data using modular utilities"""
+    def save_profile_operation():
         data = request.get_json()
+        # Debug: Log height-related data
+        print(f"🔍 Save profile data received: height = {data.get('height')}, height_input = {data.get('height_input')}")
+        
         current_user = UserService.get_current_user()
         user_profile = UserService.get_current_user_profile()
         
-        if not current_user or not user_profile:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+        if not current_user:
+            return ProfileResponseBuilder.user_not_found()
         
-        # Update profile fields
-        if 'name' in data:
-            user_profile.name = data['name'].strip()
-        if 'age' in data:
-            user_profile.age = int(data['age']) if data['age'] else None
-        if 'gender' in data:
-            user_profile.gender = data['gender']
-        if 'height' in data:
-            user_profile.height = float(data['height']) if data['height'] else None
-        if 'weight' in data:
-            user_profile.weight = float(data['weight']) if data['weight'] else None
-        if 'weight_unit' in data:
-            user_profile.weight_unit = data['weight_unit']
-        if 'activity_level' in data:
-            user_profile.activity_level = data['activity_level']
-        if 'goal' in data:
-            user_profile.goal = data['goal']
-        if 'dietary_restrictions' in data:
-            user_profile.dietary_restrictions = data['dietary_restrictions']
-        if 'allergies' in data:
-            user_profile.allergies = data['allergies']
-        if 'medical_conditions' in data:
-            user_profile.medical_conditions = data['medical_conditions']
-        if 'medications' in data:
-            user_profile.medications = data['medications']
-        if 'avatar' in data:
-            user_profile.avatar = data['avatar']
+        # Create profile if it doesn't exist
+        if not user_profile:
+            user_profile = UserProfile(
+                user_id=current_user.id,
+                name=current_user.username,
+                avatar='default-avatar.png',
+                weight_unit='kg'
+            )
+            db.session.add(user_profile)
+        
+        # Validate profile data
+        is_valid, error_message = ProfileUtils.validate_profile_data(data)
+        if not is_valid:
+            return ProfileResponseBuilder.validation_error(error_message)
+        
+        # Update profile fields using utility
+        ProfileUtils.update_profile_fields(user_profile, data)
         
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Profile updated successfully!'
-        })
-        
-    except Exception as e:
-        print(f"❌ Error saving profile: {e}")
-        db.session.rollback()
-        return jsonify({'success': False, 'error': 'Failed to save profile'}), 500
+        return ProfileResponseBuilder.profile_saved()
+    
+    return jsonify(handle_profile_operation(save_profile_operation))
 
 
 @profile_bp.route('/profile/data')
 @login_required
 def get_profile_data():
-    """Get user profile data"""
-    try:
+    """Get user profile data using modular utilities"""
+    def get_profile_data_operation():
         current_user = UserService.get_current_user()
         user_profile = UserService.get_current_user_profile()
         
-        if not current_user or not user_profile:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+        if not current_user:
+            return ProfileResponseBuilder.user_not_found()
         
-        profile_data = {
-            'username': current_user.username,
-            'email': current_user.email,
-            'name': user_profile.name,
-            'age': user_profile.age,
-            'gender': user_profile.gender,
-            'height': user_profile.height,
-            'weight': user_profile.weight,
-            'weight_unit': user_profile.weight_unit,
-            'activity_level': user_profile.activity_level,
-            'goal': user_profile.goal,
-            'dietary_restrictions': user_profile.dietary_restrictions,
-            'allergies': user_profile.allergies,
-            'medical_conditions': user_profile.medical_conditions,
-            'medications': user_profile.medications,
-            'avatar': user_profile.avatar,
-            'created_at': user_profile.created_at.isoformat() if user_profile.created_at else None,
-            'updated_at': user_profile.updated_at.isoformat() if user_profile.updated_at else None
-        }
-        
-        return jsonify({
-            'success': True,
-            'data': profile_data
-        })
-        
-    except Exception as e:
-        print(f"❌ Error getting profile data: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get profile data'}), 500
+        return ProfileResponseBuilder.profile_data(current_user, user_profile)
+    
+    return jsonify(handle_profile_operation(get_profile_data_operation))
 
 
 @profile_bp.route('/profile/change-password', methods=['POST'])

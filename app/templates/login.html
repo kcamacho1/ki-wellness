@@ -247,12 +247,14 @@
             }
         });
 
-        // Form validation function
+        // Form validation and submission function
         function validateForm(e) {
+            e.preventDefault(); // Prevent default form submission
             console.log('🔍 Form validation started...');
             
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember_me').checked;
             
             console.log('🔍 Username length:', username.length);
             console.log('🔍 Password length:', password.length);
@@ -310,34 +312,68 @@
             console.log('🔧 reCAPTCHA disabled in configuration');
             {% endif %}
             
-            console.log('✅ All validations passed, allowing form submission');
+            console.log('✅ All validations passed, submitting form via AJAX');
             
             // Disable submit button to prevent double submission
             const submitBtn = document.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Signing In...';
             
-            // Allow form to submit
-            return true;
+            // Prepare JSON data
+            const formData = {
+                username: username,
+                password: password,
+                remember_me: rememberMe
+            };
+            
+            // Submit form via AJAX
+            console.log('🔍 Sending fetch request to /login with data:', formData);
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response headers:', response.headers);
+                return response.text().then(text => {
+                    console.log('🔍 Response text:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('🔍 Failed to parse JSON:', e);
+                        throw new Error('Invalid JSON response');
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Login successful, redirecting...');
+                    window.location.href = data.redirect_url;
+                } else {
+                    console.error('❌ Login failed:', data.error);
+                    showError(data.error, 'Login Failed');
+                    
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                }
+            })
+            .catch(error => {
+                console.error('❌ Network error:', error);
+                showError('Network error. Please try again.', 'Connection Error');
+                
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            });
+            
+            return false; // Prevent default form submission
         }
 
-        // Backup form submission handler (simplified)
-        document.querySelector('form').addEventListener('submit', function(e) {
-            console.log('🔍 Backup form submission handler triggered');
-            
-            // Only handle if validateForm didn't already handle it
-            if (e.defaultPrevented) {
-                console.log('🔍 Form submission already handled by validateForm');
-                return;
-            }
-            
-            // Disable submit button to prevent double submission
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing In...';
-            
-            console.log('✅ Form submission proceeding...');
-        });
+
 
         // Rate limiting for failed attempts
         let loginAttempts = 0;

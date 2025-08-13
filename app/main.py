@@ -61,6 +61,7 @@ stripe_initialized = False
 def inject_functions():
     return {
         'get_current_user': UserService.get_current_user,
+        'get_current_user_profile': UserService.get_current_user_profile,
         'is_admin_user': is_admin_user,
         'ADMIN_EMAIL': os.environ.get('ADMIN_EMAIL', 'admin@kiwellness.org'),
         'IS_LOCALHOST': SecurityUtils.is_localhost_environment(),
