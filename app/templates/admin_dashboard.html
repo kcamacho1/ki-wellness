@@ -86,6 +86,11 @@
         </div>
     </div>
 
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="fixed top-0 left-0 w-full h-1 bg-blue-600 z-50 hidden">
+        <div class="h-full bg-blue-400 animate-pulse"></div>
+    </div>
+
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Business KPI Cards -->
@@ -1748,11 +1753,32 @@
         </div>
     </div>
 
-    <!-- AI Chat Box for logged-in users -->
-    {% include 'includes/ai_chat.html' %}
+
 
     <!-- JavaScript for Admin Dashboard -->
     <script>
+        // Global error handler to prevent crashes
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript error caught:', e.error);
+            // Prevent the error from crashing the page
+            e.preventDefault();
+        });
+
+        // Loading indicator functions
+        function showLoading() {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.classList.remove('hidden');
+            }
+        }
+
+        function hideLoading() {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.classList.add('hidden');
+            }
+        }
+
         // Check verification status and show notice if needed
         const checkVerificationStatus = async () => {
             try {
@@ -1773,42 +1799,52 @@
         };
         
         // Check verification status on page load
-        document.addEventListener('DOMContentLoaded', checkVerificationStatus);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize first tab
+            showTab('overview');
+            
+            // Check verification status
+            checkVerificationStatus();
+        });
         
-        // Tab functionality
+        // Tab functionality with error handling
         function showTab(tabName, event = null) {
-            // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // Remove active state from all tab buttons
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('border-mint-green', 'text-mint-green');
-                button.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            // Show selected tab content
-            const tabContent = document.getElementById(tabName + '-tab');
-            if (tabContent) {
-                tabContent.classList.remove('hidden');
-            }
-            
-            // Activate selected tab button if event is provided
-            if (event && event.target) {
-                event.target.classList.remove('border-transparent', 'text-gray-500');
-                event.target.classList.add('border-mint-green', 'text-mint-green');
-            } else {
-                // Find the button by data-tab attribute and activate it
-                const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
-                if (tabButton) {
-                    tabButton.classList.remove('border-transparent', 'text-gray-500');
-                    tabButton.classList.add('border-mint-green', 'text-mint-green');
+            try {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Remove active state from all tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('border-mint-green', 'text-mint-green');
+                    button.classList.add('border-transparent', 'text-gray-500');
+                });
+                
+                // Show selected tab content
+                const tabContent = document.getElementById(tabName + '-tab');
+                if (tabContent) {
+                    tabContent.classList.remove('hidden');
                 }
+                
+                // Activate selected tab button if event is provided
+                if (event && event.target) {
+                    event.target.classList.remove('border-transparent', 'text-gray-500');
+                    event.target.classList.add('border-mint-green', 'text-mint-green');
+                } else {
+                    // Find the button by data-tab attribute and activate it
+                    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+                    if (tabButton) {
+                        tabButton.classList.remove('border-transparent', 'text-gray-500');
+                        tabButton.classList.add('border-mint-green', 'text-mint-green');
+                    }
+                }
+            } catch (error) {
+                console.error('Error showing tab:', error);
             }
         }
 
-        // Account creation toggle function
+        // Account creation toggle function with error handling
         async function toggleAccountCreation() {
             try {
                 const response = await fetch('/admin/system/toggle-account-creation', {
@@ -1824,11 +1860,12 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error toggling account creation:', error);
                 alert('Error: ' + error.message);
             }
         }
 
-        // Payment testing mode toggle function
+        // Payment testing mode toggle function with error handling
         async function togglePaymentTesting() {
             try {
                 const currentMode = {{ 'true' if payment_testing_mode else 'false' }};
@@ -1848,11 +1885,12 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error toggling payment testing:', error);
                 alert('Error: ' + error.message);
             }
         }
 
-        // User management functions
+        // User management functions with error handling
         async function suspendUser(userId) {
             if (!confirm('Are you sure you want to suspend this user?')) return;
             
@@ -1870,6 +1908,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error suspending user:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -1891,6 +1930,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error activating user:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -1912,6 +1952,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error promoting user:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -1933,6 +1974,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error demoting admin:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -1954,11 +1996,12 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error deleting user:', error);
                 alert('Error: ' + error.message);
             }
         }
 
-        // Review management functions
+        // Review management functions with error handling
         async function approveReview(reviewId) {
             try {
                 const response = await fetch(`/admin/reviews/${reviewId}/approve`, {
@@ -1974,6 +2017,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error approving review:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -1995,11 +2039,12 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error rejecting review:', error);
                 alert('Error: ' + error.message);
             }
         }
 
-        // System monitoring functions
+        // System monitoring functions with error handling
         async function checkSystemHealth() {
             try {
                 const response = await fetch('/admin/system/health');
@@ -2015,15 +2060,20 @@
                           'Disk: ' + data.disk_space);
                 }
             } catch (error) {
+                console.error('Error checking system health:', error);
                 alert('Error checking system health: ' + error.message);
             }
         }
 
         function refreshSystemHealth() {
-            location.reload();
+            try {
+                location.reload();
+            } catch (error) {
+                console.error('Error refreshing system health:', error);
+            }
         }
 
-        // Emergency stop functions
+        // Emergency stop functions with error handling
         async function toggleEmergencyStop(action) {
             const actionText = action === 'enable' ? 'DISABLE' : 'ENABLE';
             const confirmMessage = action === 'enable' 
@@ -2047,6 +2097,7 @@
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
+                console.error('Error toggling emergency stop:', error);
                 alert('Error: ' + error.message);
             }
         }

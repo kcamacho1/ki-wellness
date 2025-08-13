@@ -109,7 +109,7 @@
             <!-- Login Form -->
             <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div class="bg-white py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-soft-green">
-                    <form class="space-y-6" method="POST">
+                    <form class="space-y-6" method="POST" action="{{ url_for('auth.login') }}" onsubmit="return validateForm(event)">
                         <!-- Username Field -->
                         <div>
                             <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
@@ -154,7 +154,7 @@
                                 </label>
                             </div>
                             <div class="text-sm">
-                                <a href="{{ url_for('forgot_password') }}" class="font-medium text-mint-green hover:text-forest-green transition-colors duration-200">
+                                <a href="{{ url_for('auth.forgot_password') }}" class="font-medium text-mint-green hover:text-forest-green transition-colors duration-200">
                                     Forgot password?
                                 </a>
                             </div>
@@ -197,7 +197,7 @@
                     
                     <!-- Google OAuth Button -->
                     <div class="mt-6">
-                        <a href="{{ url_for('google_login') }}" 
+                        <a href="{{ url_for('auth.google_login') }}" 
                            class="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-mint-green transition-all duration-200">
                             <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -211,7 +211,7 @@
                     
                     <div class="mt-6 text-center">
                         <p class="text-gray-600">Don't have an account? 
-                            <a href="{{ url_for('register') }}" class="text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
+                            <a href="{{ url_for('auth.register') }}" class="text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
                                 Create one here
                             </a>
                         </p>
@@ -247,26 +247,35 @@
             }
         });
 
-        // Form submission security
-        document.querySelector('form').addEventListener('submit', function(e) {
+        // Form validation function
+        function validateForm(e) {
+            console.log('🔍 Form validation started...');
+            
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             
+            console.log('🔍 Username length:', username.length);
+            console.log('🔍 Password length:', password.length);
+            
             // Basic validation
-            if (username.length < 3) {
-                e.preventDefault();
+            if (!username || username.length < 3) {
+                console.error('❌ Username validation failed');
                 showError('Username must be at least 3 characters long.', 'Validation Error');
-                return;
+                return false;
             }
             
-            if (password.length < 8) {
-                e.preventDefault();
+            if (!password || password.length < 8) {
+                console.error('❌ Password validation failed');
                 showError('Password must be at least 8 characters long.', 'Validation Error');
-                return;
+                return false;
             }
+            
+            console.log('✅ Basic validation passed');
             
             // reCAPTCHA validation (only if enabled)
             {% if config.RECAPTCHA_ENABLED %}
+            console.log('🔍 reCAPTCHA is enabled, checking...');
+            
             if (typeof grecaptcha !== 'undefined') {
                 console.log('reCAPTCHA: Checking checkbox verification...');
                 
@@ -275,13 +284,11 @@
                 
                 if (!recaptchaResponse) {
                     console.error('reCAPTCHA: Checkbox not completed');
-                    e.preventDefault();
                     showError('Please complete the security verification checkbox.', 'Security Error');
-                    return;
+                    return false;
                 }
                 
                 console.log('✅ reCAPTCHA: Checkbox completed, proceeding with form submission');
-                // Form will submit normally with the reCAPTCHA response
             } else {
                 console.warn('reCAPTCHA: Not available - checking if we should bypass...');
                 
@@ -293,10 +300,8 @@
                 if (isLocalhost) {
                     console.log('🔧 Development mode: Bypassing reCAPTCHA verification');
                     // Allow form submission in development
-                    return true;
                 } else {
                     console.error('reCAPTCHA: Not available in production');
-                    e.preventDefault();
                     showError('Security verification system is not available. Please refresh the page and try again.', 'Security Error');
                     return false;
                 }
@@ -305,10 +310,33 @@
             console.log('🔧 reCAPTCHA disabled in configuration');
             {% endif %}
             
+            console.log('✅ All validations passed, allowing form submission');
+            
+            // Disable submit button to prevent double submission
+            const submitBtn = document.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing In...';
+            
+            // Allow form to submit
+            return true;
+        }
+
+        // Backup form submission handler (simplified)
+        document.querySelector('form').addEventListener('submit', function(e) {
+            console.log('🔍 Backup form submission handler triggered');
+            
+            // Only handle if validateForm didn't already handle it
+            if (e.defaultPrevented) {
+                console.log('🔍 Form submission already handled by validateForm');
+                return;
+            }
+            
             // Disable submit button to prevent double submission
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Signing In...';
+            
+            console.log('✅ Form submission proceeding...');
         });
 
         // Rate limiting for failed attempts

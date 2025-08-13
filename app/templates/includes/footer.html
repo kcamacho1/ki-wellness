@@ -17,8 +17,8 @@
                     <a href="/coaching" class="text-blue-100 hover:text-white transition-colors duration-200">Coaching</a>
                     <a href="/contact" class="text-blue-100 hover:text-white transition-colors duration-200">Contact</a>
                     {% if not session.get('user_id') %}
-                        <a href="/login" class="text-blue-100 hover:text-white transition-colors duration-200">Login</a>
-                        <a href="/register" class="text-blue-100 hover:text-white transition-colors duration-200">Register</a>
+                        <a href="{{ url_for('auth.login') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Register</a>
                     {% endif %}
                 </div>
             </div>

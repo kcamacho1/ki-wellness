@@ -92,6 +92,11 @@
 
         <!-- Chat Input Area -->
         <div class="p-4 bg-white border-t border-gray-200 rounded-b-2xl">
+            <!-- Rate Limit Status -->
+            <div id="ai-chat-rate-limit" class="text-xs text-orange-600 mb-2 hidden">
+                ⏱️ Rate limit active - please wait before sending another message
+            </div>
+            
             <div class="flex space-x-2">
                 <input type="text" 
                        id="ai-chat-input" 
@@ -235,9 +240,14 @@ class AIChatBox {
 
     async sendMessage() {
         const input = document.getElementById('ai-chat-input');
+        const sendBtn = document.getElementById('ai-chat-send');
         const message = input.value.trim();
         
         if (!message || this.isTyping) return;
+        
+        // Disable input and button during processing
+        input.disabled = true;
+        sendBtn.disabled = true;
         
         // Add user message
         this.addMessage(message, 'user');
@@ -252,40 +262,54 @@ class AIChatBox {
             const response = await this.sendToAI(message);
             this.hideTypingIndicator();
             this.addMessage(response, 'ai');
+            
+            // Re-enable input and button
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+            
         } catch (error) {
             this.hideTypingIndicator();
             this.addMessage('Sorry, I encountered an error. Please try again.', 'ai');
             console.error('AI Chat Error:', error);
+            
+            // Re-enable input and button
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
         }
     }
 
     async sendToAI(message) {
-        // For now, return a mock response
-        // In production, this would call your AI backend
-        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-        
-        // Context-aware responses based on message content
-        const messageLower = message.toLowerCase();
-        
-        if (messageLower.includes('nutrition') || messageLower.includes('food') || messageLower.includes('diet')) {
-            return "Great question about nutrition! A balanced diet should include plenty of fruits, vegetables, lean proteins, and whole grains. Remember to stay hydrated and listen to your body's hunger cues. What specific nutrition area would you like to explore?";
-        } else if (messageLower.includes('mood') || messageLower.includes('mental') || messageLower.includes('stress')) {
-            return "Mental wellness is so important! Consider practices like mindfulness, regular exercise, adequate sleep, and connecting with loved ones. What's your current mood like, and how can I help you feel better?";
-        } else if (messageLower.includes('exercise') || messageLower.includes('workout') || messageLower.includes('fitness')) {
-            return "Exercise is fantastic for overall wellness! Aim for at least 150 minutes of moderate activity weekly. Mix cardio, strength training, and flexibility work. What type of movement do you enjoy most?";
-        } else if (messageLower.includes('goal') || messageLower.includes('target') || messageLower.includes('achieve')) {
-            return "Setting wellness goals is a great step! Make them SMART: Specific, Measurable, Achievable, Relevant, and Time-bound. What's one wellness goal you'd like to work on?";
-        } else if (messageLower.includes('sleep') || messageLower.includes('rest')) {
-            return "Quality sleep is essential for wellness! Aim for 7-9 hours nightly, maintain a consistent schedule, and create a relaxing bedtime routine. How's your sleep quality lately?";
-        } else {
-            const generalResponses = [
-                "That's a great question! Wellness is about finding balance in mind, body, and spirit. What specific area would you like to explore?",
-                "I'm here to support your wellness journey! Could you tell me more about your current goals or challenges?",
-                "That's an interesting perspective on wellness. Have you considered how this relates to your overall health goals?",
-                "Great question! Let me share some insights that might help you on your wellness journey.",
-                "I understand you're asking about wellness. What aspect would you like to focus on today?"
-            ];
-            return generalResponses[Math.floor(Math.random() * generalResponses.length)];
+        try {
+            // Call the real AI backend endpoint
+            const response = await fetch('/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                return data.response;
+            } else {
+                console.error('AI Chat Error:', data.error);
+                
+                // Handle rate limiting specifically
+                if (response.status === 429) {
+                    this.showRateLimitWarning();
+                    return "I'm receiving too many requests right now. Please wait a moment before asking another question.";
+                }
+                
+                return `I'm sorry, I encountered an error: ${data.error}. Please try again in a moment.`;
+            }
+        } catch (error) {
+            console.error('AI Chat Network Error:', error);
+            return "I'm sorry, I'm having trouble connecting right now. Please check your internet connection and try again.";
         }
     }
 
@@ -451,6 +475,18 @@ Feel free to ask anything related to your health and wellness journey!`;
             }
         } catch (error) {
             console.error('Failed to load chat state:', error);
+        }
+    }
+
+    showRateLimitWarning() {
+        const rateLimitDiv = document.getElementById('ai-chat-rate-limit');
+        if (rateLimitDiv) {
+            rateLimitDiv.classList.remove('hidden');
+            
+            // Hide after 30 seconds
+            setTimeout(() => {
+                rateLimitDiv.classList.add('hidden');
+            }, 30000);
         }
     }
 

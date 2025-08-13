@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Startup script for KI Wellness Profile System
+Startup script for Ki Wellness Profile System
 """
 
 import os
@@ -31,7 +31,7 @@ def check_dependencies():
 
 def main():
     """Main function to start the application"""
-    print("🚀 Starting KI Wellness Profile System...")
+    print("🚀 Starting Ki Wellness Profile System...")
     print("=" * 50)
     
     # Check dependencies

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Database initialization script for KI Wellness Profile System
+Database initialization script for Ki Wellness Profile System
 """
 
 import psycopg2
@@ -58,7 +58,7 @@ def create_tables():
 
 def main():
     """Main function to initialize the database"""
-    print("Initializing KI Wellness Database...")
+    print("Initializing Ki Wellness Database...")
     
     # Create database
     create_database()
