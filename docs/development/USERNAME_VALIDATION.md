@@ -1,8 +1,8 @@
-# 🚫 Username Validation - KI Wellness Protection
+# 🚫 Username Validation - Ki Wellness Protection
 
 ## ✅ **Successfully Implemented**
 
-Your KI Wellness application now prohibits any users from having usernames that contain 'kiwellness' in any form (with or without spaces, underscores, and numbers).
+Your Ki Wellness application now prohibits any users from having usernames that contain 'kiwellness' in any form (with or without spaces, underscores, and numbers).
 
 ## 🎯 **What's Protected**
 

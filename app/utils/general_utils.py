@@ -291,7 +291,7 @@ class NotificationUtils:
         If you didn't create this account, please ignore this email.
         
         Best regards,
-        KI Wellness Team
+        Ki Wellness Team
         """
         
         try:

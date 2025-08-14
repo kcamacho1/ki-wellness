@@ -5,58 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ki Wellness</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-production.css') }}">
+    <!-- Tailwind CSS with fallback -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-production.css') }}" onerror="console.log('Local Tailwind CSS failed to load, using CDN')">
     <script>
-        // Dynamically load reCAPTCHA v2 checkbox based on environment
-        {% if config.RECAPTCHA_ENABLED %}
-        fetch('/api/recaptcha-status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.enabled && '{{ config.RECAPTCHA_SITE_KEY }}' && '{{ config.RECAPTCHA_SITE_KEY }}' !== 'None') {
-                    // Load production reCAPTCHA v2 checkbox
-                    const recaptchaScript = document.createElement('script');
-                    recaptchaScript.src = 'https://www.google.com/recaptcha/api.js';
-                    recaptchaScript.async = true;
-                    recaptchaScript.defer = true;
-                    document.head.appendChild(recaptchaScript);
-                } else {
-                    // Load development bypass
-                    const bypassScript = document.createElement('script');
-                    bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
-                    document.head.appendChild(bypassScript);
-                }
-            })
-            .catch(error => {
-                // Load development bypass on error
-                const bypassScript = document.createElement('script');
-                bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
-                document.head.appendChild(bypassScript);
-            });
-        {% else %}
-        // Load development bypass
-        const bypassScript = document.createElement('script');
-        bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
-        document.head.appendChild(bypassScript);
-        {% endif %}
+        // Check if we're on localhost and disable reCAPTCHA
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' || 
+                           window.location.hostname === '0.0.0.0';
+        
+        if (isLocalhost) {
+            console.log('🔧 Localhost detected: Loading development bypass for reCAPTCHA');
+            // Load development bypass for localhost
+            const bypassScript = document.createElement('script');
+            bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+            bypassScript.async = true;
+            document.head.appendChild(bypassScript);
+        } else if ({{ 'true' if config.RECAPTCHA_ENABLED and config.RECAPTCHA_SITE_KEY else 'false' }}) {
+            console.log('🌐 Production detected: Loading reCAPTCHA');
+            // Load production reCAPTCHA
+            const recaptchaScript = document.createElement('script');
+            recaptchaScript.src = 'https://www.google.com/recaptcha/api.js';
+            recaptchaScript.async = true;
+            recaptchaScript.defer = true;
+            document.head.appendChild(recaptchaScript);
+        } else {
+            console.log('🔧 Development mode: Loading development bypass for reCAPTCHA');
+            // Load development bypass
+            const bypassScript = document.createElement('script');
+            bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+            bypassScript.async = true;
+            document.head.appendChild(bypassScript);
+        }
     </script>
     <!-- Global Ki Wellness Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'forest-green': '#2d5016',
+                        'sage-green': '#9ca3af',
+                        'mint-green': '#10b981',
+                        'soft-green': '#f0f9ff',
+                        'nature-gray': '#f8fafc',
+                        'calm-blue': '#3b82f6',
+                        'earth-brown': '#8b4513'
+                    },
+                    fontFamily: {
+                        'quicksand': ['Quicksand', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
     
     <!-- Login-specific styles -->
     <style>
         .hero-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        /* Ensure form elements are properly styled */
+        .login-form input[type="text"],
+        .login-form input[type="password"],
+        .login-form input[type="email"] {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            transition: all 0.2s ease;
+        }
+        
+        .login-form input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Ensure button styling is consistent */
+        .btn-primary {
+            background-color: #10b981 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            padding: 0.75rem 1rem !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            line-height: 1.5rem !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+        
+        .btn-primary:hover {
+            background-color: #059669 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Ensure proper spacing and layout */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2rem;
+            width: 100%;
+            max-width: 28rem;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div class="min-h-screen flex flex-col">
+    <div class="login-container">
         <!-- Main Content Container -->
         <div class="flex-1 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="sm:mx-auto sm:w-full sm:max-w-md">
                 <div class="flex justify-center">
-                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="KI Wellness" class="h-12 w-auto">
+                    <img src="{{ url_for('static', filename='public/branding/logo.png') }}" alt="Ki Wellness" class="h-12 w-auto">
                 </div>
                 <h2 class="mt-6 text-center text-3xl font-bold text-gray-900" style="font-family: 'Quicksand', sans-serif;">
                     Welcome Back
@@ -68,8 +150,8 @@
 
             <!-- Login Form -->
             <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div class="bg-white py-8 px-4 shadow-xl rounded-xl sm:px-10 border border-soft-green">
-                    <form class="space-y-6" method="POST" action="{{ url_for('auth.login') }}" onsubmit="return validateForm(event)">
+                <div class="login-card">
+                    <form class="space-y-6 login-form" method="POST" action="{{ url_for('auth.login') }}" onsubmit="return validateForm(event)">
                         <!-- Username Field -->
                         <div>
                             <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
@@ -121,21 +203,38 @@
                         </div>
 
                         <!-- Google reCAPTCHA v2 Checkbox -->
-                        {% if config.RECAPTCHA_ENABLED %}
-                            <div class="flex justify-center">
-                                <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
-                            </div>
-                        {% else %}
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                <p class="text-xs text-yellow-800 text-center">
-                                    {% if IS_LOCALHOST %}
-                                        <strong>Localhost Detected:</strong> Security verification is disabled for local development.
-                                    {% else %}
-                                        <strong>Development Mode:</strong> Security verification is disabled for testing.
-                                    {% endif %}
-                                </p>
-                            </div>
-                        {% endif %}
+                        <div id="recaptcha-container">
+                            <!-- This will be populated by JavaScript based on environment -->
+                        </div>
+                        
+                        <script>
+                            // Dynamically show reCAPTCHA or development message
+                            const recaptchaContainer = document.getElementById('recaptcha-container');
+                            
+                            if (isLocalhost) {
+                                recaptchaContainer.innerHTML = `
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                        <p class="text-xs text-yellow-800 text-center">
+                                            <strong>Localhost Detected:</strong> Security verification is disabled for local development.
+                                        </p>
+                                    </div>
+                                `;
+                            } else if (!isLocalhost && {{ 'true' if config.RECAPTCHA_ENABLED and config.RECAPTCHA_SITE_KEY else 'false' }}) {
+                                recaptchaContainer.innerHTML = `
+                                    <div class="flex justify-center">
+                                        <div class="g-recaptcha" data-sitekey="{{ config.RECAPTCHA_SITE_KEY }}"></div>
+                                    </div>
+                                `;
+                            } else {
+                                recaptchaContainer.innerHTML = `
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                        <p class="text-xs text-yellow-800 text-center">
+                                            <strong>Development Mode:</strong> Security verification is disabled for testing.
+                                        </p>
+                                    </div>
+                                `;
+                            }
+                        </script>
                         
                         <button type="submit" 
                                 class="w-full btn-primary py-3 px-4 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 text-lg">

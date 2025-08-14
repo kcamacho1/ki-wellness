@@ -129,6 +129,9 @@ def search_food():
                                 'protein': nutrition_data.get('protein', 0),
                                 'carbs': nutrition_data.get('carbs', 0),
                                 'fat': nutrition_data.get('fat', 0),
+                                'fiber': nutrition_data.get('fiber', 0),
+                                'sugar': nutrition_data.get('sugar', 0),
+                                'sodium': nutrition_data.get('sodium', 0),
                                 'source': 'openfoodfacts_api',
                                 'search_query': enhanced_query  # Track which query found this result
                             })
@@ -160,6 +163,9 @@ def search_food():
                                 'protein': common_food.get('protein', 0),
                                 'carbs': common_food.get('carbs', 0),
                                 'fat': common_food.get('fat', 0),
+                                'fiber': common_food.get('fiber', 0),
+                                'sugar': common_food.get('sugar', 0),
+                                'sodium': common_food.get('sodium', 0),
                                 'source': 'common_foods_db',
                                 'search_query': enhanced_query  # Track which query found this result
                             })
@@ -172,15 +178,52 @@ def search_food():
                 import traceback
                 traceback.print_exc()
         
+        # Score and sort results by nutritional data completeness
+        def score_nutritional_completeness(result):
+            """Score a result based on how complete its nutritional data is"""
+            score = 0
+            core_nutrients = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium']
+            for nutrient in core_nutrients:
+                if result.get(nutrient) is not None and result.get(nutrient) != 0:
+                    score += 1
+            return score
+        
+        # Sort results by completeness (most complete first)
+        results.sort(key=score_nutritional_completeness, reverse=True)
+        
         # Return results for the frontend
         if results:
             # If we have multiple results, return them all for user selection
             if len(results) > 1:
+                # Multiple results found, convert all results based on user's serving size
+                user_serving_size = request.json.get('serving_size')
+                user_serving_unit = request.json.get('serving_unit', 'g')
+                
+                converted_results = []
+                for result in results:
+                    if user_serving_size and user_serving_unit:
+                        try:
+                            # Convert each result to match user's serving size
+                            converted_data = NutritionService.convert_nutritional_data(
+                                result, 
+                                float(user_serving_size), 
+                                user_serving_unit
+                            )
+                            if converted_data:
+                                converted_results.append(converted_data)
+                            else:
+                                converted_results.append(result)
+                        except Exception as conversion_error:
+                            print(f"❌ Error converting nutritional data: {conversion_error}")
+                            converted_results.append(result)
+                    else:
+                        converted_results.append(result)
+                
                 return jsonify({
                     'success': True,
                     'multiple_results': True,
-                    'results': results,
-                    'count': len(results)
+                    'results': converted_results,
+                    'count': len(converted_results)
                 })
             else:
                 # Single result, use it as the main data

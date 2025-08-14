@@ -705,35 +705,73 @@ class ShareManager {
         finalCtx.shadowColor = 'transparent';
         finalCtx.shadowBlur = 0;
         
-        // Add logo
+        // Add Ki Wellness watermark
         try {
-            const logoImg = new Image();
-            logoImg.crossOrigin = 'anonymous';
+            // Load the leaf logo
+            const leafLogo = new Image();
+            leafLogo.crossOrigin = 'anonymous';
             
             await new Promise((resolve, reject) => {
-                logoImg.onload = resolve;
-                logoImg.onerror = reject;
-                logoImg.src = '/static/logo-new.png';
+                leafLogo.onload = resolve;
+                leafLogo.onerror = reject;
+                leafLogo.src = '/static/public/branding/logo.png'; // Leaf logo
             });
 
-            const logoWidth = Math.min(250, finalCanvas.width * 0.4);
-            const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
-            const logoX = (finalCanvas.width - logoWidth) / 2;
-            const logoY = finalCanvas.height - logoHeight - 30;
+            // Calculate watermark dimensions
+            const watermarkWidth = Math.min(120, finalCanvas.width * 0.25);
+            const watermarkHeight = (watermarkWidth * leafLogo.height) / leafLogo.width;
             
-            // Add background for logo
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            finalCtx.fillRect(logoX - 20, logoY - 15, logoWidth + 40, logoHeight + 30);
+            // Position watermark in bottom-right corner with some padding
+            const watermarkX = finalCanvas.width - watermarkWidth - 20;
+            const watermarkY = finalCanvas.height - watermarkHeight - 20;
             
-            // Add border
-            finalCtx.strokeStyle = 'rgba(16, 185, 129, 0.3)';
-            finalCtx.lineWidth = 1.5;
-            finalCtx.strokeRect(logoX - 20, logoY - 15, logoWidth + 40, logoHeight + 30);
+            // Add semi-transparent background for watermark
+            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            finalCtx.fillRect(watermarkX - 15, watermarkY - 15, watermarkWidth + 30, watermarkHeight + 30);
             
-            // Draw logo
-            finalCtx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+            // Add subtle border
+            finalCtx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
+            finalCtx.lineWidth = 1;
+            finalCtx.strokeRect(watermarkX - 15, watermarkY - 15, watermarkWidth + 30, watermarkHeight + 30);
+            
+            // Draw leaf logo
+            finalCtx.drawImage(leafLogo, watermarkX, watermarkY, watermarkWidth, watermarkHeight);
+            
+            // Add "Ki Wellness" text in Quicksand font
+            finalCtx.font = 'bold 16px "Quicksand", sans-serif';
+            finalCtx.fillStyle = '#10b981'; // Forest green color
+            finalCtx.textAlign = 'center';
+            finalCtx.textBaseline = 'top';
+            
+            // Position text below the logo
+            const textX = watermarkX + (watermarkWidth / 2);
+            const textY = watermarkY + watermarkHeight + 5;
+            
+            // Add text shadow for better readability
+            finalCtx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            finalCtx.shadowBlur = 2;
+            finalCtx.shadowOffsetX = 0;
+            finalCtx.shadowOffsetY = 1;
+            
+            finalCtx.fillText('Ki Wellness', textX, textY);
+            
+            // Reset shadow
+            finalCtx.shadowColor = 'transparent';
+            finalCtx.shadowBlur = 0;
+            
         } catch (error) {
             console.warn('Could not load logo for watermark:', error);
+            
+            // Fallback: Add text-only watermark
+            finalCtx.font = 'bold 18px "Quicksand", sans-serif';
+            finalCtx.fillStyle = 'rgba(16, 185, 129, 0.7)';
+            finalCtx.textAlign = 'right';
+            finalCtx.textBaseline = 'bottom';
+            
+            const textX = finalCanvas.width - 20;
+            const textY = finalCanvas.height - 20;
+            
+            finalCtx.fillText('Ki Wellness', textX, textY);
         }
 
         return finalCanvas;

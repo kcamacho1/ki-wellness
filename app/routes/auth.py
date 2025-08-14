@@ -88,21 +88,22 @@ def google_authorized():
             request.args['error_description']
         ), 'error')
         return redirect(url_for('auth.login'))
-    
-    session['google_token'] = (resp['access_token'], '')
+
+    # Fix: Use correct dict access for resp and me.data
+    session['google_token'] = (resp.get('access_token', ''), '')
     me = google_oauth.get('userinfo')
-    
+
     # Check if user exists
-    user = User.query.filter_by(oauth_id=me.data['id']).first()
+    user = User.query.filter_by(oauth_id=me.data.get('id')).first()
     
     if not user:
         # Create new user
         user = User(
-            username=me.data['email'].split('@')[0],
-            email=me.data['email'],
+            username=me.data.get('email', '').split('@')[0] if me.data.get('email') else '',
+            email=me.data.get('email', ''),
             oauth_provider='google',
-            oauth_id=me.data['id'],
-            oauth_email=me.data['email'],
+            oauth_id=me.data.get('id', ''),
+            oauth_email=me.data.get('email', ''),
             oauth_name=me.data.get('name', ''),
             oauth_picture=me.data.get('picture', ''),
             email_verified=True,  # Google emails are pre-verified

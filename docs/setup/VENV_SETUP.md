@@ -1,8 +1,8 @@
-# Virtual Environment Setup for KI Wellness
+# Virtual Environment Setup for Ki Wellness
 
 ## ✅ Successfully Created Virtual Environment
 
-Your KI Wellness project now has a properly configured virtual environment that isolates all dependencies from your global Python installation.
+Your Ki Wellness project now has a properly configured virtual environment that isolates all dependencies from your global Python installation.
 
 ## 🎯 What Was Accomplished
 

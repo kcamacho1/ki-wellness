@@ -498,9 +498,9 @@ class AddFoodForm {
                 const element = this.container.querySelector(`#${field}`);
                 if (element && this.currentNutritionData[field] !== undefined) {
                     const value = this.currentNutritionData[field];
-                    // Check if value is a number and convert to string with 1 decimal place
+                    // Check if value is a number and convert to string with 2 decimal places
                     if (typeof value === 'number' && !isNaN(value)) {
-                        element.textContent = value.toFixed(1);
+                        element.textContent = value.toFixed(2);
                     } else if (value !== null && value !== undefined) {
                         // If it's a string or other type, just convert to string
                         element.textContent = String(value);
@@ -575,9 +575,9 @@ class AddFoodForm {
                         <h5 class="font-medium text-forest-green mb-1 text-sm sm:text-base truncate">${result.food_name}</h5>
                         ${result.brand ? `<p class="text-xs sm:text-sm text-sage-green mb-2 truncate">${result.brand}</p>` : ''}
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 text-xs">
-                            <div><span class="font-medium">Calories:</span> ${result.calories || '-'}</div>
-                            <div><span class="font-medium">Protein:</span> ${result.protein || '-'}g</div>
-                            <div class="sm:col-span-1"><span class="font-medium">Fat:</span> ${result.fat || '-'}g</div>
+                            <div><span class="font-medium">Calories:</span> ${typeof result.calories === 'number' ? result.calories.toFixed(2) : (result.calories || '-')}</div>
+                            <div><span class="font-medium">Protein:</span> ${typeof result.protein === 'number' ? result.protein.toFixed(2) : (result.protein || '-')}g</div>
+                            <div class="sm:col-span-1"><span class="font-medium">Fat:</span> ${typeof result.fat === 'number' ? result.fat.toFixed(2) : (result.fat || '-')}g</div>
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Source: ${result.source || 'Unknown'}</p>
                     </div>
@@ -608,14 +608,8 @@ class AddFoodForm {
             brand: selectedResult.brand || ''
         };
         
-        // Convert nutritional data if we have serving size info
-        if (userServingSize && userServingUnit) {
-            // For now, we'll use the selected result directly
-            // The backend should have already converted it
-            this.currentNutritionData = selectedResult;
-        } else {
-            this.currentNutritionData = selectedResult;
-        }
+        // Use the selected result directly (backend already converted it)
+        this.currentNutritionData = selectedResult;
         
         // Proceed to review step
         this.showStep(4);
@@ -883,6 +877,95 @@ class AddFoodForm {
         
         continueDiv.appendChild(continueButton);
         container.appendChild(continueDiv);
+    }
+    
+    convertNutritionalData(nutritionData, userServingSize, userServingUnit) {
+        // Convert nutritional data based on user's serving size and unit
+        if (!nutritionData) return null;
+        
+        // Convert to grams for calculation
+        const baseServingSize = nutritionData.serving_size || 100;
+        const baseServingUnit = nutritionData.serving_unit || 'g';
+        
+        // Convert user serving to grams
+        const userServingInGrams = this.convertToGrams(userServingSize, userServingUnit);
+        const baseServingInGrams = this.convertToGrams(baseServingSize, baseServingUnit);
+        
+        if (baseServingInGrams === 0) return nutritionData;
+        
+        // Calculate conversion factor
+        const conversionFactor = userServingInGrams / baseServingInGrams;
+        
+        // Convert all nutritional values
+        const convertedData = { ...nutritionData };
+        convertedData.serving_size = userServingSize;
+        convertedData.serving_unit = userServingUnit;
+        
+        // Core nutritional fields (displayed to user)
+        const coreNutritionalFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium'];
+        
+        // Extended nutritional fields (stored but not displayed)
+        const extendedNutritionalFields = [
+            'saturated_fat', 'trans_fat', 'cholesterol', 'potassium', 'calcium', 'iron',
+            'vitamin_a', 'vitamin_c', 'vitamin_d', 'vitamin_e', 'vitamin_k', 'vitamin_b6', 'vitamin_b12',
+            'magnesium', 'zinc', 'phosphorus', 'manganese', 'selenium', 'copper', 'thiamin',
+            'riboflavin', 'niacin', 'folate', 'pantothenic_acid', 'biotin', 'choline', 'betaine',
+            'taurine', 'caffeine', 'alcohol', 'water_content', 'ash'
+        ];
+        
+        // Convert all nutritional fields
+        const allNutritionalFields = coreNutritionalFields.concat(extendedNutritionalFields);
+        allNutritionalFields.forEach(field => {
+            if (convertedData[field] !== null && convertedData[field] !== undefined) {
+                try {
+                    // Convert to float if it's a string, then multiply
+                    let value = convertedData[field];
+                    if (typeof value === 'string') {
+                        value = parseFloat(value);
+                    } else if (typeof value !== 'number') {
+                        return; // Skip non-numeric values
+                    }
+                    
+                    if (!isNaN(value)) {
+                        convertedData[field] = Math.round((value * conversionFactor) * 100) / 100;
+                    }
+                } catch (e) {
+                    console.warn(`Could not convert ${field} value '${convertedData[field]}' to number:`, e);
+                }
+            }
+        });
+        
+        return convertedData;
+    }
+    
+    convertToGrams(amount, unit) {
+        // Convert various units to grams
+        const unitLower = unit.toLowerCase();
+        
+        if (['g', 'gram', 'grams'].includes(unitLower)) {
+            return amount;
+        } else if (['kg', 'kilogram', 'kilograms'].includes(unitLower)) {
+            return amount * 1000;
+        } else if (['oz', 'ounce', 'ounces'].includes(unitLower)) {
+            return amount * 28.35;
+        } else if (['lb', 'pound', 'pounds'].includes(unitLower)) {
+            return amount * 453.59;
+        } else if (['ml', 'milliliter', 'milliliters'].includes(unitLower)) {
+            return amount; // Approximate for water-based foods
+        } else if (['l', 'liter', 'liters'].includes(unitLower)) {
+            return amount * 1000;
+        } else if (['cup', 'cups'].includes(unitLower)) {
+            return amount * 236.59;
+        } else if (['tbsp', 'tablespoon', 'tablespoons'].includes(unitLower)) {
+            return amount * 14.79;
+        } else if (['tsp', 'teaspoon', 'teaspoons'].includes(unitLower)) {
+            return amount * 4.93;
+        } else if (['item', 'items'].includes(unitLower)) {
+            // For bacon, 1 item ≈ 15g (typical bacon slice)
+            return amount * 15;
+        } else {
+            return amount; // Default to grams
+        }
     }
     
     showSuccess(message) {

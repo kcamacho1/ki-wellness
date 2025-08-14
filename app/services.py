@@ -1078,7 +1078,26 @@ class NutritionService:
         fat = nutriments.get('fat_100g')
         fiber = nutriments.get('fiber_100g')
         sugar = nutriments.get('sugars_100g')
-        sodium = nutriments.get('salt_100g')
+        # OpenFoodFacts provides salt in grams, convert to sodium in mg
+        salt_g = nutriments.get('salt_100g')
+        try:
+            if salt_g is not None:
+                # Ensure salt_g is a number
+                if isinstance(salt_g, str):
+                    salt_g = float(salt_g)
+                elif not isinstance(salt_g, (int, float)):
+                    salt_g = None
+                
+                if salt_g is not None and not float('nan') == salt_g:
+                    sodium = salt_g * 400  # 1g salt ≈ 400mg sodium
+                else:
+                    sodium = None
+            else:
+                sodium = None
+        except (ValueError, TypeError):
+            sodium = None
+        
+
         
         # Extended nutritional values (stored but not displayed)
         saturated_fat = nutriments.get('saturated-fat_100g')
@@ -1117,6 +1136,15 @@ class NutritionService:
         # Validate data quality - be more lenient
         if calories is None:
             calories = 0  # Set to 0 if not available
+        
+        # Convert calories to float for comparison
+        try:
+            if isinstance(calories, str):
+                calories = float(calories)
+            elif not isinstance(calories, (int, float)):
+                calories = 0
+        except (ValueError, TypeError):
+            calories = 0
         
         # Check for reasonable ranges
         if calories > 900:  # Most foods don't exceed 900 cal/100g
@@ -1255,7 +1283,7 @@ class NutritionService:
                     elif not isinstance(value, (int, float)):
                         continue  # Skip non-numeric values
                     
-                    converted_data[field] = value * conversion_factor
+                    converted_data[field] = round(value * conversion_factor, 2)
                 except (ValueError, TypeError) as e:
                     print(f"⚠️ Warning: Could not convert {field} value '{converted_data[field]}' to number: {e}")
                     continue  # Skip this field if conversion fails
