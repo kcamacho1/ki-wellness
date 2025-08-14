@@ -425,10 +425,8 @@ class AddFoodForm {
             const data = await response.json();
             
             if (data.success) {
-                console.log('🔍 Search successful, data:', data);
                 // Check if we have multiple results to choose from
                 if (data.results && data.results.length > 1) {
-                    console.log('🔍 Multiple results found, showing selection');
                     this.showFoodSelection(data.results, foodData);
                 } else {
                     // Single result, proceed directly to review
@@ -506,11 +504,9 @@ class AddFoodForm {
     }
     
     showFoodSelection(results, baseFoodData) {
-        console.log('🔍 showFoodSelection called with:', results, baseFoodData);
         this.showStep(3);
         
         const container = this.container.querySelector('#foodOptionsContainer');
-        console.log('🔍 Container found:', container);
         if (!container) {
             console.error('❌ Food options container not found');
             return;
@@ -518,22 +514,35 @@ class AddFoodForm {
         
         container.innerHTML = '';
         
-        results.forEach((result, index) => {
+        // Limit to top 20 results for better UX
+        const limitedResults = results.slice(0, 20);
+        
+        // Add result count message
+        const resultCountDiv = document.createElement('div');
+        resultCountDiv.className = 'text-center mb-4 p-2 bg-blue-50 border border-blue-200 rounded-lg';
+        resultCountDiv.innerHTML = `
+            <p class="text-sm text-blue-800">
+                Found ${results.length} results${results.length > 20 ? ` (showing top 20)` : ''}
+            </p>
+        `;
+        container.appendChild(resultCountDiv);
+        
+        limitedResults.forEach((result, index) => {
             const optionDiv = document.createElement('div');
-            optionDiv.className = 'p-4 border border-gray-200 rounded-lg hover:border-forest-green hover:bg-mint-green/5 cursor-pointer transition-all duration-200';
+            optionDiv.className = 'p-3 sm:p-4 border border-gray-200 rounded-lg hover:border-forest-green hover:bg-mint-green/5 cursor-pointer transition-all duration-200';
             optionDiv.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <h5 class="font-medium text-forest-green mb-1">${result.food_name}</h5>
-                        ${result.brand ? `<p class="text-sm text-sage-green mb-2">${result.brand}</p>` : ''}
-                        <div class="grid grid-cols-3 gap-2 text-xs">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
+                    <div class="flex-1 min-w-0">
+                        <h5 class="font-medium text-forest-green mb-1 text-sm sm:text-base truncate">${result.food_name}</h5>
+                        ${result.brand ? `<p class="text-xs sm:text-sm text-sage-green mb-2 truncate">${result.brand}</p>` : ''}
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 text-xs">
                             <div><span class="font-medium">Calories:</span> ${result.calories || '-'}</div>
                             <div><span class="font-medium">Protein:</span> ${result.protein || '-'}g</div>
-                            <div><span class="font-medium">Fat:</span> ${result.fat || '-'}g</div>
+                            <div class="sm:col-span-1"><span class="font-medium">Fat:</span> ${result.fat || '-'}g</div>
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Source: ${result.source || 'Unknown'}</p>
                     </div>
-                    <button class="ml-4 px-4 py-2 bg-forest-green text-white rounded-md hover:bg-forest-green/90 focus:outline-none focus:ring-2 focus:ring-forest-green focus:ring-offset-2 transition-colors duration-200 text-sm">
+                    <button class="w-full sm:w-auto px-3 sm:px-4 py-2 bg-forest-green text-white rounded-md hover:bg-forest-green/90 focus:outline-none focus:ring-2 focus:ring-forest-green focus:ring-offset-2 transition-colors duration-200 text-sm font-medium">
                         Select
                     </button>
                 </div>

@@ -13,8 +13,6 @@
         fetch('/api/recaptcha-status')
             .then(response => response.json())
             .then(data => {
-                console.log('🔍 reCAPTCHA status response:', data);
-                
                 if (data.enabled && '{{ config.RECAPTCHA_SITE_KEY }}' && '{{ config.RECAPTCHA_SITE_KEY }}' !== 'None') {
                     console.log('✅ Loading production reCAPTCHA v2 checkbox...');
                     
@@ -35,8 +33,6 @@
                     document.head.appendChild(recaptchaScript);
                 } else {
                     console.log('🔧 Development mode: reCAPTCHA disabled');
-                    console.log('🔍 Site key present:', !!'{{ config.RECAPTCHA_SITE_KEY }}');
-                    console.log('🔍 Site key value:', '{{ config.RECAPTCHA_SITE_KEY }}');
                     
                     // Load development bypass
                     console.log('🔧 Loading development bypass module...');

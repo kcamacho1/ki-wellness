@@ -432,17 +432,61 @@ class NutritionService:
             'sodium': 800,
             'source': 'common_foods_db'
         },
-        'streaky bacon': {
-            'food_name': 'Streaky bacon',
-            'calories': 541,
-            'protein': 37,
-            'carbs': 1.4,
-            'fat': 42,
-            'fiber': 0,
-            'sugar': 0,
-            'sodium': 1717,
-            'source': 'common_foods_db'
-        }
+            'streaky bacon': {
+        'food_name': 'Streaky bacon',
+        'calories': 541,
+        'protein': 37,
+        'carbs': 1.4,
+        'fat': 42,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 1717,
+        'source': 'common_foods_db'
+    },
+    'bacon': {
+        'food_name': 'Bacon',
+        'calories': 541,
+        'protein': 37,
+        'carbs': 1.4,
+        'fat': 42,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 1717,
+        'source': 'common_foods_db'
+    },
+    'turkey bacon': {
+        'food_name': 'Turkey bacon',
+        'calories': 382,
+        'protein': 28,
+        'carbs': 4.3,
+        'fat': 28,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 1033,
+        'source': 'common_foods_db'
+    },
+    'canadian bacon': {
+        'food_name': 'Canadian bacon',
+        'calories': 185,
+        'protein': 12,
+        'carbs': 0.7,
+        'fat': 15,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 560,
+        'source': 'common_foods_db'
+    },
+    'pancetta': {
+        'food_name': 'Pancetta',
+        'calories': 357,
+        'protein': 14,
+        'carbs': 0,
+        'fat': 33,
+        'fiber': 0,
+        'sugar': 0,
+        'sodium': 800,
+        'source': 'common_foods_db'
+    }
     }
     
     @staticmethod
@@ -490,35 +534,29 @@ class NutritionService:
     @staticmethod
     def search_openfoodfacts_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
         """Search Open Food Facts API v2 by barcode for specific product"""
-        try:
-            # Use the official API v2 product endpoint
-            url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
-            print(f"🔍 Making request to: {url}")
-            
-            # Set up headers with proper User-Agent as required by the API
-            headers = {
-                'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
-                'Content-Type': 'application/json'
-            }
-            
-            response = requests.get(url, headers=headers, timeout=10)
-            print(f"📡 Response status: {response.status_code}")
+                    try:
+                # Use the official API v2 product endpoint
+                url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+                
+                # Set up headers with proper User-Agent as required by the API
+                headers = {
+                    'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
+                    'Content-Type': 'application/json'
+                }
+                
+                response = requests.get(url, headers=headers, timeout=10)
             
             # Handle rate limiting (429 status)
             if response.status_code == 429:
                 print("Open Food Facts API: Rate limit reached (100 req/min for product queries)")
                 return None
             
-            response.raise_for_status()
-            data = response.json()
-            print(f"📄 API Response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
-            
-            if data.get('status') == 1 and data.get('product'):
-                product = data['product']
-                print(f"✅ OpenFoodFacts product found: {product.get('product_name', 'Unknown')}")
-                return NutritionService.extract_nutritional_data(product, product.get('product_name', ''))
-            else:
-                print(f"❌ OpenFoodFacts API returned status: {data.get('status')}, product: {bool(data.get('product'))}")
+                            response.raise_for_status()
+                data = response.json()
+                
+                if data.get('status') == 1 and data.get('product'):
+                    product = data['product']
+                    return NutritionService.extract_nutritional_data(product, product.get('product_name', ''))
             
             return None
         except requests.exceptions.Timeout:

@@ -155,10 +155,6 @@ def search_food():
         
         # Return the first result as data for the frontend
         if results:
-            print(f"🔍 Found {len(results)} results for query: {query}")
-            for i, result in enumerate(results):
-                print(f"  {i+1}. {result.get('food_name', 'Unknown')} - {result.get('source', 'Unknown source')}")
-            
             # Use the first result as the main data
             main_result = results[0]
             
@@ -166,25 +162,19 @@ def search_food():
             user_serving_size = request.json.get('serving_size')
             user_serving_unit = request.json.get('serving_unit', 'g')
             
-            if user_serving_size and user_serving_unit:
-                try:
-                    print(f"🔧 Converting nutritional data: {user_serving_size} {user_serving_unit}")
-                    print(f"🔧 Original data: {main_result}")
-                    
-                    # Convert the nutritional data to match user's serving size
-                    converted_data = NutritionService.convert_nutritional_data(
-                        main_result, 
-                        float(user_serving_size), 
-                        user_serving_unit
-                    )
-                    if converted_data:
-                        main_result = converted_data
-                        print(f"✅ Converted data: {main_result}")
-                except Exception as conversion_error:
-                    print(f"❌ Error converting nutritional data: {conversion_error}")
-                    import traceback
-                    traceback.print_exc()
-                    # Continue with original data if conversion fails
+                            if user_serving_size and user_serving_unit:
+                    try:
+                        # Convert the nutritional data to match user's serving size
+                        converted_data = NutritionService.convert_nutritional_data(
+                            main_result, 
+                            float(user_serving_size), 
+                            user_serving_unit
+                        )
+                        if converted_data:
+                            main_result = converted_data
+                    except Exception as conversion_error:
+                        print(f"❌ Error converting nutritional data: {conversion_error}")
+                        # Continue with original data if conversion fails
             
             return jsonify({
                 'success': True,
