@@ -14,10 +14,21 @@ import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, Tuple
 from flask import session, request, current_app
-from google_auth_oauthlib.flow import Flow
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+try:
+    from google_auth_oauthlib.flow import Flow
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.errors import HttpError
+    OAUTH_AVAILABLE = True
+except ImportError:
+    OAUTH_AVAILABLE = False
+    # Create dummy classes for when OAuth is not available
+    class Flow:
+        pass
+    class Credentials:
+        pass
+    class HttpError:
+        pass
 from ..models import db, User
 
 
@@ -25,6 +36,9 @@ class OAuthService:
     """Modular OAuth service for Google authentication"""
     
     def __init__(self):
+        if not OAUTH_AVAILABLE:
+            raise RuntimeError("OAuth dependencies not available. Install google-auth-oauthlib to enable OAuth features.")
+        
         self.scopes = {
             'youtube': ['https://www.googleapis.com/auth/youtube.readonly'],
             'profile': ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
@@ -181,6 +195,9 @@ class YouTubeService:
     """YouTube API service using OAuth authentication"""
     
     def __init__(self, oauth_service: OAuthService):
+        if not OAUTH_AVAILABLE:
+            raise RuntimeError("OAuth dependencies not available. Install google-auth-oauthlib to enable YouTube features.")
+        
         self.oauth_service = oauth_service
         self.api_service_name = 'youtube'
         self.api_version = 'v3'
@@ -279,5 +296,10 @@ class YouTubeService:
 
 
 # Global service instances
-oauth_service = OAuthService()
-youtube_service = YouTubeService(oauth_service)
+try:
+    oauth_service = OAuthService()
+    youtube_service = YouTubeService(oauth_service)
+except RuntimeError as e:
+    print(f"⚠️ OAuth services not available: {e}")
+    oauth_service = None
+    youtube_service = None

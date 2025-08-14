@@ -10,7 +10,14 @@ Version: 1.0
 """
 
 from flask import Blueprint, request, jsonify, session, redirect, url_for
-from ..utils.oauth_utils import oauth_service, youtube_service
+
+try:
+    from ..utils.oauth_utils import oauth_service, youtube_service
+    YOUTUBE_AVAILABLE = True
+except RuntimeError:
+    YOUTUBE_AVAILABLE = False
+    oauth_service = None
+    youtube_service = None
 
 # Create blueprint
 youtube_bp = Blueprint('youtube', __name__)
@@ -18,6 +25,9 @@ youtube_bp = Blueprint('youtube', __name__)
 @youtube_bp.route('/youtube/auth')
 def youtube_auth():
     """Initiate YouTube OAuth flow"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -37,6 +47,9 @@ def youtube_auth():
 @youtube_bp.route('/youtube/oauth2callback')
 def youtube_oauth2callback():
     """Handle OAuth callback from Google"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -55,6 +68,9 @@ def youtube_oauth2callback():
 @youtube_bp.route('/youtube/playlists')
 def get_playlists():
     """Get user's YouTube playlists"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -64,6 +80,9 @@ def get_playlists():
 @youtube_bp.route('/youtube/playlist/<playlist_id>/videos')
 def get_playlist_videos(playlist_id):
     """Get videos from a specific playlist"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -73,6 +92,9 @@ def get_playlist_videos(playlist_id):
 @youtube_bp.route('/youtube/auth/status')
 def youtube_auth_status():
     """Check if user is authenticated with YouTube"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -86,6 +108,9 @@ def youtube_auth_status():
 @youtube_bp.route('/youtube/logout')
 def youtube_logout():
     """Logout from YouTube (clear credentials)"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
@@ -99,6 +124,9 @@ def youtube_logout():
 @youtube_bp.route('/youtube/refresh-token')
 def refresh_youtube_token():
     """Refresh YouTube access token"""
+    if not YOUTUBE_AVAILABLE:
+        return jsonify({'success': False, 'error': 'YouTube integration not available'}), 503
+    
     if not session.get('user_id'):
         return jsonify({'success': False, 'error': 'User not logged in'}), 401
     
