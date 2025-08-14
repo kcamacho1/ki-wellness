@@ -602,26 +602,92 @@ class ShareManager {
                 throw new Error('Tile element not found');
             }
 
-            // Hide share buttons before taking screenshot
-            const shareButtons = tileElement.querySelectorAll('.share-btn');
-            const originalDisplayStates = [];
-            shareButtons.forEach(button => {
-                originalDisplayStates.push(button.style.display);
-                button.style.display = 'none';
-            });
+            // Share buttons are now always visible, no need to hide them
 
             // Create screenshot using html2canvas
             const html2canvas = window.html2canvas || await this.loadHtml2Canvas();
             
-            const tileCanvas = await html2canvas(tileElement, {
-                backgroundColor: '#ffffff',
-                scale: 3,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-                removeContainer: true
+            // Ensure the element is fully rendered and visible
+            tileElement.style.display = 'block';
+            tileElement.style.visibility = 'visible';
+            tileElement.style.opacity = '1';
+            tileElement.style.transform = 'none';
+            
+            // Force all child elements to be visible
+            const allChildren = tileElement.querySelectorAll('*');
+            allChildren.forEach(child => {
+                if (child.style.opacity === '0') {
+                    child.style.opacity = '1';
+                }
+                if (child.style.visibility === 'hidden') {
+                    child.style.visibility = 'visible';
+                }
+                if (child.style.display === 'none') {
+                    child.style.display = 'block';
+                }
             });
+            
+            // Wait a moment for any animations to complete
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Debug: Log element properties
+            console.log('🔍 Element properties before capture:');
+            console.log('  - Display:', tileElement.style.display);
+            console.log('  - Visibility:', tileElement.style.visibility);
+            console.log('  - Opacity:', tileElement.style.opacity);
+            console.log('  - Dimensions:', tileElement.offsetWidth, 'x', tileElement.offsetHeight);
+            console.log('  - Bounding rect:', tileElement.getBoundingClientRect());
+            
+            // Try to capture with enhanced settings
+            let tileCanvas;
+            try {
+                tileCanvas = await html2canvas(tileElement, {
+                    backgroundColor: '#ffffff',
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: true, // Enable logging for debugging
+                    removeContainer: false, // Don't remove container to avoid issues
+                    foreignObjectRendering: true, // Better rendering of complex elements
+                    imageTimeout: 5000, // Increase timeout for image loading
+                    onclone: (clonedDoc) => {
+                        // Ensure cloned element has proper styles
+                        const clonedElement = clonedDoc.querySelector(`[data-tile="${tileType}"]`).closest('.bg-white');
+                        if (clonedElement) {
+                            clonedElement.style.display = 'block';
+                            clonedElement.style.visibility = 'visible';
+                            clonedElement.style.opacity = '1';
+                            clonedElement.style.transform = 'none';
+                            
+                            // Force all children to be visible in clone
+                            const allClonedChildren = clonedElement.querySelectorAll('*');
+                            allClonedChildren.forEach(child => {
+                                child.style.opacity = '1';
+                                child.style.visibility = 'visible';
+                                if (child.style.display === 'none') {
+                                    child.style.display = 'block';
+                                }
+                            });
+                        }
+                    }
+                });
+            } catch (captureError) {
+                console.warn('First capture attempt failed, trying with simpler settings:', captureError);
+                
+                // Fallback: Try with simpler settings
+                tileCanvas = await html2canvas(tileElement, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: true,
+                    removeContainer: false
+                });
+            }
 
+            // Debug: Check if canvas has content
+            console.log('🔍 Canvas dimensions:', tileCanvas.width, 'x', tileCanvas.height);
+            
             // Add logo watermark
             const finalCanvas = await this.addLogoWatermark(tileCanvas);
 
@@ -630,10 +696,7 @@ class ShareManager {
                 finalCanvas.toBlob(resolve, 'image/png', 0.9);
             });
 
-            // Restore share buttons
-            shareButtons.forEach((button, index) => {
-                button.style.display = originalDisplayStates[index] || '';
-            });
+            // Share buttons remain visible
             
             // Restore share button state
             shareButton.innerHTML = originalContent;
@@ -718,38 +781,29 @@ class ShareManager {
             });
 
             // Calculate watermark dimensions
-            const watermarkWidth = Math.min(120, finalCanvas.width * 0.25);
+            const watermarkWidth = Math.min(100, finalCanvas.width * 0.2);
             const watermarkHeight = (watermarkWidth * leafLogo.height) / leafLogo.width;
             
-            // Position watermark in bottom-right corner with some padding
-            const watermarkX = finalCanvas.width - watermarkWidth - 20;
-            const watermarkY = finalCanvas.height - watermarkHeight - 20;
+            // Position watermark at center bottom
+            const watermarkX = (finalCanvas.width - watermarkWidth) / 2;
+            const watermarkY = finalCanvas.height - watermarkHeight - 30;
             
-            // Add semi-transparent background for watermark
-            finalCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            finalCtx.fillRect(watermarkX - 15, watermarkY - 15, watermarkWidth + 30, watermarkHeight + 30);
-            
-            // Add subtle border
-            finalCtx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
-            finalCtx.lineWidth = 1;
-            finalCtx.strokeRect(watermarkX - 15, watermarkY - 15, watermarkWidth + 30, watermarkHeight + 30);
-            
-            // Draw leaf logo
+            // Draw leaf logo (no background, no border)
             finalCtx.drawImage(leafLogo, watermarkX, watermarkY, watermarkWidth, watermarkHeight);
             
             // Add "Ki Wellness" text in Quicksand font
-            finalCtx.font = 'bold 16px "Quicksand", sans-serif';
+            finalCtx.font = 'bold 18px "Quicksand", sans-serif';
             finalCtx.fillStyle = '#10b981'; // Forest green color
             finalCtx.textAlign = 'center';
             finalCtx.textBaseline = 'top';
             
             // Position text below the logo
             const textX = watermarkX + (watermarkWidth / 2);
-            const textY = watermarkY + watermarkHeight + 5;
+            const textY = watermarkY + watermarkHeight + 8;
             
-            // Add text shadow for better readability
-            finalCtx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-            finalCtx.shadowBlur = 2;
+            // Add subtle text shadow for better readability
+            finalCtx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+            finalCtx.shadowBlur = 3;
             finalCtx.shadowOffsetX = 0;
             finalCtx.shadowOffsetY = 1;
             
@@ -763,12 +817,12 @@ class ShareManager {
             console.warn('Could not load logo for watermark:', error);
             
             // Fallback: Add text-only watermark
-            finalCtx.font = 'bold 18px "Quicksand", sans-serif';
-            finalCtx.fillStyle = 'rgba(16, 185, 129, 0.7)';
-            finalCtx.textAlign = 'right';
+            finalCtx.font = 'bold 20px "Quicksand", sans-serif';
+            finalCtx.fillStyle = 'rgba(16, 185, 129, 0.8)';
+            finalCtx.textAlign = 'center';
             finalCtx.textBaseline = 'bottom';
             
-            const textX = finalCanvas.width - 20;
+            const textX = finalCanvas.width / 2;
             const textY = finalCanvas.height - 20;
             
             finalCtx.fillText('Ki Wellness', textX, textY);

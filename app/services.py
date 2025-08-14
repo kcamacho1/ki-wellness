@@ -274,6 +274,34 @@ class UserService:
 class NutritionService:
     """Service class for nutritional data and food-related operations"""
     
+    # Barcode database for products not in OpenFoodFacts
+    BARCODE_DATABASE = {
+        '0828267571602': {
+            'food_name': 'Omega 3 Trail Mix',
+            'brand': 'Generic',
+            'calories': 520,
+            'protein': 12,
+            'carbs': 45,
+            'fat': 32,
+            'fiber': 8,
+            'sugar': 25,
+            'sodium': 120,
+            'source': 'barcode_db'
+        },
+        '1126275101910': {
+            'food_name': 'Mixed Nuts and Dried Fruits',
+            'brand': 'Generic',
+            'calories': 580,
+            'protein': 15,
+            'carbs': 35,
+            'fat': 45,
+            'fiber': 10,
+            'sugar': 20,
+            'sodium': 80,
+            'source': 'barcode_db'
+        }
+    }
+    
     # Fallback nutritional database for common foods (per 100g)
     COMMON_FOODS_DATABASE = {
         'apple': {
@@ -373,6 +401,72 @@ class NutritionService:
             'fiber': 2.8,
             'sugar': 0.9,
             'sodium': 7,
+            'source': 'common_foods_db'
+        },
+        'cilantro': {
+            'food_name': 'Cilantro, raw',
+            'calories': 23,
+            'protein': 2.1,
+            'carbs': 3.7,
+            'fat': 0.5,
+            'fiber': 2.8,
+            'sugar': 0.9,
+            'sodium': 46,
+            'source': 'common_foods_db'
+        },
+        'parsley': {
+            'food_name': 'Parsley, raw',
+            'calories': 36,
+            'protein': 3.0,
+            'carbs': 6.3,
+            'fat': 0.8,
+            'fiber': 3.3,
+            'sugar': 0.9,
+            'sodium': 56,
+            'source': 'common_foods_db'
+        },
+        'basil': {
+            'food_name': 'Basil, raw',
+            'calories': 22,
+            'protein': 3.2,
+            'carbs': 2.6,
+            'fat': 0.6,
+            'fiber': 1.6,
+            'sugar': 0.3,
+            'sodium': 4,
+            'source': 'common_foods_db'
+        },
+        'mint': {
+            'food_name': 'Mint, raw',
+            'calories': 44,
+            'protein': 3.8,
+            'carbs': 8.4,
+            'fat': 0.7,
+            'fiber': 8.0,
+            'sugar': 0.2,
+            'sodium': 30,
+            'source': 'common_foods_db'
+        },
+        'omega 3 trail mix': {
+            'food_name': 'Omega 3 Trail Mix',
+            'calories': 520,
+            'protein': 12,
+            'carbs': 45,
+            'fat': 32,
+            'fiber': 8,
+            'sugar': 25,
+            'sodium': 120,
+            'source': 'common_foods_db'
+        },
+        'trail mix': {
+            'food_name': 'Trail Mix',
+            'calories': 500,
+            'protein': 10,
+            'carbs': 50,
+            'fat': 30,
+            'fiber': 6,
+            'sugar': 30,
+            'sodium': 100,
             'source': 'common_foods_db'
         },
         'egg': {
@@ -629,6 +723,21 @@ class NutritionService:
         
         return results
     
+    @staticmethod
+    def search_barcode_database(barcode: str) -> Optional[Dict[str, Any]]:
+        """Search local barcode database for products not in OpenFoodFacts"""
+        try:
+            if barcode in NutritionService.BARCODE_DATABASE:
+                data = NutritionService.BARCODE_DATABASE[barcode].copy()
+                # Add serving size and unit for consistency
+                data['serving_size'] = 100
+                data['serving_unit'] = 'g'
+                return data
+            return None
+        except Exception as e:
+            print(f"Error searching barcode database: {e}")
+            return None
+
     @staticmethod
     def search_openfoodfacts_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
         """Search Open Food Facts API v2 by barcode for specific product"""
@@ -920,6 +1029,18 @@ class NutritionService:
             'turnips': 'turnip',
             'parsnip': 'parsnips',
             'parsnips': 'parsnip',
+            
+            # Herb variations
+            'cilantro herb': 'cilantro',
+            'fresh cilantro': 'cilantro',
+            'coriander': 'cilantro',
+            'coriander leaves': 'cilantro',
+            'parsley herb': 'parsley',
+            'fresh parsley': 'parsley',
+            'basil herb': 'basil',
+            'fresh basil': 'basil',
+            'mint herb': 'mint',
+            'fresh mint': 'mint',
             'rutabaga': 'rutabagas',
             'rutabagas': 'rutabaga',
             'swiss chard': 'chard',
@@ -999,7 +1120,11 @@ class NutritionService:
             'carrot': ['carrots', 'carrot vegetable'],
             'cucumber': ['cucumbers', 'cucumber vegetable'],
             'lettuce': ['lettuce vegetable', 'lettuce leaves'],
-            'kale': ['kale vegetable', 'kale leaves']
+            'kale': ['kale vegetable', 'kale leaves'],
+            'cilantro': ['coriander', 'coriander leaves', 'fresh cilantro', 'cilantro herb'],
+            'parsley': ['fresh parsley', 'parsley herb'],
+            'basil': ['fresh basil', 'basil herb'],
+            'mint': ['fresh mint', 'mint herb']
         }
         
         # Add variations for the query

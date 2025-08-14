@@ -79,12 +79,12 @@ def search_food():
                     'source': 'user_history'
                 })
             else:
-                # Try OpenFoodFacts barcode API
+                # Try local barcode database first
                 try:
-                    print(f"🔍 Searching OpenFoodFacts barcode API for: {query}")
-                    barcode_data = NutritionService.search_openfoodfacts_by_barcode(query)
+                    print(f"🔍 Searching local barcode database for: {query}")
+                    barcode_data = NutritionService.search_barcode_database(query)
                     if barcode_data:
-                        print(f"✅ Found barcode data for: {query}")
+                        print(f"✅ Found barcode data in local database for: {query}")
                         results.append({
                             'id': None,
                             'food_name': barcode_data.get('food_name', f'Product {query}'),
@@ -95,10 +95,34 @@ def search_food():
                             'protein': barcode_data.get('protein', 0),
                             'carbs': barcode_data.get('carbs', 0),
                             'fat': barcode_data.get('fat', 0),
-                            'source': 'openfoodfacts_barcode'
+                            'fiber': barcode_data.get('fiber', 0),
+                            'sugar': barcode_data.get('sugar', 0),
+                            'sodium': barcode_data.get('sodium', 0),
+                            'source': 'barcode_db'
                         })
                     else:
-                        print(f"❌ No barcode data found for: {query}")
+                        # Try OpenFoodFacts barcode API as fallback
+                        print(f"🔍 Searching OpenFoodFacts barcode API for: {query}")
+                        barcode_data = NutritionService.search_openfoodfacts_by_barcode(query)
+                        if barcode_data:
+                            print(f"✅ Found barcode data in OpenFoodFacts for: {query}")
+                            results.append({
+                                'id': None,
+                                'food_name': barcode_data.get('food_name', f'Product {query}'),
+                                'brand': barcode_data.get('brand', ''),
+                                'serving_size': barcode_data.get('serving_size', 100),
+                                'serving_unit': barcode_data.get('serving_unit', 'g'),
+                                'calories': barcode_data.get('calories', 0),
+                                'protein': barcode_data.get('protein', 0),
+                                'carbs': barcode_data.get('carbs', 0),
+                                'fat': barcode_data.get('fat', 0),
+                                'fiber': barcode_data.get('fiber', 0),
+                                'sugar': barcode_data.get('sugar', 0),
+                                'sodium': barcode_data.get('sodium', 0),
+                                'source': 'openfoodfacts_barcode'
+                            })
+                        else:
+                            print(f"❌ No barcode data found for: {query}")
                 except Exception as barcode_error:
                     print(f"❌ Error searching barcode: {barcode_error}")
                     import traceback
@@ -334,14 +358,26 @@ def add_food_entry():
         )
         
         # Add nutritional data if available
-        if 'calories' in data:
-            entry.calories = float(data['calories'])
-        if 'protein' in data:
-            entry.protein = float(data['protein'])
-        if 'carbs' in data:
-            entry.carbs = float(data['carbs'])
-        if 'fat' in data:
-            entry.fat = float(data['fat'])
+        if 'calories' in data and data['calories'] is not None:
+            try:
+                entry.calories = float(data['calories'])
+            except (ValueError, TypeError):
+                entry.calories = None
+        if 'protein' in data and data['protein'] is not None:
+            try:
+                entry.protein = float(data['protein'])
+            except (ValueError, TypeError):
+                entry.protein = None
+        if 'carbs' in data and data['carbs'] is not None:
+            try:
+                entry.carbs = float(data['carbs'])
+            except (ValueError, TypeError):
+                entry.carbs = None
+        if 'fat' in data and data['fat'] is not None:
+            try:
+                entry.fat = float(data['fat'])
+            except (ValueError, TypeError):
+                entry.fat = None
         
         db.session.add(entry)
         db.session.commit()

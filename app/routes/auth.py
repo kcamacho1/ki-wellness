@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..models import db, User, UserProfile, UserAgreement, EmailSubscription
 from ..utils import ValidationUtils, SecurityUtils, NotificationUtils
+from ..utils.database_health import check_database_health, log_database_health
 from ..services import UserService, SystemService
 from ..decorators import login_required
 from ..config import oauth, google_oauth, OAUTH_AVAILABLE
@@ -26,40 +27,66 @@ auth_bp = Blueprint('auth', __name__)
 def login():
     """Handle user login"""
     if request.method == 'POST':
-        data = request.get_json()
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        remember_me = data.get('remember_me', False)
-        
-        # Validate input
-        if not username or not password:
-            return jsonify({'success': False, 'error': 'Username and password are required'}), 400
-        
-        # Find user by username or email
-        user = User.query.filter(
-            (User.username == username) | (User.email == username)
-        ).first()
-        
-        if user and user.check_password(password):
-            if not user.is_active:
-                return jsonify({'success': False, 'error': 'Account is suspended. Please contact support.'}), 403
+        try:
+            # Check database health before processing login
+            db_health = check_database_health()
+            if db_health.get('status') != 'healthy':
+                print(f"⚠️  Database health check failed during login: {db_health.get('last_error')}")
+                log_database_health()
             
-            # Set session
-            session['user_id'] = user.id
-            session['last_activity'] = datetime.utcnow().isoformat()
-            session.permanent = remember_me
+            data = request.get_json()
+            username = data.get('username', '').strip()
+            password = data.get('password', '')
+            remember_me = data.get('remember_me', False)
             
-            # Update last login
-            user.updated_at = datetime.utcnow()
-            db.session.commit()
+            # Validate input
+            if not username or not password:
+                return jsonify({'success': False, 'error': 'Username and password are required'}), 400
             
-            return jsonify({
-                'success': True,
-                'redirect_url': url_for('dashboard.dashboard'),
-                'message': 'Login successful!'
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+            # Find user by username or email
+            try:
+                user = User.query.filter(
+                    (User.username == username) | (User.email == username)
+                ).first()
+            except Exception as db_error:
+                print(f"❌ Database error during login: {db_error}")
+                # Log database health after error
+                log_database_health()
+                return jsonify({'success': False, 'error': 'Database connection error. Please try again.'}), 500
+            
+            if user and user.check_password(password):
+                if not user.is_active:
+                    return jsonify({'success': False, 'error': 'Account is suspended. Please contact support.'}), 403
+                
+                # Set session
+                session['user_id'] = user.id
+                session['last_activity'] = datetime.utcnow().isoformat()
+                session.permanent = remember_me
+                
+                # Update last login
+                try:
+                    user.updated_at = datetime.utcnow()
+                    db.session.commit()
+                except Exception as commit_error:
+                    print(f"❌ Database commit error during login: {commit_error}")
+                    # Log database health after commit error
+                    log_database_health()
+                    # Don't fail login if commit fails, just log it
+                    db.session.rollback()
+                
+                return jsonify({
+                    'success': True,
+                    'redirect_url': url_for('dashboard.dashboard'),
+                    'message': 'Login successful!'
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+                
+        except Exception as e:
+            print(f"❌ Login error: {e}")
+            # Log database health after unexpected error
+            log_database_health()
+            return jsonify({'success': False, 'error': 'An unexpected error occurred. Please try again.'}), 500
     
     return render_template('login.html')
 

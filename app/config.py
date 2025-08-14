@@ -15,7 +15,23 @@ from flask import Flask
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DevelopmentConfig, ProductionConfig
+try:
+    from config import DevelopmentConfig, ProductionConfig
+except ImportError:
+    # Fallback configuration classes if root config.py is not available
+    class DevelopmentConfig:
+        DEBUG = True
+        FLASK_ENV = 'development'
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///ki_wellness.db'
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        SECRET_KEY = 'dev-secret-key-change-in-production'
+    
+    class ProductionConfig:
+        DEBUG = False
+        FLASK_ENV = 'production'
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///ki_wellness.db')
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
+        SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 from .models import db, User, UserProfile, SystemSettings, APICosts
 from typing import Optional, Union, Callable, TYPE_CHECKING
 
@@ -103,6 +119,16 @@ def create_app():
         db_path = os.path.join(project_root, 'ki_wellness.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
         print(f"🔧 Fallback database path: {db_path}")
+    
+    # Handle PostgreSQL URL format for production
+    database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+    if database_url and database_url.startswith('postgres://'):
+        # Convert postgres:// to postgresql:// for newer SQLAlchemy versions
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        print(f"🔧 Updated PostgreSQL URL format: {database_url}")
+    
+    print(f"🗄️  Using database: {app.config.get('SQLALCHEMY_DATABASE_URI', 'NOT_SET')}")
     
     # Initialize extensions (db will be initialized in main.py)
     
