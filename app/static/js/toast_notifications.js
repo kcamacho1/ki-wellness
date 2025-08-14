@@ -26,6 +26,20 @@ class ToastNotifications {
      * Initialize the toast container
      */
     init() {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.createContainer();
+            });
+        } else {
+            this.createContainer();
+        }
+    }
+
+    /**
+     * Create the toast container
+     */
+    createContainer() {
         // Create container if it doesn't exist
         if (!document.getElementById('toast-container')) {
             this.container = document.createElement('div');
@@ -51,6 +65,11 @@ class ToastNotifications {
      * @param {number} duration - Duration in milliseconds (default: 5000)
      */
     show(message, type = 'info', duration = 5000) {
+        // Ensure container exists
+        if (!this.container) {
+            this.createContainer();
+        }
+        
         const notification = this.createNotification(message, type);
         
         // Add to container

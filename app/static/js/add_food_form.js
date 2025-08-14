@@ -461,7 +461,10 @@ class AddFoodForm {
                 if (data.spelling_suggestions && data.spelling_suggestions.length > 0) {
                     this.showSpellingSuggestions(data.spelling_suggestions, foodData);
                 } else {
-                    this.showError('No nutritional data found. You can still add the food without nutrition info.');
+                    // Show a more helpful error message with spelling suggestions
+                    const errorMessage = data.error || 'No nutritional data found. You can still add the food without nutrition info.';
+                    this.showError(errorMessage);
+                    
                     // Still proceed to step 4 with basic data
                     this.currentFoodData = foodData;
                     this.currentNutritionData = null;

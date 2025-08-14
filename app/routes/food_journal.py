@@ -14,7 +14,7 @@ import io
 from flask import Blueprint, render_template, request, jsonify, send_file, make_response
 from datetime import datetime
 from ..models import db, FoodJournal
-from ..services import UserService, NutritionService
+from ..services import UserService, NutritionService, FUZZY_AVAILABLE
 from ..decorators import login_required
 
 # Create blueprint
@@ -44,7 +44,11 @@ def search_food():
         results = []
         
         # Check if this is a barcode search (numeric or alphanumeric with specific patterns)
-        is_barcode = query.isdigit() or (len(query) >= 8 and query.replace('-', '').replace(' ', '').isalnum())
+        # Only treat as barcode if it's all digits or has a specific barcode pattern
+        is_barcode = (query.isdigit() or 
+                     (len(query) >= 8 and query.replace('-', '').replace(' ', '').isdigit()) or
+                     (len(query) >= 8 and query.replace('-', '').replace(' ', '').isalnum() and 
+                      any(char.isdigit() for char in query)))
         
         if is_barcode:
             # Barcode search - try FoodJournal history first, then OpenFoodFacts API

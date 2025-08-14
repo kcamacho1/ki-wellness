@@ -5,52 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ki Wellness</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-production.css') }}">
     <script>
         // Dynamically load reCAPTCHA v2 checkbox based on environment
-        console.log('🔍 Loading reCAPTCHA status...');
-        
+        {% if config.RECAPTCHA_ENABLED %}
         fetch('/api/recaptcha-status')
             .then(response => response.json())
             .then(data => {
                 if (data.enabled && '{{ config.RECAPTCHA_SITE_KEY }}' && '{{ config.RECAPTCHA_SITE_KEY }}' !== 'None') {
-                    console.log('✅ Loading production reCAPTCHA v2 checkbox...');
-                    
                     // Load production reCAPTCHA v2 checkbox
                     const recaptchaScript = document.createElement('script');
                     recaptchaScript.src = 'https://www.google.com/recaptcha/api.js';
                     recaptchaScript.async = true;
                     recaptchaScript.defer = true;
-                    
-                    recaptchaScript.onload = function() {
-                        console.log('✅ reCAPTCHA script loaded successfully');
-                    };
-                    
-                    recaptchaScript.onerror = function() {
-                        console.error('❌ Failed to load reCAPTCHA script');
-                    };
-                    
                     document.head.appendChild(recaptchaScript);
                 } else {
-                    console.log('🔧 Development mode: reCAPTCHA disabled');
-                    
                     // Load development bypass
-                    console.log('🔧 Loading development bypass module...');
                     const bypassScript = document.createElement('script');
                     bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
                     document.head.appendChild(bypassScript);
                 }
             })
             .catch(error => {
-                console.error('❌ Error loading reCAPTCHA status:', error);
-                console.log('🔧 Development mode: reCAPTCHA disabled (fallback)');
-                
                 // Load development bypass on error
-                console.log('🔧 Loading development bypass module (error fallback)...');
                 const bypassScript = document.createElement('script');
                 bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
                 document.head.appendChild(bypassScript);
             });
+        {% else %}
+        // Load development bypass
+        const bypassScript = document.createElement('script');
+        bypassScript.src = '{{ url_for("static", filename="js/dev_bypass.js") }}';
+        document.head.appendChild(bypassScript);
+        {% endif %}
     </script>
     <!-- Global Ki Wellness Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
@@ -223,69 +210,44 @@
         // Form validation and submission function
         function validateForm(e) {
             e.preventDefault(); // Prevent default form submission
-            console.log('🔍 Form validation started...');
             
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember_me').checked;
             
-            console.log('🔍 Username length:', username.length);
-            console.log('🔍 Password length:', password.length);
-            
             // Basic validation
             if (!username || username.length < 3) {
-                console.error('❌ Username validation failed');
                 showError('Username must be at least 3 characters long.', 'Validation Error');
                 return false;
             }
             
             if (!password || password.length < 8) {
-                console.error('❌ Password validation failed');
                 showError('Password must be at least 8 characters long.', 'Validation Error');
                 return false;
             }
             
-            console.log('✅ Basic validation passed');
-            
             // reCAPTCHA validation (only if enabled)
             {% if config.RECAPTCHA_ENABLED %}
-            console.log('🔍 reCAPTCHA is enabled, checking...');
-            
             if (typeof grecaptcha !== 'undefined') {
-                console.log('reCAPTCHA: Checking checkbox verification...');
-                
                 // Get the reCAPTCHA response
                 const recaptchaResponse = grecaptcha.getResponse();
                 
                 if (!recaptchaResponse) {
-                    console.error('reCAPTCHA: Checkbox not completed');
                     showError('Please complete the security verification checkbox.', 'Security Error');
                     return false;
                 }
-                
-                console.log('✅ reCAPTCHA: Checkbox completed, proceeding with form submission');
             } else {
-                console.warn('reCAPTCHA: Not available - checking if we should bypass...');
-                
                 // Check if we're in development mode
                 const isLocalhost = window.location.hostname === 'localhost' || 
                                   window.location.hostname === '127.0.0.1' || 
                                   window.location.hostname === '0.0.0.0';
                 
-                if (isLocalhost) {
-                    console.log('🔧 Development mode: Bypassing reCAPTCHA verification');
-                    // Allow form submission in development
-                } else {
-                    console.error('reCAPTCHA: Not available in production');
+                if (!isLocalhost) {
                     showError('Security verification system is not available. Please refresh the page and try again.', 'Security Error');
                     return false;
                 }
             }
-            {% else %}
-            console.log('🔧 reCAPTCHA disabled in configuration');
             {% endif %}
-            
-            console.log('✅ All validations passed, submitting form via AJAX');
             
             // Disable submit button to prevent double submission
             const submitBtn = document.querySelector('button[type="submit"]');
@@ -300,7 +262,6 @@
             };
             
             // Submit form via AJAX
-            console.log('🔍 Sending fetch request to /login with data:', formData);
             fetch('/login', {
                 method: 'POST',
                 headers: {
@@ -309,24 +270,18 @@
                 body: JSON.stringify(formData)
             })
             .then(response => {
-                console.log('🔍 Response status:', response.status);
-                console.log('🔍 Response headers:', response.headers);
                 return response.text().then(text => {
-                    console.log('🔍 Response text:', text);
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        console.error('🔍 Failed to parse JSON:', e);
                         throw new Error('Invalid JSON response');
                     }
                 });
             })
             .then(data => {
                 if (data.success) {
-                    console.log('✅ Login successful, redirecting...');
                     window.location.href = data.redirect_url;
                 } else {
-                    console.error('❌ Login failed:', data.error);
                     showError(data.error, 'Login Failed');
                     
                     // Re-enable submit button
@@ -335,7 +290,6 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Network error:', error);
                 showError('Network error. Please try again.', 'Connection Error');
                 
                 // Re-enable submit button

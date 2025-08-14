@@ -1,0 +1,136 @@
+/* Tailwind CSS Production Build for Ki Wellness */
+/* This file contains the compiled Tailwind CSS for production use */
+
+/* Tailwind Base */
+@tailwind base;
+
+/* Tailwind Components */
+@tailwind components;
+
+/* Tailwind Utilities */
+@tailwind utilities;
+
+/* Custom Ki Wellness Styles */
+@layer base {
+    :root {
+        --forest-green: #2d5016;
+        --sage-green: #9caf88;
+        --mint-green: #d4e9c5;
+        --soft-green: #f0f7ed;
+        --warm-beige: #f5f5dc;
+        --cream: #fafaf0;
+        --warm-gray: #8b7355;
+        --earth-brown: #8b4513;
+        --sky-blue: #87ceeb;
+        --ocean-blue: #4682b4;
+        --sunset-orange: #ff7f50;
+        --coral-pink: #ff6b6b;
+        --lavender-purple: #e6e6fa;
+        --rose-pink: #ffe4e1;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-forest-green text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200;
+    }
+    
+    .btn-secondary {
+        @apply bg-sage-green text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200;
+    }
+    
+    .btn-outline {
+        @apply border border-forest-green text-forest-green px-4 py-2 rounded-lg hover:bg-forest-green hover:text-white transition-colors duration-200;
+    }
+    
+    .input-field {
+        @apply appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-mint-green focus:border-transparent transition-colors duration-200;
+    }
+    
+    .card {
+        @apply bg-white rounded-xl shadow-xl border border-soft-green;
+    }
+    
+    .hero-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+}
+
+/* Custom color utilities */
+.text-forest-green { color: var(--forest-green); }
+.text-sage-green { color: var(--sage-green); }
+.text-mint-green { color: var(--mint-green); }
+.text-soft-green { color: var(--soft-green); }
+.text-warm-beige { color: var(--warm-beige); }
+.text-cream { color: var(--cream); }
+.text-warm-gray { color: var(--warm-gray); }
+.text-earth-brown { color: var(--earth-brown); }
+.text-sky-blue { color: var(--sky-blue); }
+.text-ocean-blue { color: var(--ocean-blue); }
+.text-sunset-orange { color: var(--sunset-orange); }
+.text-coral-pink { color: var(--coral-pink); }
+.text-lavender-purple { color: var(--lavender-purple); }
+.text-rose-pink { color: var(--rose-pink); }
+
+.bg-forest-green { background-color: var(--forest-green); }
+.bg-sage-green { background-color: var(--sage-green); }
+.bg-mint-green { background-color: var(--mint-green); }
+.bg-soft-green { background-color: var(--soft-green); }
+.bg-warm-beige { background-color: var(--warm-beige); }
+.bg-cream { background-color: var(--cream); }
+.bg-warm-gray { background-color: var(--warm-gray); }
+.bg-earth-brown { background-color: var(--earth-brown); }
+.bg-sky-blue { background-color: var(--sky-blue); }
+.bg-ocean-blue { background-color: var(--ocean-blue); }
+.bg-sunset-orange { background-color: var(--sunset-orange); }
+.bg-coral-pink { background-color: var(--coral-pink); }
+.bg-lavender-purple { background-color: var(--lavender-purple); }
+.bg-rose-pink { background-color: var(--rose-pink); }
+
+.border-forest-green { border-color: var(--forest-green); }
+.border-sage-green { border-color: var(--sage-green); }
+.border-mint-green { border-color: var(--mint-green); }
+.border-soft-green { border-color: var(--soft-green); }
+.border-warm-beige { border-color: var(--warm-beige); }
+.border-cream { border-color: var(--cream); }
+.border-warm-gray { border-color: var(--warm-gray); }
+.border-earth-brown { border-color: var(--earth-brown); }
+.border-sky-blue { border-color: var(--sky-blue); }
+.border-ocean-blue { border-color: var(--ocean-blue); }
+.border-sunset-orange { border-color: var(--sunset-orange); }
+.border-coral-pink { border-color: var(--coral-pink); }
+.border-lavender-purple { border-color: var(--lavender-purple); }
+.border-rose-pink { border-color: var(--rose-pink); }
+
+.focus\:ring-mint-green:focus { --tw-ring-color: var(--mint-green); }
+.focus\:border-mint-green:focus { border-color: var(--mint-green); }
+
+.hover\:bg-forest-green:hover { background-color: var(--forest-green); }
+.hover\:bg-sage-green:hover { background-color: var(--sage-green); }
+.hover\:bg-mint-green:hover { background-color: var(--mint-green); }
+.hover\:bg-soft-green:hover { background-color: var(--soft-green); }
+.hover\:bg-warm-beige:hover { background-color: var(--warm-beige); }
+.hover\:bg-cream:hover { background-color: var(--cream); }
+.hover\:bg-warm-gray:hover { background-color: var(--warm-gray); }
+.hover\:bg-earth-brown:hover { background-color: var(--earth-brown); }
+.hover\:bg-sky-blue:hover { background-color: var(--sky-blue); }
+.hover\:bg-ocean-blue:hover { background-color: var(--ocean-blue); }
+.hover\:bg-sunset-orange:hover { background-color: var(--sunset-orange); }
+.hover\:bg-coral-pink:hover { background-color: var(--coral-pink); }
+.hover\:bg-lavender-purple:hover { background-color: var(--lavender-purple); }
+.hover\:bg-rose-pink:hover { background-color: var(--rose-pink); }
+
+.hover\:text-forest-green:hover { color: var(--forest-green); }
+.hover\:text-sage-green:hover { color: var(--sage-green); }
+.hover\:text-mint-green:hover { color: var(--mint-green); }
+.hover\:text-soft-green:hover { color: var(--soft-green); }
+.hover\:text-warm-beige:hover { color: var(--warm-beige); }
+.hover\:text-cream:hover { color: var(--cream); }
+.hover\:text-warm-gray:hover { color: var(--warm-gray); }
+.hover\:text-earth-brown:hover { color: var(--earth-brown); }
+.hover\:text-sky-blue:hover { color: var(--sky-blue); }
+.hover\:text-ocean-blue:hover { color: var(--ocean-blue); }
+.hover\:text-sunset-orange:hover { color: var(--sunset-orange); }
+.hover\:text-coral-pink:hover { color: var(--coral-pink); }
+.hover\:text-lavender-purple:hover { color: var(--lavender-purple); }
+.hover\:text-rose-pink:hover { color: var(--rose-pink); }

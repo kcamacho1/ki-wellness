@@ -495,6 +495,50 @@ class NutritionService:
         'sugar': 0,
         'sodium': 800,
         'source': 'common_foods_db'
+    },
+    'sauerkraut': {
+        'food_name': 'Sauerkraut, canned',
+        'calories': 19,
+        'protein': 0.9,
+        'carbs': 4.3,
+        'fat': 0.1,
+        'fiber': 2.9,
+        'sugar': 1.8,
+        'sodium': 661,
+        'source': 'common_foods_db'
+    },
+    'fermented cabbage': {
+        'food_name': 'Sauerkraut, fermented cabbage',
+        'calories': 19,
+        'protein': 0.9,
+        'carbs': 4.3,
+        'fat': 0.1,
+        'fiber': 2.9,
+        'sugar': 1.8,
+        'sodium': 661,
+        'source': 'common_foods_db'
+    },
+    'sour kraut': {
+        'food_name': 'Sauerkraut, sour kraut',
+        'calories': 19,
+        'protein': 0.9,
+        'carbs': 4.3,
+        'fat': 0.1,
+        'fiber': 2.9,
+        'sugar': 1.8,
+        'sodium': 661,
+        'source': 'common_foods_db'
+    },
+    'sauer kraut': {
+        'food_name': 'Sauerkraut, sauer kraut',
+        'calories': 19,
+        'protein': 0.9,
+        'carbs': 4.3,
+        'fat': 0.1,
+        'fiber': 2.9,
+        'sugar': 1.8,
+        'sodium': 661,
+        'source': 'common_foods_db'
     }
     }
     
@@ -786,7 +830,9 @@ class NutritionService:
             'sauer kraut': 'sauerkraut',
             'sourcrout': 'sauerkraut',
             'sauerkrout': 'sauerkraut',
-            'sourkraut': 'sauerkraut',
+            'saurkraut': 'sauerkraut',  # Missing 'e'
+            'saur kraut': 'sauerkraut',  # Missing 'e'
+            'saurkraut': 'sauerkraut',  # Missing 'e'
             
             # Common food misspellings
             'brocolli': 'broccoli',
@@ -937,7 +983,7 @@ class NutritionService:
         
         # Add common variations
         variations = {
-            'sauerkraut': ['sourkraut', 'sour kraut', 'fermented cabbage'],
+            'sauerkraut': ['sourkraut', 'sour kraut', 'saurkraut', 'saur kraut', 'fermented cabbage'],
             'broccoli': ['brocolli', 'brocolli'],
             'cauliflower': ['cauliflour', 'cauliflour'],
             'zucchini': ['zuchini', 'courgette'],
