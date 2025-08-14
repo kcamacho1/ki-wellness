@@ -1,4 +1,4 @@
-# Ki Wellness - Your Personal AI Health Coach
+# Ki Wellness - Self Health Simplified
 
 A simple, safe, and affordable wellness application built by someone who understands your journey. Get personalized guidance from AI and human coaches to track your health, nutrition, and wellness goals.
 

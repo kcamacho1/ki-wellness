@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choose Your Coaching Path - Ki Wellness LLC</title>
+    <title>Choose Your Coaching Path - Ki Wellness LLC | Self Health Simplified</title>
     <meta name="description" content="Choose between personalized human coaching with Kristina or AI-powered self-health analysis. Both paths lead to wellness transformation.">
     
     <!-- Favicon -->
@@ -27,35 +27,8 @@
         }
     </script>
     
-    <!-- Custom CSS -->
-    <style>
-        .coaching-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .coaching-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #166534 0%, #059669 50%, #0d9488 100%);
-        }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        .feature-icon {
-            transition: transform 0.3s ease;
-        }
-        .coaching-card:hover .feature-icon {
-            transform: scale(1.1);
-        }
-    </style>
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -142,7 +115,9 @@
 
                     <!-- CTA Button -->
                     <div class="text-center">
-                        <a href="/human-coaching" 
+                        <a href="https://calendly.com/ki-wellness/human-health-coach" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
                            class="inline-block bg-mint-green text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-sage-green transition-all duration-300 transform hover:scale-105 shadow-lg">
                             Choose Human Coaching
                         </a>
@@ -209,7 +184,7 @@
 
                     <!-- CTA Button -->
                     <div class="text-center">
-                        <a href="/ai-coaching" 
+                        <a href="/login" 
                            class="inline-block bg-calm-blue text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
                             Choose AI Coaching
                         </a>
@@ -318,11 +293,13 @@
                 Choose your preferred coaching path and take the first step toward a healthier, more balanced life.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/human-coaching" 
+                <a href="https://calendly.com/ki-wellness/human-health-coach" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
                    class="bg-mint-green text-forest-green px-8 py-4 rounded-lg text-xl font-bold hover:bg-sage-green transition-all duration-300 transform hover:scale-105 shadow-lg">
                     Start with Human Coaching
                 </a>
-                <a href="/ai-coaching" 
+                <a href="/login" 
                    class="bg-calm-blue text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
                     Start with AI Coaching
                 </a>

@@ -10,12 +10,12 @@
                     <h3 class="text-xl font-semibold">Ki Wellness LLC</h3>
                 </div>
                 <p class="text-blue-100 mb-4 max-w-md">
-                    Empowering individuals to achieve holistic wellness through mind, body, and spirit balance.
+                    Self Health Simplified - Empowering individuals to achieve holistic wellness through mind, body, and spirit balance.
                 </p>
                 <div class="flex space-x-4">
                     <a href="/" class="text-blue-100 hover:text-white transition-colors duration-200">Home</a>
-                    <a href="/coaching" class="text-blue-100 hover:text-white transition-colors duration-200">Coaching</a>
-                    <a href="/contact" class="text-blue-100 hover:text-white transition-colors duration-200">Contact</a>
+                    <a href="{{ url_for('static.coaching') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Coaching</a>
+                    <a href="{{ url_for('static.contact') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Contact</a>
                     {% if not session.get('user_id') %}
                         <a href="{{ url_for('auth.login') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Login</a>
                         <a href="{{ url_for('auth.register') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Register</a>
@@ -32,7 +32,7 @@
                         <li><a href="/profile" class="text-blue-100 hover:text-white transition-colors duration-200">Profile</a></li>
                                             <li><a href="/coaching" class="text-blue-100 hover:text-white transition-colors duration-200">Coaching</a></li>
                     <li><a href="/reviews" class="text-blue-100 hover:text-white transition-colors duration-200">Reviews</a></li>
-                    <li><a href="/contact" class="text-blue-100 hover:text-white transition-colors duration-200">Contact</a></li>
+                    <li><a href="{{ url_for('static.contact') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Contact</a></li>
                     </ul>
                 </div>
             
@@ -40,9 +40,9 @@
             <div>
                 <h4 class="text-lg font-semibold mb-4">Legal</h4>
                 <ul class="space-y-2">
-                    <li><a href="/terms" class="text-blue-100 hover:text-white transition-colors duration-200">Terms of Service</a></li>
-                    <li><a href="/privacy" class="text-blue-100 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
-                    <li><a href="/disclaimer" class="text-blue-100 hover:text-white transition-colors duration-200">Disclaimer</a></li>
+                    <li><a href="{{ url_for('static.terms') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Terms of Service</a></li>
+                    <li><a href="{{ url_for('static.privacy') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('static.disclaimer') }}" class="text-blue-100 hover:text-white transition-colors duration-200">Disclaimer</a></li>
                 </ul>
             </div>
         </div>
@@ -66,9 +66,9 @@
                     © 2024 Ki Wellness LLC. All rights reserved.
                 </p>
                 <div class="flex space-x-6 text-sm">
-                    <a href="/terms" class="text-blue-200 hover:text-white transition-colors duration-200">Terms</a>
-                    <a href="/privacy" class="text-blue-200 hover:text-white transition-colors duration-200">Privacy</a>
-                    <a href="/disclaimer" class="text-blue-200 hover:text-white transition-colors duration-200">Disclaimer</a>
+                    <a href="{{ url_for('static.terms') }}" class="text-blue-200 hover:text-white transition-colors duration-200">Terms</a>
+                    <a href="{{ url_for('static.privacy') }}" class="text-blue-200 hover:text-white transition-colors duration-200">Privacy</a>
+                    <a href="{{ url_for('static.disclaimer') }}" class="text-blue-200 hover:text-white transition-colors duration-200">Disclaimer</a>
                 </div>
             </div>
         </div>

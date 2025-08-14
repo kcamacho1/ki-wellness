@@ -13,7 +13,7 @@ import csv
 import io
 from flask import Blueprint, render_template, request, jsonify, send_file, make_response
 from datetime import datetime
-from ..models import db, FoodCache, FoodJournal
+from ..models import db, FoodJournal
 from ..services import UserService, NutritionService
 from ..decorators import login_required
 
@@ -21,11 +21,7 @@ from ..decorators import login_required
 food_journal_bp = Blueprint('food_journal', __name__)
 
 
-@food_journal_bp.route('/food-journal')
-@login_required
-def food_journal():
-    """Food journal page"""
-    return render_template('food_journal.html')
+# Food journal route removed - functionality moved to dashboard
 
 
 @food_journal_bp.route('/food-journal/search', methods=['POST'])
@@ -34,35 +30,181 @@ def search_food():
     """Search for food items"""
     try:
         data = request.get_json()
+        
+        # Handle different search types: query, food_name, or barcode
         query = data.get('query', '').strip()
+        if not query:
+            query = data.get('food_name', '').strip()
+        if not query:
+            query = data.get('barcode', '').strip()
         
         if not query:
-            return jsonify({'success': False, 'error': 'Search query is required'}), 400
-        
-        # Search in cache first
-        cached_results = FoodCache.query.filter(
-            FoodCache.name.ilike(f'%{query}%')
-        ).limit(10).all()
+            return jsonify({'success': False, 'error': 'Search query or barcode is required'}), 400
         
         results = []
-        for item in cached_results:
-            results.append({
-                'id': item.id,
-                'name': item.name,
-                'brand': item.brand,
-                'serving_size': item.serving_size,
-                'serving_unit': item.serving_unit,
-                'calories': item.calories,
-                'protein': item.protein,
-                'carbs': item.carbs,
-                'fat': item.fat,
-                'source': item.source
-            })
         
-        return jsonify({
-            'success': True,
-            'results': results
-        })
+        # Check if this is a barcode search (numeric or alphanumeric with specific patterns)
+        is_barcode = query.isdigit() or (len(query) >= 8 and query.replace('-', '').replace(' ', '').isalnum())
+        
+        if is_barcode:
+            # Barcode search - try FoodJournal history first, then OpenFoodFacts API
+            print(f"🔍 Searching for barcode: {query}")
+            
+            # Check if this barcode was used before in FoodJournal
+            current_user = UserService.get_current_user()
+            if not current_user:
+                return jsonify({'error': 'User not authenticated'}), 401
+                
+            previous_entry = FoodJournal.query.filter(
+                FoodJournal.barcode == query,
+                FoodJournal.user_id == current_user.id
+            ).order_by(FoodJournal.consumed_at.desc()).first()
+            
+            if previous_entry:
+                print(f"✅ Found barcode in user's food journal history: {query}")
+                results.append({
+                    'id': previous_entry.id,
+                    'food_name': previous_entry.food_name,
+                    'brand': previous_entry.brand or '',
+                    'serving_size': previous_entry.serving_size,
+                    'serving_unit': previous_entry.serving_unit,
+                    'calories': previous_entry.calories,
+                    'protein': previous_entry.protein,
+                    'carbs': previous_entry.carbs,
+                    'fat': previous_entry.fat,
+                    'source': 'user_history'
+                })
+            else:
+                # Try OpenFoodFacts barcode API
+                try:
+                    print(f"🔍 Searching OpenFoodFacts barcode API for: {query}")
+                    barcode_data = NutritionService.search_openfoodfacts_by_barcode(query)
+                    if barcode_data:
+                        print(f"✅ Found barcode data for: {query}")
+                        results.append({
+                            'id': None,
+                            'food_name': barcode_data.get('food_name', f'Product {query}'),
+                            'brand': barcode_data.get('brand', ''),
+                            'serving_size': barcode_data.get('serving_size', 100),
+                            'serving_unit': barcode_data.get('serving_unit', 'g'),
+                            'calories': barcode_data.get('calories', 0),
+                            'protein': barcode_data.get('protein', 0),
+                            'carbs': barcode_data.get('carbs', 0),
+                            'fat': barcode_data.get('fat', 0),
+                            'source': 'openfoodfacts_barcode'
+                        })
+                    else:
+                        print(f"❌ No barcode data found for: {query}")
+                except Exception as barcode_error:
+                    print(f"❌ Error searching barcode: {barcode_error}")
+                    import traceback
+                    traceback.print_exc()
+        
+        # For non-barcode searches, try OpenFoodFacts API and common foods
+        if not is_barcode and len(results) < 5:
+            try:
+                print(f"🔍 Searching OpenFoodFacts API for: {query}")
+                nutrition_data = NutritionService.search_openfoodfacts_api(query)
+                if nutrition_data:
+                    print(f"✅ Found OpenFoodFacts data for: {query}")
+                    # Add to results
+                    results.append({
+                        'id': None,  # No cache ID for API results
+                        'food_name': nutrition_data.get('food_name', query),
+                        'brand': nutrition_data.get('brand', ''),
+                        'serving_size': nutrition_data.get('serving_size', 100),
+                        'serving_unit': nutrition_data.get('serving_unit', 'g'),
+                        'calories': nutrition_data.get('calories', 0),
+                        'protein': nutrition_data.get('protein', 0),
+                        'carbs': nutrition_data.get('carbs', 0),
+                        'fat': nutrition_data.get('fat', 0),
+                        'source': 'openfoodfacts_api'
+                    })
+                else:
+                    print(f"❌ No OpenFoodFacts data found for: {query}")
+                    
+            except Exception as api_error:
+                print(f"❌ Error searching OpenFoodFacts API: {api_error}")
+                import traceback
+                traceback.print_exc()
+            
+            # Always try common foods database as fallback
+            try:
+                print(f"🔍 Searching common foods database for: {query}")
+                common_food = NutritionService.search_common_foods_database(query)
+                if common_food and len(results) < 5:
+                    print(f"✅ Found common foods data for: {query}")
+                    results.append({
+                        'id': None,
+                        'food_name': common_food.get('food_name', query),
+                        'brand': '',
+                        'serving_size': common_food.get('serving_size', 100),
+                        'serving_unit': common_food.get('serving_unit', 'g'),
+                        'calories': common_food.get('calories', 0),
+                        'protein': common_food.get('protein', 0),
+                        'carbs': common_food.get('carbs', 0),
+                        'fat': common_food.get('fat', 0),
+                        'source': 'common_foods_db'
+                    })
+                else:
+                    print(f"❌ No common foods data found for: {query}")
+            except Exception as common_error:
+                print(f"❌ Error searching common foods database: {common_error}")
+                import traceback
+                traceback.print_exc()
+        
+        # Return the first result as data for the frontend
+        if results:
+            print(f"🔍 Found {len(results)} results for query: {query}")
+            for i, result in enumerate(results):
+                print(f"  {i+1}. {result.get('food_name', 'Unknown')} - {result.get('source', 'Unknown source')}")
+            
+            # Use the first result as the main data
+            main_result = results[0]
+            
+            # Convert nutritional data based on user's serving size if provided
+            user_serving_size = request.json.get('serving_size')
+            user_serving_unit = request.json.get('serving_unit', 'g')
+            
+            if user_serving_size and user_serving_unit:
+                try:
+                    print(f"🔧 Converting nutritional data: {user_serving_size} {user_serving_unit}")
+                    print(f"🔧 Original data: {main_result}")
+                    
+                    # Convert the nutritional data to match user's serving size
+                    converted_data = NutritionService.convert_nutritional_data(
+                        main_result, 
+                        float(user_serving_size), 
+                        user_serving_unit
+                    )
+                    if converted_data:
+                        main_result = converted_data
+                        print(f"✅ Converted data: {main_result}")
+                except Exception as conversion_error:
+                    print(f"❌ Error converting nutritional data: {conversion_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Continue with original data if conversion fails
+            
+            return jsonify({
+                'success': True,
+                'data': main_result,
+                'results': results  # Keep all results for future use
+            })
+        else:
+            # Provide helpful message for barcode searches
+            if is_barcode:
+                return jsonify({
+                    'success': False,
+                    'error': f'No nutritional data found for barcode: {query}. This product may not be in our database yet. You can add it manually below.',
+                    'barcode': query,
+                    'suggest_manual': True
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'No food data found'
+                })
         
     except Exception as e:
         print(f"❌ Error searching food: {e}")
@@ -88,14 +230,26 @@ def add_food_entry():
         if not food_name or not serving_size:
             return jsonify({'success': False, 'error': 'Food name and serving size are required'}), 400
         
+        # Parse consumed_at date from request or use current time
+        consumed_at = data.get('consumed_at')
+        if consumed_at:
+            try:
+                consumed_at = datetime.fromisoformat(consumed_at.replace('Z', '+00:00'))
+            except ValueError:
+                consumed_at = datetime.utcnow()
+        else:
+            consumed_at = datetime.utcnow()
+        
         # Create food journal entry
         entry = FoodJournal(
             user_id=current_user.id,
             food_name=food_name,
+            brand=data.get('brand', ''),
             serving_size=float(serving_size),
             serving_unit=serving_unit,
-            meal_type=data.get('meal_type', 'snack'),
-            date=datetime.utcnow().date(),
+            time_of_day=data.get('time_of_day', 'snack'),
+            consumed_at=consumed_at,
+            mood=data.get('mood'),
             notes=data.get('notes', '')
         )
         
@@ -139,25 +293,27 @@ def get_food_entries():
         query = FoodJournal.query.filter_by(user_id=current_user.id)
         
         if start_date:
-            query = query.filter(FoodJournal.date >= start_date)
+            query = query.filter(FoodJournal.consumed_at >= start_date)
         if end_date:
-            query = query.filter(FoodJournal.date <= end_date)
+            query = query.filter(FoodJournal.consumed_at <= end_date + ' 23:59:59')
         
-        entries = query.order_by(FoodJournal.date.desc(), FoodJournal.created_at.desc()).all()
+        entries = query.order_by(FoodJournal.consumed_at.desc(), FoodJournal.created_at.desc()).all()
         
         results = []
         for entry in entries:
             results.append({
                 'id': entry.id,
                 'food_name': entry.food_name,
+                'brand': entry.brand,
                 'serving_size': entry.serving_size,
                 'serving_unit': entry.serving_unit,
                 'calories': entry.calories,
                 'protein': entry.protein,
                 'carbs': entry.carbs,
                 'fat': entry.fat,
-                'meal_type': entry.meal_type,
-                'date': entry.date.isoformat(),
+                'time_of_day': entry.time_of_day,
+                'consumed_at': entry.consumed_at.isoformat(),
+                'mood': entry.mood,
                 'notes': entry.notes,
                 'created_at': entry.created_at.isoformat()
             })

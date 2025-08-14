@@ -11,9 +11,14 @@ Version: 2.0
 
 from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
-from ..models import db, MoodEntry
+from ..models import db, MoodEntry, FoodJournal
 from ..services import UserService, AIService
 from ..decorators import login_required
+from ..utils.dashboard_utils import (
+    DashboardDataService, DashboardStatsService, DashboardDateService,
+    DashboardResponseService, DashboardValidationService, DashboardCacheService,
+    DashboardAnalyticsService
+)
 
 # Create blueprint
 dashboard_bp = Blueprint('dashboard', __name__)
@@ -33,48 +38,24 @@ def dashboard_patterns():
     try:
         current_user = UserService.get_current_user()
         if not current_user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+            return DashboardResponseService.error_response('User not found', 404)
         
         # Check if user can use AI
-        if not UserService.can_user_use_ai(current_user.id):
-            return jsonify({'success': False, 'error': 'verification_required'}), 403
+        if not DashboardDataService.can_user_use_ai(current_user.id):
+            return DashboardResponseService.verification_required_response()
+        
+        # Get browser timezone
+        browser_timezone = DashboardDataService.get_browser_timezone()
         
         # For now, return basic patterns data structure
         # This can be enhanced later with actual AI analysis
-        patterns_data = {
-            'success': True,
-            'is_new_user': True,  # Set to True for now to show call-to-action
-            'needs_more_data': False,
-            'call_to_action': {
-                'title': 'Start Your Wellness Journey',
-                'description': 'Begin tracking your meals and mood to unlock personalized AI insights and recommendations.',
-                'actions': [
-                    {
-                        'title': 'Add Your First Meal',
-                        'description': 'Log what you ate today to start building your nutrition profile.',
-                        'icon': '🍽️',
-                        'action': 'add_food'
-                    },
-                    {
-                        'title': 'Track Your Mood',
-                        'description': 'Record how you\'re feeling to understand your wellness patterns.',
-                        'icon': '😊',
-                        'action': 'add_mood'
-                    }
-                ]
-            },
-            'patterns': {},
-            'suggestions': {},
-            'cache_info': {
-                'seven_day_updated': False
-            }
-        }
+        patterns_data = DashboardResponseService.new_user_response()
         
         return jsonify(patterns_data)
         
     except Exception as e:
         print(f"❌ Error getting patterns: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get patterns'}), 500
+        return DashboardResponseService.error_response('Failed to get patterns', 500)
 
 
 @dashboard_bp.route('/dashboard/patterns/refresh', methods=['POST'])
@@ -84,21 +65,20 @@ def refresh_patterns():
     try:
         current_user = UserService.get_current_user()
         if not current_user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
+            return DashboardResponseService.error_response('User not found', 404)
         
         # Check if user can use AI
-        if not UserService.can_user_use_ai(current_user.id):
-            return jsonify({'success': False, 'error': 'AI features not available'}), 403
+        if not DashboardDataService.can_user_use_ai(current_user.id):
+            return DashboardResponseService.error_response('AI features not available', 403)
         
         # Trigger AI analysis
         result = AIService.analyze_patterns_with_openai(current_user.id)
         
         if result['success']:
-            return jsonify({
-                'success': True,
-                'message': 'Patterns refreshed successfully!',
-                'patterns': result.get('patterns', {})
-            })
+            return jsonify(DashboardResponseService.success_response(
+                data=result.get('patterns', {}),
+                message='Patterns refreshed successfully!'
+            ))
         else:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to refresh patterns')}), 500
         
@@ -110,27 +90,64 @@ def refresh_patterns():
 @dashboard_bp.route('/dashboard/water/add', methods=['POST'])
 @login_required
 def add_water():
-    """Add water intake"""
+    """Add water intake as food journal entry"""
     try:
         data = request.get_json()
-        amount = data.get('amount')
-        
-        if not amount or amount <= 0:
-            return jsonify({'success': False, 'error': 'Valid amount is required'}), 400
+        browser_timezone = data.get('browser_timezone', 'UTC')
         
         current_user = UserService.get_current_user()
         if not current_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         
-        # Add water entry (this would be implemented based on your water tracking model)
-        # For now, just return success
+        # Parse target date from request or use current time
+        target_date = data.get('target_date')
+        if target_date:
+            try:
+                consumed_at = datetime.fromisoformat(target_date.replace('Z', '+00:00'))
+            except ValueError:
+                consumed_at = datetime.utcnow()
+        else:
+            consumed_at = datetime.utcnow()
+        
+        # Create water entry as a food journal entry
+        water_entry = FoodJournal(
+            user_id=current_user.id,
+            food_name="Water",
+            brand="",
+            serving_size=8,
+            serving_unit="oz",
+            calories=0,
+            protein=0,
+            carbs=0,
+            fat=0,
+            fiber=0,
+            sugar=0,
+            sodium=0,
+            time_of_day="snack",
+            consumed_at=consumed_at,
+            mood=None,
+            notes="Quick add water intake"
+        )
+        
+        db.session.add(water_entry)
+        db.session.commit()
+        
         return jsonify({
             'success': True,
-            'message': f'Added {amount}ml of water!'
+            'message': 'Added 8 oz of water!',
+            'entry': {
+                'id': water_entry.id,
+                'food_name': water_entry.food_name,
+                'serving_size': water_entry.serving_size,
+                'serving_unit': water_entry.serving_unit,
+                'calories': water_entry.calories,
+                'consumed_at': water_entry.consumed_at.isoformat()
+            }
         })
         
     except Exception as e:
         print(f"❌ Error adding water: {e}")
+        db.session.rollback()
         return jsonify({'success': False, 'error': 'Failed to add water'}), 500
 
 
@@ -150,12 +167,22 @@ def add_mood():
         if not current_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
         
+        # Parse target date from request or use current time
+        target_date = data.get('target_date')
+        if target_date:
+            try:
+                logged_at = datetime.fromisoformat(target_date.replace('Z', '+00:00'))
+            except ValueError:
+                logged_at = datetime.utcnow()
+        else:
+            logged_at = datetime.utcnow()
+        
         # Create mood entry
         mood_entry = MoodEntry(
             user_id=current_user.id,
-            mood_score=mood_score,
+            mood=mood_score,
             notes=notes,
-            date=datetime.utcnow().date()
+            logged_at=logged_at
         )
         
         db.session.add(mood_entry)
@@ -188,19 +215,19 @@ def get_mood_entries():
         query = MoodEntry.query.filter_by(user_id=current_user.id)
         
         if start_date:
-            query = query.filter(MoodEntry.date >= start_date)
+            query = query.filter(MoodEntry.logged_at >= start_date)
         if end_date:
-            query = query.filter(MoodEntry.date <= end_date)
+            query = query.filter(MoodEntry.logged_at <= end_date + ' 23:59:59')
         
-        entries = query.order_by(MoodEntry.date.desc(), MoodEntry.created_at.desc()).all()
+        entries = query.order_by(MoodEntry.logged_at.desc(), MoodEntry.created_at.desc()).all()
         
         results = []
         for entry in entries:
             results.append({
                 'id': entry.id,
-                'mood_score': entry.mood_score,
+                'mood': entry.mood,
                 'notes': entry.notes,
-                'date': entry.date.isoformat(),
+                'logged_at': entry.logged_at.isoformat(),
                 'created_at': entry.created_at.isoformat()
             })
         

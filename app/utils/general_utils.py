@@ -265,6 +265,10 @@ class ConversionUtils:
             return amount * 14.79
         elif unit in ['tsp', 'teaspoon', 'teaspoons']:
             return amount * 4.93
+        elif unit in ['item', 'items']:
+            # For bacon, 1 item ≈ 15g (typical bacon slice)
+            # This is an approximation and could be made more specific per food
+            return amount * 15
         else:
             return amount  # Default to grams
 

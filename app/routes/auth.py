@@ -12,7 +12,7 @@ Version: 2.0
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, session
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..models import db, User, UserProfile, UserAgreement
+from ..models import db, User, UserProfile, UserAgreement, EmailSubscription
 from ..utils import ValidationUtils, SecurityUtils, NotificationUtils
 from ..services import UserService, SystemService
 from ..decorators import login_required
@@ -346,3 +346,89 @@ def extend_session():
     """Extend user session"""
     session['last_activity'] = datetime.utcnow().isoformat()
     return jsonify({'success': True, 'message': 'Session extended'})
+
+
+@auth_bp.route('/subscribe-email', methods=['POST'])
+def subscribe_email():
+    """Subscribe email for account creation notifications"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+            
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'success': False, 'error': 'Email is required'}), 400
+        
+        # Basic email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({'success': False, 'error': 'Invalid email format'}), 400
+        
+        # Check if email already exists
+        existing_subscription = EmailSubscription.query.filter_by(email=email).first()
+        if existing_subscription:
+            if existing_subscription.is_active:
+                return jsonify({'success': False, 'error': 'Email already subscribed'}), 400
+            else:
+                # Reactivate existing subscription
+                existing_subscription.is_active = True
+                existing_subscription.updated_at = datetime.utcnow()
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Email subscription reactivated!'})
+        
+        # Create new subscription
+        from ..utils import SecurityUtils
+        unsubscribe_token = SecurityUtils.generate_verification_token()
+        
+        subscription = EmailSubscription(
+            email=email,
+            unsubscribe_token=unsubscribe_token
+        )
+        
+        db.session.add(subscription)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Email subscribed successfully! You will be notified when account creation opens.'})
+        
+    except Exception as e:
+        print(f"Error in subscribe_email: {e}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'An error occurred while processing your request'}), 500
+
+
+@auth_bp.route('/unsubscribe/<token>')
+def unsubscribe_email(token):
+    """Unsubscribe email from notifications"""
+    subscription = EmailSubscription.query.filter_by(unsubscribe_token=token).first()
+    
+    if not subscription:
+        flash('Invalid or expired unsubscribe link.', 'error')
+        return redirect(url_for('static.index'))
+    
+    subscription.is_active = False
+    subscription.updated_at = datetime.utcnow()
+    db.session.commit()
+    
+    flash('You have been successfully unsubscribed from account creation notifications.', 'success')
+    return redirect(url_for('static.index'))
+
+
+@auth_bp.route('/debug/check-email-subscription-table')
+def debug_check_email_subscription_table():
+    """Debug route to check if email_subscriptions table exists"""
+    try:
+        # Try to query the table
+        result = EmailSubscription.query.first()
+        return jsonify({
+            'success': True,
+            'message': 'Email subscription table exists and is accessible',
+            'table_exists': True
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'table_exists': False,
+            'message': 'Email subscription table does not exist or is not accessible'
+        })

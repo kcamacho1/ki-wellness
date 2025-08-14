@@ -11,6 +11,7 @@ Version: 2.0
 # Import utility modules for easy access
 from .profile_utils import *
 from .general_utils import *
+from .dashboard_utils import *
 
 # Export utility classes
 __all__ = [
@@ -60,5 +61,14 @@ __all__ = [
     'validate_username',
     'generate_secure_token',
     'hash_sensitive_data',
-    'validate_password_strength'
+    'validate_password_strength',
+    
+    # Dashboard utilities
+    'DashboardDataService',
+    'DashboardStatsService',
+    'DashboardDateService',
+    'DashboardResponseService',
+    'DashboardValidationService',
+    'DashboardCacheService',
+    'DashboardAnalyticsService'
 ]

@@ -142,37 +142,6 @@ class UserProfile(db.Model):
         return f'<UserProfile {self.name}>'
 
 
-class FoodCache(db.Model):
-    """
-    Food Cache model for storing nutritional information
-    
-    Caches nutritional data from external APIs to improve performance
-    and reduce API calls.
-    """
-    __tablename__ = 'food_cache'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    food_name = db.Column(db.String(200), nullable=False, index=True)
-    brand = db.Column(db.String(100), nullable=True)
-    serving_size = db.Column(db.Float, nullable=False)
-    serving_unit = db.Column(db.String(20), nullable=False)
-    
-    # Core nutritional values
-    calories = db.Column(db.Float, nullable=True)
-    protein = db.Column(db.Float, nullable=True)
-    carbs = db.Column(db.Float, nullable=True)
-    fat = db.Column(db.Float, nullable=True)
-    fiber = db.Column(db.Float, nullable=True)
-    sugar = db.Column(db.Float, nullable=True)
-    sodium = db.Column(db.Float, nullable=True)
-    
-    # Metadata
-    source = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def __repr__(self) -> str:
-        return f'<FoodCache {self.food_name}>'
-
 
 class FoodJournal(db.Model):
     """
@@ -579,3 +548,22 @@ class AIUsageSession(db.Model):
     
     def __repr__(self) -> str:
         return f'<AIUsageSession {self.session_type}>'
+
+
+class EmailSubscription(db.Model):
+    """
+    Email Subscription model for waitlist management
+    
+    Tracks email addresses of users who want to be notified when account creation opens.
+    """
+    __tablename__ = 'email_subscriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    unsubscribe_token = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self) -> str:
+        return f'<EmailSubscription {self.email}>'

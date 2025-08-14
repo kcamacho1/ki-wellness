@@ -80,6 +80,12 @@ def reviews():
     return render_template('reviews.html', reviews=approved_reviews)
 
 
+@static_bp.route('/exercise')
+def exercise():
+    """Exercise playlist page"""
+    return render_template('exercise.html')
+
+
 @static_bp.route('/reviews/submit', methods=['POST'])
 def submit_review():
     """Submit a new review"""

@@ -27,7 +27,10 @@
         }
     </script>
     
-    <!-- Custom CSS -->
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    
+    <!-- Onboarding-specific styles -->
     <style>
         .step-indicator {
             transition: all 0.3s ease;
@@ -97,7 +100,7 @@
                                    class="mt-1 w-5 h-5 text-mint-green border-gray-300 rounded focus:ring-mint-green" required>
                             <label for="privacy_policy" class="ml-3 text-lg font-medium text-gray-900">
                                 I have read and agree to the 
-                                <a href="{{ url_for('privacy') }}" target="_blank" 
+                                <a href="{{ url_for('static.privacy') }}" target="_blank" 
                                    class="text-mint-green hover:text-forest-green underline">Privacy Policy</a>
                             </label>
                         </div>
@@ -113,7 +116,7 @@
                                    class="mt-1 w-5 h-5 text-mint-green border-gray-300 rounded focus:ring-mint-green" required>
                             <label for="terms_of_service" class="ml-3 text-lg font-medium text-gray-900">
                                 I have read and agree to the 
-                                <a href="{{ url_for('terms') }}" target="_blank" 
+                                <a href="{{ url_for('static.terms') }}" target="_blank" 
                                    class="text-mint-green hover:text-forest-green underline">Terms of Service</a>
                             </label>
                         </div>
@@ -129,7 +132,7 @@
                                    class="mt-1 w-5 h-5 text-mint-green border-gray-300 rounded focus:ring-mint-green" required>
                             <label for="disclaimer" class="ml-3 text-lg font-medium text-gray-900">
                                 I have read and agree to the 
-                                <a href="{{ url_for('disclaimer') }}" target="_blank" 
+                                <a href="{{ url_for('static.disclaimer') }}" target="_blank" 
                                    class="text-mint-green hover:text-forest-green underline">Disclaimer</a>
                             </label>
                         </div>

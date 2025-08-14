@@ -27,7 +27,10 @@
         }
     </script>
     
-    <!-- Custom CSS -->
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    
+    <!-- Reviews-specific styles -->
     <style>
         .star-rating {
             display: inline-flex;
@@ -44,13 +47,6 @@
         }
         .star:hover {
             color: #fbbf24;
-        }
-        .review-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .review-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
     </style>
     

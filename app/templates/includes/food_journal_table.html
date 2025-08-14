@@ -1,0 +1,58 @@
+<!-- Food Journal Table Component -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden border border-soft-green">
+    <div class="px-6 py-4 border-b border-soft-green">
+        <div class="flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-forest-green">{{ title|default('Food Journal') }}</h3>
+            {% if show_date_navigation %}
+            <div class="flex items-center space-x-2">
+                <button id="prevWeekBtn" 
+                        class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <div class="text-sm text-gray-600">
+                    <span id="dateRangeDisplay">Loading...</span>
+                </div>
+                <button id="nextWeekBtn" 
+                        class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2 transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            {% endif %}
+            {% if show_add_button %}
+            <button id="addFoodBtn" class="bg-mint-green text-white px-4 py-2 rounded-lg hover:bg-forest-green transition-colors duration-200 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                <span>Add Food</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full divide-y divide-gray-200">
+            <thead class="bg-soft-green">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Date</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Meal</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Food</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Serving</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Calories</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Protein</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Carbs</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Fat</th>
+                    {% if show_actions %}
+                    <th class="px-4 py-3 text-left text-xs font-medium text-forest-green uppercase tracking-wider">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="{{ table_id|default('foodJournalTable') }}" class="bg-white divide-y divide-gray-200">
+                <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>

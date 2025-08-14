@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Self Health Coaching - Ki Wellness LLC</title>
+    <title>AI Self Health Coaching - Ki Wellness LLC | Self Health Simplified</title>
     <meta name="description" content="Experience the future of wellness with AI-powered health analysis, personalized insights, and intelligent recommendations.">
     
     <!-- Favicon -->
@@ -27,39 +27,8 @@
         }
     </script>
     
-    <!-- Custom CSS -->
-    <style>
-        .feature-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #166534 0%, #059669 50%, #0d9488 100%);
-        }
-        .ai-gradient {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-        }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        .pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite alternate;
-        }
-        @keyframes pulse-glow {
-            from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
-            to { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
-        }
-    </style>
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -356,7 +325,7 @@
                    class="bg-white text-calm-blue px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 shadow-lg">
                     Start Your AI Journey
                 </a>
-                <a href="{{ url_for('coaching_selection') }}" 
+                <a href="{{ url_for('static.coaching_selection') }}" 
                    class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-calm-blue transition-colors duration-200">
                     Compare Options
                 </a>

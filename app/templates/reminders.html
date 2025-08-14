@@ -20,9 +20,11 @@
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    
+    <!-- Reminders-specific styles -->
     <style>
-        body { font-family: 'Quicksand', sans-serif; }
         .reminder-card { transition: all 0.3s ease; }
         .reminder-card:hover { transform: translateY(-2px); }
         .notification-toggle { transition: all 0.3s ease; }

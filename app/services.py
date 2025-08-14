@@ -18,7 +18,7 @@ from flask import current_app, request
 import pytz
 
 # Import models and utilities
-from .models import db, User, UserProfile, FoodCache, FoodJournal, TokenUsage, APICosts
+from .models import db, User, UserProfile, FoodJournal, TokenUsage, APICosts
 from .utils import ValidationUtils, SecurityUtils, TimeUtils, ConversionUtils, NotificationUtils
 
 # OpenAI integration
@@ -366,6 +366,28 @@ class NutritionService:
             'sodium': 7,
             'source': 'common_foods_db'
         },
+        'egg': {
+            'food_name': 'Egg, whole, raw',
+            'calories': 155,
+            'protein': 13,
+            'carbs': 1.1,
+            'fat': 11,
+            'fiber': 0,
+            'sugar': 1.1,
+            'sodium': 124,
+            'source': 'common_foods_db'
+        },
+        'eggs': {
+            'food_name': 'Eggs, whole, raw',
+            'calories': 155,
+            'protein': 13,
+            'carbs': 1.1,
+            'fat': 11,
+            'fiber': 0,
+            'sugar': 1.1,
+            'sodium': 124,
+            'source': 'common_foods_db'
+        },
         'avocado': {
             'food_name': 'Avocado, raw',
             'calories': 160,
@@ -375,6 +397,50 @@ class NutritionService:
             'fiber': 7,
             'sugar': 0.7,
             'sodium': 7,
+            'source': 'common_foods_db'
+        },
+        'bacon': {
+            'food_name': 'Bacon, cooked',
+            'calories': 541,
+            'protein': 37,
+            'carbs': 1.4,
+            'fat': 42,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 1717,
+            'source': 'common_foods_db'
+        },
+        'unsmoked bacon': {
+            'food_name': 'Unsmoked back bacon rashers',
+            'calories': 290,
+            'protein': 25,
+            'carbs': 0,
+            'fat': 20,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 800,
+            'source': 'common_foods_db'
+        },
+        'back bacon': {
+            'food_name': 'Back bacon rashers',
+            'calories': 290,
+            'protein': 25,
+            'carbs': 0,
+            'fat': 20,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 800,
+            'source': 'common_foods_db'
+        },
+        'streaky bacon': {
+            'food_name': 'Streaky bacon',
+            'calories': 541,
+            'protein': 37,
+            'carbs': 1.4,
+            'fat': 42,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 1717,
             'source': 'common_foods_db'
         }
     }
@@ -427,6 +493,7 @@ class NutritionService:
         try:
             # Use the official API v2 product endpoint
             url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+            print(f"🔍 Making request to: {url}")
             
             # Set up headers with proper User-Agent as required by the API
             headers = {
@@ -435,6 +502,7 @@ class NutritionService:
             }
             
             response = requests.get(url, headers=headers, timeout=10)
+            print(f"📡 Response status: {response.status_code}")
             
             # Handle rate limiting (429 status)
             if response.status_code == 429:
@@ -443,10 +511,14 @@ class NutritionService:
             
             response.raise_for_status()
             data = response.json()
+            print(f"📄 API Response keys: {list(data.keys()) if isinstance(data, dict) else 'Not a dict'}")
             
             if data.get('status') == 1 and data.get('product'):
                 product = data['product']
+                print(f"✅ OpenFoodFacts product found: {product.get('product_name', 'Unknown')}")
                 return NutritionService.extract_nutritional_data(product, product.get('product_name', ''))
+            else:
+                print(f"❌ OpenFoodFacts API returned status: {data.get('status')}, product: {bool(data.get('product'))}")
             
             return None
         except requests.exceptions.Timeout:
@@ -636,13 +708,13 @@ class NutritionService:
         water_content = nutriments.get('water_100g')
         ash = nutriments.get('ash_100g')
         
-        # Validate data quality
-        if not calories or calories <= 0:
-            return None
+        # Validate data quality - be more lenient
+        if calories is None:
+            calories = 0  # Set to 0 if not available
         
         # Check for reasonable ranges
         if calories > 900:  # Most foods don't exceed 900 cal/100g
-            return None
+            calories = 0  # Reset to 0 if unreasonable
         
         return {
             'food_name': product.get('product_name', original_food_name),
@@ -769,7 +841,18 @@ class NutritionService:
         all_nutritional_fields = core_nutritional_fields + extended_nutritional_fields
         for field in all_nutritional_fields:
             if converted_data.get(field) is not None:
-                converted_data[field] = converted_data[field] * conversion_factor
+                try:
+                    # Convert to float if it's a string, then multiply
+                    value = converted_data[field]
+                    if isinstance(value, str):
+                        value = float(value)
+                    elif not isinstance(value, (int, float)):
+                        continue  # Skip non-numeric values
+                    
+                    converted_data[field] = value * conversion_factor
+                except (ValueError, TypeError) as e:
+                    print(f"⚠️ Warning: Could not convert {field} value '{converted_data[field]}' to number: {e}")
+                    continue  # Skip this field if conversion fails
         
         return converted_data
 

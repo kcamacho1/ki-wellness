@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ki Wellness - Your AI Health Coach</title>
-    <meta name="description" content="Your personal AI Health Coach for simple, safe wellness tracking. Free to try, pay only for what you use. Get personalized guidance from AI and human coaches.">
+    <title>Ki Wellness - Self Health Simplified</title>
+    <meta name="description" content="Self Health Simplified - Your personal AI Health Coach for simple, safe wellness tracking. Free to try, pay only for what you use. Get personalized guidance from AI and human coaches.">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
@@ -44,32 +44,8 @@
         }
     </script>
     
-    <!-- Custom Styles -->
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        }
-        .hero-gradient {
-            background: linear-gradient(135deg, #2d5016 0%, #10b981 100%);
-        }
-        .trust-gradient {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        }
-        .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        .safety-badge {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-    </style>
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
 </head>
 <body class="bg-nature-gray font-sans">
     <!-- Navigation -->
@@ -90,18 +66,18 @@
                     </div>
                     
                     <h1 class="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-                        Your Personal 
-                        <span class="text-mint-green">AI Health Coach</span>
+                        <span class="text-mint-green">Self Health</span>
+                        Simplified
                     </h1>
                     <p class="text-xl lg:text-2xl mb-6 text-gray-100 leading-relaxed">
-                        Get personalized guidance from AI and human coaches. Track your health simply, safely, and affordably.
+                        Your personal AI Health Coach for simple, safe wellness tracking. Get personalized guidance from AI and human coaches.
                     </p>
                     
                                          <!-- Trust Indicators -->
                      <div class="flex flex-wrap gap-4 mb-8 text-sm">
                          <div class="flex items-center">
                              <div class="w-2 h-2 bg-mint-green rounded-full mr-2"></div>
-                             <span class="text-gray-100">AI Health Coach</span>
+                             <span class="text-gray-100">Self Health Simplified</span>
                          </div>
                          <div class="flex items-center">
                              <div class="w-2 h-2 bg-mint-green rounded-full mr-2"></div>
@@ -183,7 +159,7 @@
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                          </svg>
                      </div>
-                     <h3 class="text-xl font-semibold text-forest-green mb-2">AI Health Coach</h3>
+                     <h3 class="text-xl font-semibold text-forest-green mb-2">Self Health Simplified</h3>
                      <p class="text-gray-600">Get personalized AI guidance anytime. Buy sessions as you need them.</p>
                  </div>
                  
@@ -261,10 +237,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl lg:text-4xl font-bold text-forest-green mb-4">
-                    Your AI Health Coach Features
+                    Self Health Simplified Features
                 </h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Everything you need from your personal AI Health Coach, without the complexity or high costs.
+                    Everything you need for simplified wellness tracking, without the complexity or high costs.
                 </p>
             </div>
             
@@ -278,7 +254,7 @@
                     </div>
                     <h3 class="text-xl font-semibold text-forest-green mb-4">AI Health Coach</h3>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        Get personalized coaching and insights from your AI Health Coach. Buy sessions as you need them.
+                        Get personalized coaching and insights from your AI Health Coach. Self Health Simplified with session-based pricing.
                     </p>
                     <a href="{{ url_for('static.ai_self_health') }}" 
                        class="inline-flex items-center text-mint-green hover:text-forest-green font-medium transition-colors duration-200">
@@ -521,10 +497,10 @@
     <section class="py-20 trust-gradient text-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-3xl lg:text-4xl font-bold mb-6">
-                Ready to Meet Your AI Health Coach?
+                Ready to Simplify Your Health?
             </h2>
             <p class="text-xl mb-8 text-gray-100">
-                Join others who are getting personalized wellness guidance from their AI Health Coach.
+                Join others who are getting personalized wellness guidance with Self Health Simplified.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="{{ url_for('auth.register') }}" 

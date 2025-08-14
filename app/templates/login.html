@@ -56,36 +56,13 @@
                 document.head.appendChild(bypassScript);
             });
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Global Ki Wellness Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    
+    <!-- Login-specific styles -->
     <style>
         .hero-gradient {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .mint-green { color: #4ade80; }
-        .forest-green { color: #166534; }
-        .soft-green { color: #dcfce7; }
-        .sage-green { color: #86efac; }
-        .calm-blue { color: #3b82f6; }
-        
-        /* Button styling with proper background colors */
-        .bg-mint-green { background-color: #4ade80 !important; }
-        .bg-forest-green { background-color: #166534 !important; }
-        .bg-soft-green { background-color: #dcfce7 !important; }
-        .bg-sage-green { background-color: #86efac !important; }
-        .bg-calm-blue { background-color: #3b82f6 !important; }
-        
-        /* Enhanced button visibility with site theme colors */
-        .btn-primary {
-            background-color: #4ade80 !important;
-            color: white !important;
-            border: 2px solid #166534 !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-        
-        .btn-primary:hover {
-            background-color: #166534 !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
         }
     </style>
 </head>
