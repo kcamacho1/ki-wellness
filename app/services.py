@@ -534,29 +534,29 @@ class NutritionService:
     @staticmethod
     def search_openfoodfacts_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
         """Search Open Food Facts API v2 by barcode for specific product"""
-                    try:
-                # Use the official API v2 product endpoint
-                url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
-                
-                # Set up headers with proper User-Agent as required by the API
-                headers = {
-                    'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
-                    'Content-Type': 'application/json'
-                }
-                
-                response = requests.get(url, headers=headers, timeout=10)
+        try:
+            # Use the official API v2 product endpoint
+            url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+            
+            # Set up headers with proper User-Agent as required by the API
+            headers = {
+                'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
             
             # Handle rate limiting (429 status)
             if response.status_code == 429:
                 print("Open Food Facts API: Rate limit reached (100 req/min for product queries)")
                 return None
             
-                            response.raise_for_status()
-                data = response.json()
-                
-                if data.get('status') == 1 and data.get('product'):
-                    product = data['product']
-                    return NutritionService.extract_nutritional_data(product, product.get('product_name', ''))
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get('status') == 1 and data.get('product'):
+                product = data['product']
+                return NutritionService.extract_nutritional_data(product, product.get('product_name', ''))
             
             return None
         except requests.exceptions.Timeout:

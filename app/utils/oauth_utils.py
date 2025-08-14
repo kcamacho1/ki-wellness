@@ -12,8 +12,9 @@ Version: 1.0
 import os
 import json
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Union
 from flask import session, request, current_app
+
 try:
     from google_auth_oauthlib.flow import Flow
     from google.oauth2.credentials import Credentials
@@ -23,12 +24,18 @@ try:
 except ImportError:
     OAUTH_AVAILABLE = False
     # Create dummy classes for when OAuth is not available
-    class Flow:
+    class DummyFlow:
         pass
-    class Credentials:
+    class DummyCredentials:
         pass
-    class HttpError:
+    class DummyHttpError(Exception):
         pass
+    
+    # Alias the dummy classes to match the expected names
+    Flow = DummyFlow
+    Credentials = DummyCredentials
+    HttpError = DummyHttpError
+
 from ..models import db, User
 
 
@@ -65,7 +72,7 @@ class OAuthService:
             }
         }
     
-    def create_flow(self, scope_type: str = 'youtube') -> Flow:
+    def create_flow(self, scope_type: str = 'youtube') -> Any:
         """Create OAuth flow for specified scope"""
         config = self.get_oauth_config()
         scopes = self.scopes.get(scope_type, self.scopes['youtube'])
@@ -129,7 +136,7 @@ class OAuthService:
             'expiry': credentials.expiry
         }
     
-    def get_credentials(self) -> Optional[Credentials]:
+    def get_credentials(self) -> Optional[Any]:
         """Get stored OAuth credentials"""
         if 'oauth_credentials' not in session:
             return None
@@ -246,9 +253,6 @@ class YouTubeService:
                 'playlists': playlists
             }
             
-        except HttpError as e:
-            print(f"YouTube API error: {e}")
-            return {'success': False, 'error': 'Failed to fetch playlists'}
         except Exception as e:
             print(f"Error fetching playlists: {e}")
             return {'success': False, 'error': 'Internal server error'}
@@ -287,9 +291,6 @@ class YouTubeService:
                 'playlist_id': playlist_id
             }
             
-        except HttpError as e:
-            print(f"YouTube API error: {e}")
-            return {'success': False, 'error': 'Failed to fetch videos'}
         except Exception as e:
             print(f"Error fetching videos: {e}")
             return {'success': False, 'error': 'Internal server error'}
