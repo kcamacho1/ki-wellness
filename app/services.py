@@ -12,10 +12,19 @@ Version: 2.0
 import os
 import json
 import requests
+import re
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from flask import current_app, request
 import pytz
+
+# Fuzzy search imports
+try:
+    from fuzzywuzzy import fuzz, process
+    FUZZY_AVAILABLE = True
+except ImportError:
+    FUZZY_AVAILABLE = False
+    print("⚠️  FuzzyWuzzy not available. Fuzzy search will be disabled.")
 
 # Import models and utilities
 from .models import db, User, UserProfile, FoodJournal, TokenUsage, APICosts
@@ -750,6 +759,220 @@ class NutritionService:
                 break
         
         return cleaned
+
+    @staticmethod
+    def get_fuzzy_search_suggestions(query: str, food_list: List[str], limit: int = 5) -> List[tuple]:
+        """Get fuzzy search suggestions for misspelled food names"""
+        if not FUZZY_AVAILABLE:
+            return []
+        
+        try:
+            # Use fuzzywuzzy to find similar food names
+            suggestions = process.extract(query.lower(), food_list, limit=limit, scorer=fuzz.token_sort_ratio)
+            # Filter out very low similarity matches (below 60%)
+            filtered_suggestions = [(name, score) for name, score in suggestions if score >= 60]
+            return filtered_suggestions
+        except Exception as e:
+            print(f"Error in fuzzy search: {e}")
+            return []
+
+    @staticmethod
+    def get_common_misspellings() -> Dict[str, str]:
+        """Get common misspellings and their correct forms"""
+        return {
+            # Sauerkraut variations
+            'sourkraut': 'sauerkraut',
+            'sour kraut': 'sauerkraut',
+            'sauer kraut': 'sauerkraut',
+            'sourcrout': 'sauerkraut',
+            'sauerkrout': 'sauerkraut',
+            'sourkraut': 'sauerkraut',
+            
+            # Common food misspellings
+            'brocolli': 'broccoli',
+            'brocolli': 'broccoli',
+            'cauliflour': 'cauliflower',
+            'cauliflour': 'cauliflower',
+            'zuchini': 'zucchini',
+            'zuchini': 'zucchini',
+            'eggplant': 'aubergine',
+            'aubergine': 'eggplant',
+            'courgette': 'zucchini',
+            'zucchini': 'courgette',
+            
+            # Protein variations
+            'chicken breast': 'chicken',
+            'chicken thigh': 'chicken',
+            'ground beef': 'beef',
+            'lean beef': 'beef',
+            'salmon fillet': 'salmon',
+            'tuna fish': 'tuna',
+            
+            # Grain variations
+            'brown rice': 'rice',
+            'white rice': 'rice',
+            'wild rice': 'rice',
+            'quinoa grain': 'quinoa',
+            'oatmeal': 'oats',
+            'rolled oats': 'oats',
+            
+            # Dairy variations
+            'greek yogurt': 'yogurt',
+            'plain yogurt': 'yogurt',
+            'vanilla yogurt': 'yogurt',
+            'cheddar cheese': 'cheese',
+            'mozzarella cheese': 'cheese',
+            
+            # Fruit variations
+            'red apple': 'apple',
+            'green apple': 'apple',
+            'banana fruit': 'banana',
+            'orange fruit': 'orange',
+            'strawberry': 'strawberries',
+            'strawberries': 'strawberry',
+            
+            # Vegetable variations
+            'carrot vegetable': 'carrot',
+            'tomato vegetable': 'tomato',
+            'cucumber vegetable': 'cucumber',
+            'lettuce vegetable': 'lettuce',
+            'spinach vegetable': 'spinach',
+            'kale vegetable': 'kale',
+            
+            # Additional common misspellings
+            'asparagus': 'asparagus',
+            'asparagus': 'asparagus',
+            'brussel sprouts': 'brussels sprouts',
+            'brussels sprout': 'brussels sprouts',
+            'brussel sprout': 'brussels sprouts',
+            'bell pepper': 'pepper',
+            'red pepper': 'pepper',
+            'green pepper': 'pepper',
+            'yellow pepper': 'pepper',
+            'onion': 'onion',
+            'garlic': 'garlic',
+            'ginger': 'ginger',
+            'mushroom': 'mushrooms',
+            'mushrooms': 'mushroom',
+            'potato': 'potatoes',
+            'potatoes': 'potato',
+            'sweet potato': 'sweet potatoes',
+            'sweet potatoes': 'sweet potato',
+            'yam': 'yams',
+            'yams': 'yam',
+            'corn': 'corn',
+            'peas': 'peas',
+            'green beans': 'green beans',
+            'string beans': 'green beans',
+            'snap beans': 'green beans',
+            'celery': 'celery',
+            'radish': 'radishes',
+            'radishes': 'radish',
+            'beet': 'beets',
+            'beets': 'beet',
+            'turnip': 'turnips',
+            'turnips': 'turnip',
+            'parsnip': 'parsnips',
+            'parsnips': 'parsnip',
+            'rutabaga': 'rutabagas',
+            'rutabagas': 'rutabaga',
+            'swiss chard': 'chard',
+            'chard': 'swiss chard',
+            'collard greens': 'collards',
+            'collards': 'collard greens',
+            'mustard greens': 'mustard',
+            'mustard': 'mustard greens',
+            'bok choy': 'pak choi',
+            'pak choi': 'bok choy',
+            'napa cabbage': 'chinese cabbage',
+            'chinese cabbage': 'napa cabbage',
+            'daikon': 'daikon radish',
+            'daikon radish': 'daikon',
+            'jicama': 'jicama',
+            'water chestnut': 'water chestnuts',
+            'water chestnuts': 'water chestnut',
+            'bamboo shoot': 'bamboo shoots',
+            'bamboo shoots': 'bamboo shoot',
+            'snow pea': 'snow peas',
+            'snow peas': 'snow pea',
+            'sugar snap pea': 'sugar snap peas',
+            'sugar snap peas': 'sugar snap pea',
+            'edamame': 'edamame',
+            'soybean': 'soybeans',
+            'soybeans': 'soybean',
+            'tofu': 'tofu',
+            'tempeh': 'tempeh',
+            'seitan': 'seitan',
+            'quorn': 'quorn',
+            'textured vegetable protein': 'tvp',
+            'tvp': 'textured vegetable protein'
+        }
+
+    @staticmethod
+    def correct_spelling(query: str) -> str:
+        """Correct common misspellings in food search queries"""
+        query_lower = query.lower().strip()
+        
+        # Check for exact matches in misspellings dictionary
+        misspellings = NutritionService.get_common_misspellings()
+        if query_lower in misspellings:
+            return misspellings[query_lower]
+        
+        # Check for partial matches (e.g., "sour" should match "sourkraut")
+        for misspelled, correct in misspellings.items():
+            if query_lower in misspelled or misspelled in query_lower:
+                return correct
+        
+        return query
+
+    @staticmethod
+    def enhance_search_query(query: str) -> List[str]:
+        """Enhance search query with spelling corrections and variations"""
+        enhanced_queries = [query]
+        
+        # Add spelling correction
+        corrected = NutritionService.correct_spelling(query)
+        if corrected != query:
+            enhanced_queries.append(corrected)
+        
+        # Add common variations
+        variations = {
+            'sauerkraut': ['sourkraut', 'sour kraut', 'fermented cabbage'],
+            'broccoli': ['brocolli', 'brocolli'],
+            'cauliflower': ['cauliflour', 'cauliflour'],
+            'zucchini': ['zuchini', 'courgette'],
+            'quinoa': ['quinoa grain', 'keenwa'],
+            'yogurt': ['yoghurt', 'yoghurt'],
+            'tomato': ['tomatoes', 'tomato vegetable'],
+            'apple': ['apples', 'apple fruit'],
+            'banana': ['bananas', 'banana fruit'],
+            'chicken': ['chicken meat', 'chicken breast', 'chicken thigh'],
+            'salmon': ['salmon fish', 'salmon fillet'],
+            'rice': ['rice grain', 'brown rice', 'white rice'],
+            'spinach': ['spinach vegetable', 'spinach leaves'],
+            'carrot': ['carrots', 'carrot vegetable'],
+            'cucumber': ['cucumbers', 'cucumber vegetable'],
+            'lettuce': ['lettuce vegetable', 'lettuce leaves'],
+            'kale': ['kale vegetable', 'kale leaves']
+        }
+        
+        # Add variations for the query
+        query_lower = query.lower()
+        for food, food_variations in variations.items():
+            if query_lower in food_variations or query_lower == food:
+                enhanced_queries.extend(food_variations)
+                enhanced_queries.append(food)  # Add the base form
+                break
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_queries = []
+        for q in enhanced_queries:
+            if q.lower() not in seen:
+                seen.add(q.lower())
+                unique_queries.append(q)
+        
+        return unique_queries[:5]  # Limit to 5 variations
     
     @staticmethod
     def find_best_match(products: List[Dict[str, Any]], original_food_name: str) -> Optional[Dict[str, Any]]:

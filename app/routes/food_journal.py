@@ -102,54 +102,67 @@ def search_food():
         
         # For non-barcode searches, try OpenFoodFacts API and common foods
         if not is_barcode:
-            try:
-                print(f"🔍 Searching OpenFoodFacts API for multiple results: {query}")
-                nutrition_results = NutritionService.search_openfoodfacts_multiple(query)
-                if nutrition_results:
-                    print(f"✅ Found {len(nutrition_results)} OpenFoodFacts results for: {query}")
-                    # Add all results to the results list
-                    for nutrition_data in nutrition_results:
-                        results.append({
-                            'id': None,  # No cache ID for API results
-                            'food_name': nutrition_data.get('food_name', query),
-                            'brand': nutrition_data.get('brand', ''),
-                            'serving_size': nutrition_data.get('serving_size', 100),
-                            'serving_unit': nutrition_data.get('serving_unit', 'g'),
-                            'calories': nutrition_data.get('calories', 0),
-                            'protein': nutrition_data.get('protein', 0),
-                            'carbs': nutrition_data.get('carbs', 0),
-                            'fat': nutrition_data.get('fat', 0),
-                            'source': 'openfoodfacts_api'
-                        })
-                else:
-                    print(f"❌ No OpenFoodFacts data found for: {query}")
-                    
-            except Exception as api_error:
-                print(f"❌ Error searching OpenFoodFacts API: {api_error}")
-                import traceback
-                traceback.print_exc()
+            # Enhance search query with spelling corrections and variations
+            enhanced_queries = NutritionService.enhance_search_query(query)
+            print(f"🔍 Enhanced search queries: {enhanced_queries}")
+            
+            # Try each enhanced query
+            for enhanced_query in enhanced_queries:
+                try:
+                    print(f"🔍 Searching OpenFoodFacts API for: {enhanced_query}")
+                    nutrition_results = NutritionService.search_openfoodfacts_multiple(enhanced_query)
+                    if nutrition_results:
+                        print(f"✅ Found {len(nutrition_results)} OpenFoodFacts results for: {enhanced_query}")
+                        # Add all results to the results list
+                        for nutrition_data in nutrition_results:
+                            results.append({
+                                'id': None,  # No cache ID for API results
+                                'food_name': nutrition_data.get('food_name', enhanced_query),
+                                'brand': nutrition_data.get('brand', ''),
+                                'serving_size': nutrition_data.get('serving_size', 100),
+                                'serving_unit': nutrition_data.get('serving_unit', 'g'),
+                                'calories': nutrition_data.get('calories', 0),
+                                'protein': nutrition_data.get('protein', 0),
+                                'carbs': nutrition_data.get('carbs', 0),
+                                'fat': nutrition_data.get('fat', 0),
+                                'source': 'openfoodfacts_api',
+                                'search_query': enhanced_query  # Track which query found this result
+                            })
+                        # If we found results, we can stop trying other variations
+                        break
+                    else:
+                        print(f"❌ No OpenFoodFacts data found for: {enhanced_query}")
+                        
+                except Exception as api_error:
+                    print(f"❌ Error searching OpenFoodFacts API for {enhanced_query}: {api_error}")
+                    import traceback
+                    traceback.print_exc()
             
             # Always try common foods database as fallback
             try:
-                print(f"🔍 Searching common foods database for multiple results: {query}")
-                common_foods = NutritionService.search_common_foods_multiple(query)
-                if common_foods:
-                    print(f"✅ Found {len(common_foods)} common foods results for: {query}")
-                    for common_food in common_foods:
-                        results.append({
-                            'id': None,
-                            'food_name': common_food.get('food_name', query),
-                            'brand': '',
-                            'serving_size': common_food.get('serving_size', 100),
-                            'serving_unit': common_food.get('serving_unit', 'g'),
-                            'calories': common_food.get('calories', 0),
-                            'protein': common_food.get('protein', 0),
-                            'carbs': common_food.get('carbs', 0),
-                            'fat': common_food.get('fat', 0),
-                            'source': 'common_foods_db'
-                        })
-                else:
-                    print(f"❌ No common foods data found for: {query}")
+                print(f"🔍 Searching common foods database with enhanced queries: {enhanced_queries}")
+                for enhanced_query in enhanced_queries:
+                    common_foods = NutritionService.search_common_foods_multiple(enhanced_query)
+                    if common_foods:
+                        print(f"✅ Found {len(common_foods)} common foods results for: {enhanced_query}")
+                        for common_food in common_foods:
+                            results.append({
+                                'id': None,
+                                'food_name': common_food.get('food_name', enhanced_query),
+                                'brand': '',
+                                'serving_size': common_food.get('serving_size', 100),
+                                'serving_unit': common_food.get('serving_unit', 'g'),
+                                'calories': common_food.get('calories', 0),
+                                'protein': common_food.get('protein', 0),
+                                'carbs': common_food.get('carbs', 0),
+                                'fat': common_food.get('fat', 0),
+                                'source': 'common_foods_db',
+                                'search_query': enhanced_query  # Track which query found this result
+                            })
+                        # If we found results, we can stop trying other variations
+                        break
+                    else:
+                        print(f"❌ No common foods data found for: {enhanced_query}")
             except Exception as common_error:
                 print(f"❌ Error searching common foods database: {common_error}")
                 import traceback
@@ -202,10 +215,29 @@ def search_food():
                     'suggest_manual': True
                 })
             else:
-                return jsonify({
+                # Try to provide spelling suggestions
+                spelling_suggestions = []
+                if FUZZY_AVAILABLE:
+                    # Get suggestions from common foods database
+                    common_food_names = list(NutritionService.COMMON_FOODS_DATABASE.keys())
+                    suggestions = NutritionService.get_fuzzy_search_suggestions(query, common_food_names, limit=3)
+                    spelling_suggestions = [name for name, score in suggestions if score >= 70]
+                
+                # Also check for common misspellings
+                corrected = NutritionService.correct_spelling(query)
+                if corrected != query and corrected not in spelling_suggestions:
+                    spelling_suggestions.insert(0, corrected)
+                
+                response_data = {
                     'success': False,
                     'error': 'No food data found'
-                })
+                }
+                
+                if spelling_suggestions:
+                    response_data['spelling_suggestions'] = spelling_suggestions
+                    response_data['error'] = f'No food data found for "{query}". Did you mean: {", ".join(spelling_suggestions[:3])}?'
+                
+                return jsonify(response_data)
         
     except Exception as e:
         print(f"❌ Error searching food: {e}")

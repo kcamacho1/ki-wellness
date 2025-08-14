@@ -457,12 +457,17 @@ class AddFoodForm {
                     this.populateNutritionData(this.currentFoodData);
                 }
             } else {
-                this.showError('No nutritional data found. You can still add the food without nutrition info.');
-                // Still proceed to step 4 with basic data
-                this.currentFoodData = foodData;
-                this.currentNutritionData = null;
-                this.showStep(4);
-                this.populateNutritionData(this.currentFoodData);
+                // Check if we have spelling suggestions
+                if (data.spelling_suggestions && data.spelling_suggestions.length > 0) {
+                    this.showSpellingSuggestions(data.spelling_suggestions, foodData);
+                } else {
+                    this.showError('No nutritional data found. You can still add the food without nutrition info.');
+                    // Still proceed to step 4 with basic data
+                    this.currentFoodData = foodData;
+                    this.currentNutritionData = null;
+                    this.showStep(4);
+                    this.populateNutritionData(this.currentFoodData);
+                }
             }
         } catch (error) {
             console.error('Error searching nutrition:', error);
@@ -538,14 +543,24 @@ class AddFoodForm {
         // Limit to top 20 results for better UX
         const limitedResults = results.slice(0, 20);
         
-        // Add result count message
+        // Check if any results have spelling corrections
+        const spellingCorrections = new Set();
+        results.forEach(result => {
+            if (result.search_query && result.search_query !== baseFoodData.food_name) {
+                spellingCorrections.add(result.search_query);
+            }
+        });
+        
+        // Add result count message with spelling correction info
         const resultCountDiv = document.createElement('div');
         resultCountDiv.className = 'text-center mb-4 p-2 bg-blue-50 border border-blue-200 rounded-lg';
-        resultCountDiv.innerHTML = `
-            <p class="text-sm text-blue-800">
-                Found ${results.length} results${results.length > 20 ? ` (showing top 20)` : ''}
-            </p>
-        `;
+        
+        let message = `Found ${results.length} results${results.length > 20 ? ` (showing top 20)` : ''}`;
+        if (spellingCorrections.size > 0) {
+            message += `<br><span class="text-xs text-green-600">✨ Found results using spelling variations: ${Array.from(spellingCorrections).join(', ')}</span>`;
+        }
+        
+        resultCountDiv.innerHTML = `<p class="text-sm text-blue-800">${message}</p>`;
         container.appendChild(resultCountDiv);
         
         limitedResults.forEach((result, index) => {
@@ -792,6 +807,79 @@ class AddFoodForm {
                 }
             }, 300);
         }, 5000);
+    }
+
+    showSpellingSuggestions(suggestions, baseFoodData) {
+        this.showStep(3);
+        
+        const container = this.container.querySelector('#foodOptionsContainer');
+        if (!container) {
+            console.error('❌ Food options container not found');
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        // Add spelling suggestions message
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.className = 'text-center mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg';
+        suggestionsDiv.innerHTML = `
+            <p class="text-sm text-yellow-800 mb-2">
+                <strong>No exact match found for "${baseFoodData.food_name}"</strong>
+            </p>
+            <p class="text-xs text-yellow-700 mb-3">
+                Did you mean one of these?
+            </p>
+        `;
+        container.appendChild(suggestionsDiv);
+        
+        // Create suggestion buttons
+        suggestions.forEach(suggestion => {
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'mb-2';
+            
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200';
+            button.innerHTML = `
+                <div class="font-medium text-gray-900">${suggestion}</div>
+                <div class="text-xs text-gray-500">Click to search for this instead</div>
+            `;
+            
+            button.addEventListener('click', () => {
+                // Update the search input and search again
+                const searchInput = this.container.querySelector('#foodName');
+                if (searchInput) {
+                    searchInput.value = suggestion;
+                }
+                this.handleSearchNutrition();
+            });
+            
+            suggestionDiv.appendChild(button);
+            container.appendChild(suggestionDiv);
+        });
+        
+        // Add option to continue with original search
+        const continueDiv = document.createElement('div');
+        continueDiv.className = 'mt-4 p-3 border border-gray-200 rounded-lg';
+        
+        const continueButton = document.createElement('button');
+        continueButton.type = 'button';
+        continueButton.className = 'w-full p-3 text-left text-gray-600 hover:bg-gray-50 transition-colors duration-200';
+        continueButton.innerHTML = `
+            <div class="font-medium">Continue with "${baseFoodData.food_name}"</div>
+            <div class="text-xs text-gray-500">Add without nutritional data</div>
+        `;
+        
+        continueButton.addEventListener('click', () => {
+            this.currentFoodData = baseFoodData;
+            this.currentNutritionData = null;
+            this.showStep(4);
+            this.populateNutritionData(this.currentFoodData);
+        });
+        
+        continueDiv.appendChild(continueButton);
+        container.appendChild(continueDiv);
     }
     
     showSuccess(message) {
