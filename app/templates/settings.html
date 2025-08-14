@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <!-- Global Ki Wellness Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ki-wellness-global.css') }}">
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Include Navigation -->
@@ -247,12 +248,12 @@
                             const data = await response.json();
                             
                             if (data.success) {
-                                alert('Verification email sent! Please check your inbox.');
+                                Toast.success('Verification email sent! Please check your inbox.');
                             } else {
-                                alert('Error: ' + data.error);
+                                Toast.error('Error: ' + data.error);
                             }
                         } catch (error) {
-                            alert('Error sending verification email: ' + error.message);
+                            Toast.error('Error sending verification email: ' + error.message);
                         }
                     }
 
@@ -270,10 +271,10 @@
                             if (data.success) {
                                 window.open(data.portal_url, '_blank');
                             } else {
-                                alert('Error: ' + data.error);
+                                Toast.error('Error: ' + data.error);
                             }
                         } catch (error) {
-                            alert('Error creating portal session: ' + error.message);
+                            Toast.error('Error creating portal session: ' + error.message);
                         }
                     }
                 </script>

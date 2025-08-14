@@ -18,6 +18,7 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -241,19 +242,19 @@
                 // Basic validation
                 if (name.length < 2) {
                     e.preventDefault();
-                    alert('Please enter your full name (at least 2 characters).');
+                    Toast.warning('Please enter your full name (at least 2 characters).');
                     return;
                 }
                 
                 if (message.length < 10) {
                     e.preventDefault();
-                    alert('Please enter a message with at least 10 characters.');
+                    Toast.warning('Please enter a message with at least 10 characters.');
                     return;
                 }
                 
                 if (!subject) {
                     e.preventDefault();
-                    alert('Please select a subject.');
+                    Toast.warning('Please select a subject.');
                     return;
                 }
                 

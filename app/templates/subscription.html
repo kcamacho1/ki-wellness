@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subscription Management - Ki Wellness</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -386,12 +387,12 @@
             try {
                 const quantity = document.getElementById('creditQuantity').value;
                 if (!quantity || isNaN(quantity) || quantity < 1) {
-                    alert('Please enter a valid quantity (1-1000)');
+                    Toast.warning('Please enter a valid quantity (1-1000)');
                     return;
                 }
                 
                 if (quantity > 1000) {
-                    alert('Maximum quantity is 1000 questions per purchase');
+                    Toast.warning('Maximum quantity is 1000 questions per purchase');
                     return;
                 }
                 
@@ -410,15 +411,15 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert(`Redirecting to Stripe to purchase ${quantity} questions for $${totalCost}`);
+                    Toast.info(`Redirecting to Stripe to purchase ${quantity} questions for $${totalCost}`);
                     window.location.href = data.checkout_url;
                     // Refresh status after purchase
                     setTimeout(loadCurrentStatus, 2000);
                 } else {
-                    alert('Error: ' + data.error);
+                    Toast.error('Error: ' + data.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                Toast.error('Error: ' + error.message);
             }
         };
 
@@ -432,15 +433,15 @@
                 
                 const data = await response.json();
                 if (data.success) {
-                    alert(data.message);
+                    Toast.success(data.message);
                     window.open(data.redirect_url, '_blank');
                     // Refresh status after upgrade
                     setTimeout(loadCurrentStatus, 2000);
                 } else {
-                    alert('Error: ' + data.error);
+                    Toast.error('Error: ' + data.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                Toast.error('Error: ' + error.message);
             }
         };
 

@@ -413,9 +413,21 @@ class APIService {
      * Add mood entry
      */
     static async addMoodEntry(mood, notes, targetDate = null) {
+        // Convert text mood to numeric score
+        const moodScoreMap = {
+            '😊 Great': 9,
+            '😌 Good': 7,
+            '😐 Neutral': 5,
+            '😔 Down': 3,
+            '😤 Stressed': 2,
+            '😴 Tired': 4
+        };
+        
+        const moodScore = moodScoreMap[mood] || 5; // Default to neutral if not found
+        
         const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const requestBody = {
-            mood: mood,
+            mood_score: moodScore,
             notes: notes,
             browser_timezone: browserTimezone
         };
@@ -641,7 +653,7 @@ class ShareManager {
         } catch (error) {
             console.error('Error sharing tile:', error);
             this.restoreShareButton(tileType);
-            alert('Error sharing tile. Please try again.');
+            Toast.error('Error sharing tile. Please try again.');
         }
     }
 
@@ -793,7 +805,7 @@ class ShareManager {
             default:
                 successMessage = `Screenshot saved with Ki Wellness branding! Share it with the link: https://kiwellness.org\n\n"Ki Wellness, Self Health Simplified"`;
         }
-        alert(successMessage);
+        Toast.success(successMessage);
     }
 
     /**

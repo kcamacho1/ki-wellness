@@ -16,6 +16,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
     <script src="{{ url_for('static', filename='js/food_journal_module.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard_module.js') }}"></script>
     <script src="{{ url_for('static', filename='js/add_food_form.js') }}"></script>
@@ -646,7 +647,7 @@
         
         const addMoodEntry = async () => {
             if (!selectedMood) {
-                alert('Please select a mood');
+                Toast.warning('Please select a mood');
                 return;
             }
             
@@ -673,13 +674,13 @@
                     closeMoodModal();
                     
                     // Show success feedback
-                    alert('Mood added successfully!');
+                    Toast.success('Mood added successfully!');
                 } else {
-                    alert('Error adding mood: ' + data.error);
+                    Toast.error('Error adding mood: ' + data.error);
                 }
             } catch (error) {
                 console.error('Error adding mood:', error);
-                alert('Error adding mood. Please try again.');
+                Toast.error('Error adding mood. Please try again.');
             } finally {
                 const confirmMoodBtn = document.getElementById('confirmMoodBtn');
                 confirmMoodBtn.disabled = false;

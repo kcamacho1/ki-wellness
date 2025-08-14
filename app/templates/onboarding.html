@@ -11,6 +11,7 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ url_for('static', filename='js/toast_notifications.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -358,7 +359,7 @@
                 
                 if (!isValid) {
                     e.preventDefault();
-                    alert('Please fill in all required fields.');
+                    Toast.warning('Please fill in all required fields.');
                 }
             });
         });

@@ -162,19 +162,19 @@ def search_food():
             user_serving_size = request.json.get('serving_size')
             user_serving_unit = request.json.get('serving_unit', 'g')
             
-                            if user_serving_size and user_serving_unit:
-                    try:
-                        # Convert the nutritional data to match user's serving size
-                        converted_data = NutritionService.convert_nutritional_data(
-                            main_result, 
-                            float(user_serving_size), 
-                            user_serving_unit
-                        )
-                        if converted_data:
-                            main_result = converted_data
-                    except Exception as conversion_error:
-                        print(f"❌ Error converting nutritional data: {conversion_error}")
-                        # Continue with original data if conversion fails
+            if user_serving_size and user_serving_unit:
+                try:
+                    # Convert the nutritional data to match user's serving size
+                    converted_data = NutritionService.convert_nutritional_data(
+                        main_result, 
+                        float(user_serving_size), 
+                        user_serving_unit
+                    )
+                    if converted_data:
+                        main_result = converted_data
+                except Exception as conversion_error:
+                    print(f"❌ Error converting nutritional data: {conversion_error}")
+                    # Continue with original data if conversion fails
             
             return jsonify({
                 'success': True,
