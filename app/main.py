@@ -10,17 +10,16 @@ Version: 2.0
 """
 
 import os
-from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash, session, make_response
-from sqlalchemy import text, inspect
+from datetime import datetime
+from flask import Flask, jsonify
 
-# Import new modular components
-from .models import db, init_db, User, UserProfile, FoodJournal, MoodEntry, PatternsCache, Review, UserAgreement, Reminder, ReminderLog, Notification, SystemSettings, TokenUsage, APICosts, UserSubscription, SessionCredits, AIUsageSession
-from .utils import ValidationUtils, SecurityUtils, TimeUtils, ConversionUtils, NotificationUtils, DataQualityUtils
-from .utils.database_health import init_health_monitor, log_database_health, check_database_health, safe_check_database_health
-from .services import SystemService, UserService, NutritionService, AIService
-from .config import create_app, limiter, oauth, google_oauth, OAUTH_AVAILABLE, STRIPE_AVAILABLE, get_stripe_config, create_admin_account, ensure_tables_exist
-from .decorators import login_required, admin_required, is_admin_user, verify_user_data_access
+# Import modular components
+from .models import db, init_db
+from .utils import SecurityUtils
+from .utils.database_health import init_health_monitor, log_database_health, check_database_health
+from .services import UserService
+from .config import create_app, create_admin_account, ensure_tables_exist
+from .decorators import is_admin_user
 from .routes.auth import auth_bp
 from .routes.static import static_bp
 from .routes.subscription import subscription_bp
@@ -64,10 +63,6 @@ app.register_blueprint(reminders_bp)
 app.register_blueprint(ai_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(youtube_bp)
-
-# Initialize Stripe
-stripe_initialized = False
-
 
 # ============================================================================
 # HEALTH CHECK AND MONITORING ROUTES
@@ -113,10 +108,8 @@ def database_health():
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
 # ============================================================================
-# REMAINING ROUTES - TO BE MODULARIZED
+# CONTEXT PROCESSORS
 # ============================================================================
-
-# Profile Routes
 
 @app.context_processor
 def inject_functions():
