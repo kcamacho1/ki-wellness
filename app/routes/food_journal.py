@@ -101,25 +101,26 @@ def search_food():
                     traceback.print_exc()
         
         # For non-barcode searches, try OpenFoodFacts API and common foods
-        if not is_barcode and len(results) < 5:
+        if not is_barcode:
             try:
-                print(f"🔍 Searching OpenFoodFacts API for: {query}")
-                nutrition_data = NutritionService.search_openfoodfacts_api(query)
-                if nutrition_data:
-                    print(f"✅ Found OpenFoodFacts data for: {query}")
-                    # Add to results
-                    results.append({
-                        'id': None,  # No cache ID for API results
-                        'food_name': nutrition_data.get('food_name', query),
-                        'brand': nutrition_data.get('brand', ''),
-                        'serving_size': nutrition_data.get('serving_size', 100),
-                        'serving_unit': nutrition_data.get('serving_unit', 'g'),
-                        'calories': nutrition_data.get('calories', 0),
-                        'protein': nutrition_data.get('protein', 0),
-                        'carbs': nutrition_data.get('carbs', 0),
-                        'fat': nutrition_data.get('fat', 0),
-                        'source': 'openfoodfacts_api'
-                    })
+                print(f"🔍 Searching OpenFoodFacts API for multiple results: {query}")
+                nutrition_results = NutritionService.search_openfoodfacts_multiple(query)
+                if nutrition_results:
+                    print(f"✅ Found {len(nutrition_results)} OpenFoodFacts results for: {query}")
+                    # Add all results to the results list
+                    for nutrition_data in nutrition_results:
+                        results.append({
+                            'id': None,  # No cache ID for API results
+                            'food_name': nutrition_data.get('food_name', query),
+                            'brand': nutrition_data.get('brand', ''),
+                            'serving_size': nutrition_data.get('serving_size', 100),
+                            'serving_unit': nutrition_data.get('serving_unit', 'g'),
+                            'calories': nutrition_data.get('calories', 0),
+                            'protein': nutrition_data.get('protein', 0),
+                            'carbs': nutrition_data.get('carbs', 0),
+                            'fat': nutrition_data.get('fat', 0),
+                            'source': 'openfoodfacts_api'
+                        })
                 else:
                     print(f"❌ No OpenFoodFacts data found for: {query}")
                     
@@ -130,22 +131,23 @@ def search_food():
             
             # Always try common foods database as fallback
             try:
-                print(f"🔍 Searching common foods database for: {query}")
-                common_food = NutritionService.search_common_foods_database(query)
-                if common_food and len(results) < 5:
-                    print(f"✅ Found common foods data for: {query}")
-                    results.append({
-                        'id': None,
-                        'food_name': common_food.get('food_name', query),
-                        'brand': '',
-                        'serving_size': common_food.get('serving_size', 100),
-                        'serving_unit': common_food.get('serving_unit', 'g'),
-                        'calories': common_food.get('calories', 0),
-                        'protein': common_food.get('protein', 0),
-                        'carbs': common_food.get('carbs', 0),
-                        'fat': common_food.get('fat', 0),
-                        'source': 'common_foods_db'
-                    })
+                print(f"🔍 Searching common foods database for multiple results: {query}")
+                common_foods = NutritionService.search_common_foods_multiple(query)
+                if common_foods:
+                    print(f"✅ Found {len(common_foods)} common foods results for: {query}")
+                    for common_food in common_foods:
+                        results.append({
+                            'id': None,
+                            'food_name': common_food.get('food_name', query),
+                            'brand': '',
+                            'serving_size': common_food.get('serving_size', 100),
+                            'serving_unit': common_food.get('serving_unit', 'g'),
+                            'calories': common_food.get('calories', 0),
+                            'protein': common_food.get('protein', 0),
+                            'carbs': common_food.get('carbs', 0),
+                            'fat': common_food.get('fat', 0),
+                            'source': 'common_foods_db'
+                        })
                 else:
                     print(f"❌ No common foods data found for: {query}")
             except Exception as common_error:
@@ -153,34 +155,43 @@ def search_food():
                 import traceback
                 traceback.print_exc()
         
-        # Return the first result as data for the frontend
+        # Return results for the frontend
         if results:
-            # Use the first result as the main data
-            main_result = results[0]
-            
-            # Convert nutritional data based on user's serving size if provided
-            user_serving_size = request.json.get('serving_size')
-            user_serving_unit = request.json.get('serving_unit', 'g')
-            
-            if user_serving_size and user_serving_unit:
-                try:
-                    # Convert the nutritional data to match user's serving size
-                    converted_data = NutritionService.convert_nutritional_data(
-                        main_result, 
-                        float(user_serving_size), 
-                        user_serving_unit
-                    )
-                    if converted_data:
-                        main_result = converted_data
-                except Exception as conversion_error:
-                    print(f"❌ Error converting nutritional data: {conversion_error}")
-                    # Continue with original data if conversion fails
-            
-            return jsonify({
-                'success': True,
-                'data': main_result,
-                'results': results  # Keep all results for future use
-            })
+            # If we have multiple results, return them all for user selection
+            if len(results) > 1:
+                return jsonify({
+                    'success': True,
+                    'multiple_results': True,
+                    'results': results,
+                    'count': len(results)
+                })
+            else:
+                # Single result, use it as the main data
+                main_result = results[0]
+                
+                # Convert nutritional data based on user's serving size if provided
+                user_serving_size = request.json.get('serving_size')
+                user_serving_unit = request.json.get('serving_unit', 'g')
+                
+                if user_serving_size and user_serving_unit:
+                    try:
+                        # Convert the nutritional data to match user's serving size
+                        converted_data = NutritionService.convert_nutritional_data(
+                            main_result, 
+                            float(user_serving_size), 
+                            user_serving_unit
+                        )
+                        if converted_data:
+                            main_result = converted_data
+                    except Exception as conversion_error:
+                        print(f"❌ Error converting nutritional data: {conversion_error}")
+                        # Continue with original data if conversion fails
+                
+                return jsonify({
+                    'success': True,
+                    'data': main_result,
+                    'results': results
+                })
         else:
             # Provide helpful message for barcode searches
             if is_barcode:

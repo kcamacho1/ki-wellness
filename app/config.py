@@ -12,6 +12,9 @@ Version: 2.0
 import os
 from datetime import timedelta
 from flask import Flask
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import DevelopmentConfig, ProductionConfig
 from .models import db, User, UserProfile, SystemSettings, APICosts
 from typing import Optional, Union, Callable, TYPE_CHECKING
@@ -29,10 +32,16 @@ try:
     from flask_oauthlib.client import OAuth
     OAUTH_AVAILABLE = True
     print("✅ Flask-OAuthlib available. OAuth features enabled.")
-except ImportError:
+except ImportError as e:
     OAUTH_AVAILABLE = False
-    print("⚠️  Flask-OAuthlib not available. OAuth features will be disabled.")
+    print(f"⚠️  Flask-OAuthlib not available. OAuth features will be disabled.")
+    print(f"   Error: {e}")
     print("   To enable OAuth, install: pip install Flask-OAuthlib")
+except Exception as e:
+    OAUTH_AVAILABLE = False
+    print(f"⚠️  Flask-OAuthlib import failed. OAuth features will be disabled.")
+    print(f"   Error: {e}")
+    print("   This might be due to version compatibility issues.")
 
 # Rate Limiter imports
 try:

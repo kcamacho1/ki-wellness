@@ -530,6 +530,51 @@ class NutritionService:
             return data_copy
         
         return None
+
+    @staticmethod
+    def search_common_foods_multiple(food_name: str) -> List[Dict[str, Any]]:
+        """Search the local common foods database and return multiple matching results"""
+        food_lower = food_name.lower().strip()
+        results = []
+        
+        # Direct match
+        if food_lower in NutritionService.COMMON_FOODS_DATABASE:
+            data = NutritionService.COMMON_FOODS_DATABASE[food_lower].copy()
+            data['serving_size'] = 100
+            data['serving_unit'] = 'g'
+            results.append(data)
+        
+        # Partial matches
+        for key, data in NutritionService.COMMON_FOODS_DATABASE.items():
+            if key in food_lower or food_lower in key:
+                data_copy = data.copy()
+                data_copy['serving_size'] = 100
+                data_copy['serving_unit'] = 'g'
+                if data_copy not in results:  # Avoid duplicates
+                    results.append(data_copy)
+        
+        # Word-based matching for additional results
+        food_words = set(food_lower.split())
+        scored_matches = []
+        
+        for key, data in NutritionService.COMMON_FOODS_DATABASE.items():
+            key_words = set(key.split())
+            common_words = food_words.intersection(key_words)
+            score = len(common_words)
+            
+            if score >= 1:  # At least one word matches
+                data_copy = data.copy()
+                data_copy['serving_size'] = 100
+                data_copy['serving_unit'] = 'g'
+                scored_matches.append((score, data_copy))
+        
+        # Sort by score and add top matches (avoiding duplicates)
+        scored_matches.sort(key=lambda x: x[0], reverse=True)
+        for score, data in scored_matches:
+            if data not in results and len(results) < 10:  # Limit to 10 results
+                results.append(data)
+        
+        return results
     
     @staticmethod
     def search_openfoodfacts_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
@@ -591,7 +636,7 @@ class NutritionService:
                 'search_simple': 1,
                 'action': 'process',
                 'json': 1,
-                'page_size': 10  # Get more results to find better matches
+                'page_size': 20  # Get more results for user selection
             }
             
             response = requests.get(url, headers=headers, params=params, timeout=10)
@@ -620,6 +665,60 @@ class NutritionService:
         except Exception as e:
             print(f"Open Food Facts API v2 error: {e}")
             return None
+
+    @staticmethod
+    def search_openfoodfacts_multiple(food_name: str) -> List[Dict[str, Any]]:
+        """Search Open Food Facts API v2 and return multiple results for user selection"""
+        try:
+            # Clean and improve search terms
+            search_terms = NutritionService.clean_search_terms(food_name)
+            
+            # Use the official API v2 search endpoint
+            url = f"https://world.openfoodfacts.org/cgi/search.pl"
+            
+            # Set up headers with proper User-Agent as required by the API
+            headers = {
+                'User-Agent': 'KiWellness/1.0 (nutrition@kiwellness.org)',
+                'Content-Type': 'application/json'
+            }
+            
+            # Search parameters for the legacy endpoint
+            params = {
+                'search_terms': search_terms,
+                'search_simple': 1,
+                'action': 'process',
+                'json': 1,
+                'page_size': 20  # Get up to 20 results for user selection
+            }
+            
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            
+            # Handle rate limiting (429 status)
+            if response.status_code == 429:
+                print("Open Food Facts API: Rate limit reached (10 req/min for search)")
+                return []
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            results = []
+            if data.get('products') and len(data['products']) > 0:
+                # Process up to 20 products and return them as options
+                for product in data['products'][:20]:
+                    nutritional_data = NutritionService.extract_nutritional_data(product, food_name)
+                    if nutritional_data:
+                        results.append(nutritional_data)
+            
+            return results
+        except requests.exceptions.Timeout:
+            print("Open Food Facts API v2: Request timeout")
+            return []
+        except requests.exceptions.RequestException as e:
+            print(f"Open Food Facts API v2 request error: {e}")
+            return []
+        except Exception as e:
+            print(f"Open Food Facts API v2 error: {e}")
+            return []
     
     @staticmethod
     def clean_search_terms(food_name: str) -> str:

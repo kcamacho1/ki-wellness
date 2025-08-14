@@ -332,14 +332,22 @@ class AddFoodForm {
             
             if (data.success) {
                 // Check if we have multiple results to choose from
-                if (data.results && data.results.length > 1) {
+                if (data.multiple_results && data.results && data.results.length > 1) {
                     this.showFoodSelection(data.results, { food_name: 'Barcode Product', serving_size: 100, serving_unit: 'g' });
-                } else {
+                } else if (data.data) {
                     // Single result, proceed directly to review
                     this.currentFoodData = data.data;
                     this.closeBarcodeScanner();
                     this.showStep(4);
                     this.populateNutritionData(data.data);
+                } else if (data.results && data.results.length === 1) {
+                    // Single result in results array
+                    this.currentFoodData = data.results[0];
+                    this.closeBarcodeScanner();
+                    this.showStep(4);
+                    this.populateNutritionData(data.results[0]);
+                } else {
+                    this.showError('No food found for this barcode. Please try manual entry.');
                 }
             } else {
                 if (data.suggest_manual && data.barcode) {
@@ -426,12 +434,25 @@ class AddFoodForm {
             
             if (data.success) {
                 // Check if we have multiple results to choose from
-                if (data.results && data.results.length > 1) {
+                if (data.multiple_results && data.results && data.results.length > 1) {
                     this.showFoodSelection(data.results, foodData);
-                } else {
+                } else if (data.data) {
                     // Single result, proceed directly to review
                     this.currentFoodData = { ...foodData, ...data.data };
                     this.currentNutritionData = data.data;
+                    this.showStep(4);
+                    this.populateNutritionData(this.currentFoodData);
+                } else if (data.results && data.results.length === 1) {
+                    // Single result in results array
+                    this.currentFoodData = { ...foodData, ...data.results[0] };
+                    this.currentNutritionData = data.results[0];
+                    this.showStep(4);
+                    this.populateNutritionData(this.currentFoodData);
+                } else {
+                    this.showError('No nutritional data found. You can still add the food without nutrition info.');
+                    // Still proceed to step 4 with basic data
+                    this.currentFoodData = foodData;
+                    this.currentNutritionData = null;
                     this.showStep(4);
                     this.populateNutritionData(this.currentFoodData);
                 }

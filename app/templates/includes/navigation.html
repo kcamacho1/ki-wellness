@@ -21,8 +21,8 @@
                 
                 <!-- Login-required links - only visible when logged in -->
                                     {% if session.get('user_id') %}
-                        <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Dashboard</a>
-                        <a href="{{ url_for('static.exercise') }}" class="nav-link {{ 'nav-active' if request.endpoint == 'static.exercise' else '' }}" data-endpoint="exercise">Exercise</a>
+                        <a href="/dashboard" class="nav-link {{ 'nav-active' if request.endpoint == 'dashboard' else '' }}" data-endpoint="dashboard">Eat</a>
+                        <a href="{{ url_for('static.exercise') }}" class="nav-link {{ 'nav-active' if request.endpoint == 'static.exercise' else '' }}" data-endpoint="exercise">Move</a>
                 {% else %}
                     <!-- Public page navigation items -->
                     <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
