@@ -1,0 +1,48 @@
+Ki Wellness - Safe Production Database Fix
+==========================================
+
+Copy and paste this command directly into your production server terminal:
+
+python3 -c "
+import sys; sys.path.append('.'); 
+from app.main import app, db; 
+from sqlalchemy import text; 
+app.app_context().push(); 
+conn = db.engine.connect(); 
+print('🔧 Checking existing columns...'); 
+existing = [row[0] for row in conn.execute(text('SELECT column_name FROM information_schema.columns WHERE table_name = \\'users\\''))]; 
+print(f'Existing columns: {existing}'); 
+missing_cols = ['phone', 'is_active', 'email_verified', 'phone_verified', 'email_verification_token', 'phone_verification_code', 'phone_verification_expires', 'email_notifications', 'sms_notifications', 'push_notifications', 'oauth_provider', 'oauth_id', 'oauth_email', 'oauth_name', 'oauth_picture']; 
+to_add = [col for col in missing_cols if col not in existing]; 
+print(f'Missing columns to add: {to_add}'); 
+for col in to_add: 
+    try: 
+        if col == 'phone': conn.execute(text('ALTER TABLE users ADD COLUMN phone VARCHAR(20)')); 
+        elif col == 'is_active': conn.execute(text('ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE')); 
+        elif col == 'email_verified': conn.execute(text('ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE')); 
+        elif col == 'phone_verified': conn.execute(text('ALTER TABLE users ADD COLUMN phone_verified BOOLEAN DEFAULT FALSE')); 
+        elif col == 'email_verification_token': conn.execute(text('ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(255)')); 
+        elif col == 'phone_verification_code': conn.execute(text('ALTER TABLE users ADD COLUMN phone_verification_code VARCHAR(6)')); 
+        elif col == 'phone_verification_expires': conn.execute(text('ALTER TABLE users ADD COLUMN phone_verification_expires TIMESTAMP')); 
+        elif col == 'email_notifications': conn.execute(text('ALTER TABLE users ADD COLUMN email_notifications BOOLEAN DEFAULT TRUE')); 
+        elif col == 'sms_notifications': conn.execute(text('ALTER TABLE users ADD COLUMN sms_notifications BOOLEAN DEFAULT FALSE')); 
+        elif col == 'push_notifications': conn.execute(text('ALTER TABLE users ADD COLUMN push_notifications BOOLEAN DEFAULT TRUE')); 
+        elif col == 'oauth_provider': conn.execute(text('ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(20)')); 
+        elif col == 'oauth_id': conn.execute(text('ALTER TABLE users ADD COLUMN oauth_id VARCHAR(255)')); 
+        elif col == 'oauth_email': conn.execute(text('ALTER TABLE users ADD COLUMN oauth_email VARCHAR(255)')); 
+        elif col == 'oauth_name': conn.execute(text('ALTER TABLE users ADD COLUMN oauth_name VARCHAR(255)')); 
+        elif col == 'oauth_picture': conn.execute(text('ALTER TABLE users ADD COLUMN oauth_picture VARCHAR(500)')); 
+        print(f'✅ Added: {col}'); 
+    except Exception as e: 
+        if 'already exists' in str(e).lower(): 
+            print(f'ℹ️  Already exists: {col}'); 
+        else: 
+            print(f'❌ Error adding {col}: {e}'); 
+conn.commit(); 
+print('✅ Database fix completed'); 
+try: 
+    conn.execute(text('SELECT id, username, email, phone, is_active FROM users LIMIT 1')); 
+    print('✅ Login query test passed'); 
+except Exception as e: 
+    print(f'❌ Login test failed: {e}')
+"

@@ -1,0 +1,28 @@
+Ki Wellness - Clean Production Database Diagnostic
+=================================================
+
+Copy and paste this command directly into your production server terminal:
+
+python3 -c "
+import sys
+sys.path.append('.')
+from app.main import app, db
+from sqlalchemy import text
+app.app_context().push()
+conn = db.engine.connect()
+print('Database Diagnostic')
+print('=' * 40)
+existing = [row[0] for row in conn.execute(text('SELECT column_name FROM information_schema.columns WHERE table_name = \\'users\\' ORDER BY ordinal_position'))]
+print(f'Current columns ({len(existing)}):')
+for i, col in enumerate(existing, 1):
+    print(f'   {i:2d}. {col}')
+expected = ['id', 'username', 'email', 'password_hash', 'phone', 'is_admin', 'is_active', 'created_at', 'updated_at', 'email_verified', 'phone_verified', 'email_verification_token', 'phone_verification_code', 'phone_verification_expires', 'email_notifications', 'sms_notifications', 'push_notifications', 'oauth_provider', 'oauth_id', 'oauth_email', 'oauth_name', 'oauth_picture']
+missing = [col for col in expected if col not in existing]
+print(f'Missing columns ({len(missing)}):')
+for col in missing:
+    print(f'   - {col}')
+if not missing:
+    print('All expected columns exist!')
+else:
+    print('Next step: Run the fix command')
+"
