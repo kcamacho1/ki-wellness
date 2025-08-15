@@ -1,0 +1,35 @@
+Ki Wellness - Production Login Fix Command
+==========================================
+
+Copy and paste this command directly into your production server terminal:
+
+python3 -c "
+import os
+from sqlalchemy import text, create_engine
+db_url = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://', 1)
+if db_url:
+    engine = create_engine(db_url)
+    with engine.connect() as conn:
+        try:
+            result = conn.execute(text('SELECT column_name FROM information_schema.columns WHERE table_name = \\'users\\' AND column_name = \\'phone\\''))
+            if not result.fetchone():
+                print('Adding phone column...')
+                conn.execute(text('ALTER TABLE users ADD COLUMN phone VARCHAR(20)'))
+                conn.commit()
+                print('Phone column added successfully')
+            else:
+                print('Phone column already exists')
+        except Exception as e:
+            if 'already exists' in str(e).lower():
+                print('Phone column already exists')
+            else:
+                print(f'Error: {e}')
+else:
+    print('DATABASE_URL not found')
+"
+
+Or run the shell script:
+./fix_production_login.sh
+
+Or run the Python script:
+python3 deploy_fix_phone_column.py
