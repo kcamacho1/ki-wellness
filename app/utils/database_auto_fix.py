@@ -20,6 +20,17 @@ from sqlalchemy.types import String, Integer, Boolean, DateTime, Float, Date, Ti
 from sqlalchemy.dialects.postgresql import UUID
 import logging
 
+# Try to import PostgreSQL adapters
+try:
+    import psycopg2
+    POSTGRES_ADAPTER = 'psycopg2'
+except ImportError:
+    try:
+        import psycopg
+        POSTGRES_ADAPTER = 'psycopg'
+    except ImportError:
+        POSTGRES_ADAPTER = None
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -432,8 +443,39 @@ def auto_fix_database(database_url: str = None) -> Dict[str, Any]:
         if not database_url:
             raise ValueError("DATABASE_URL environment variable not found")
     
-    auto_fix = DatabaseAutoFix(database_url)
-    return auto_fix.check_and_fix_database()
+    # Check if we have the required PostgreSQL adapter
+    if database_url.startswith('postgresql://') or database_url.startswith('postgres://'):
+        if POSTGRES_ADAPTER is None:
+            return {
+                'timestamp': datetime.utcnow().isoformat(),
+                'success': False,
+                'fixes_applied': [],
+                'errors_encountered': [
+                    'PostgreSQL adapter not found. Please install psycopg2 or psycopg: '
+                    'pip install psycopg2-binary or pip install psycopg[binary]'
+                ],
+                'summary': {
+                    'total_fixes': 0,
+                    'total_errors': 1,
+                    'status': 'failed'
+                }
+            }
+    
+    try:
+        auto_fix = DatabaseAutoFix(database_url)
+        return auto_fix.check_and_fix_database()
+    except Exception as e:
+        return {
+            'timestamp': datetime.utcnow().isoformat(),
+            'success': False,
+            'fixes_applied': [],
+            'errors_encountered': [str(e)],
+            'summary': {
+                'total_fixes': 0,
+                'total_errors': 1,
+                'status': 'failed'
+            }
+        }
 
 
 def get_database_status(database_url: str = None) -> Dict[str, Any]:
@@ -451,8 +493,24 @@ def get_database_status(database_url: str = None) -> Dict[str, Any]:
         if not database_url:
             raise ValueError("DATABASE_URL environment variable not found")
     
-    auto_fix = DatabaseAutoFix(database_url)
-    return auto_fix.get_database_status()
+    # Check if we have the required PostgreSQL adapter
+    if database_url.startswith('postgresql://') or database_url.startswith('postgres://'):
+        if POSTGRES_ADAPTER is None:
+            return {
+                'timestamp': datetime.utcnow().isoformat(),
+                'error': 'PostgreSQL adapter not found. Please install psycopg2 or psycopg: pip install psycopg2-binary or pip install psycopg[binary]',
+                'status': 'error'
+            }
+    
+    try:
+        auto_fix = DatabaseAutoFix(database_url)
+        return auto_fix.get_database_status()
+    except Exception as e:
+        return {
+            'timestamp': datetime.utcnow().isoformat(),
+            'error': str(e),
+            'status': 'error'
+        }
 
 
 if __name__ == "__main__":
