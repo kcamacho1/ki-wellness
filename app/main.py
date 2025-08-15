@@ -40,7 +40,7 @@ init_db(app)
 # Initialize database health monitoring
 health_monitor = init_health_monitor(db)
 
-# Perform initial database health check within app context
+# Perform initial database health check and auto-fix within app context
 with app.app_context():
     print("🔍 Performing initial database health check...")
     initial_health = check_database_health()
@@ -51,6 +51,26 @@ with app.app_context():
 
     # Log initial health status
     log_database_health()
+    
+    # Auto-fix database schema if needed
+    try:
+        from .utils.database_auto_fix import auto_fix_database
+        print("🔧 Checking and auto-fixing database schema...")
+        fix_results = auto_fix_database()
+        
+        if fix_results.get('success', False):
+            if fix_results.get('fixes_applied'):
+                print(f"✅ Database schema auto-fixed - {len(fix_results['fixes_applied'])} fixes applied")
+                for fix in fix_results['fixes_applied']:
+                    print(f"   ➕ {fix}")
+            else:
+                print("✅ Database schema is up to date - no fixes needed")
+        else:
+            print(f"⚠️  Database schema auto-fix completed with issues: {len(fix_results.get('errors_encountered', []))} errors")
+            
+    except Exception as e:
+        print(f"⚠️  Database auto-fix failed: {e}")
+        print("   Continuing with application startup...")
 
 # Register all blueprints
 app.register_blueprint(auth_bp)
