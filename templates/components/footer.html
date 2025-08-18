@@ -1,0 +1,43 @@
+<footer class="bg-gray-800 text-white mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Company Info -->
+            <div class="col-span-1 md:col-span-2">
+                <div class="flex items-center space-x-2 mb-4">
+                    <img src="{{ url_for('static', filename='assets/leaf.png') }}" alt="Ki Wellness" class="w-6 h-6">
+                    <span class="text-lg font-bold text-ki-green-400">Ki Wellness</span>
+                </div>
+                <p class="text-gray-300 mb-4">
+                    Your comprehensive self-health companion. Track nutrition, water intake, and mood to achieve your wellness goals.
+                </p>
+                <p class="text-sm text-gray-400">
+                    © 2024 Ki Wellness. All rights reserved.
+                </p>
+            </div>
+            
+            <!-- Quick Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('dashboard') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Dashboard</a></li>
+                        <li><a href="{{ url_for('profile') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Profile</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('login') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Login</a></li>
+                        <li><a href="{{ url_for('register') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Sign Up</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <!-- Legal Links -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Legal</h3>
+                <ul class="space-y-2">
+                    <li><a href="{{ url_for('privacy') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('terms') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Terms of Service</a></li>
+                    <li><a href="{{ url_for('disclaimer') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Disclaimer</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,57 @@
+<nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+            <!-- Logo and Brand -->
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
+                    <img src="{{ url_for('static', filename='assets/leaf.png') }}" alt="Ki Wellness" class="w-8 h-8">
+                    <span class="text-xl font-bold text-ki-green-600">Ki Wellness</span>
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center space-x-8">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Dashboard</a>
+                    <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Profile</a>
+                    <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Login</a>
+                    <a href="{{ url_for('register') }}" class="bg-ki-green-600 text-white px-4 py-2 rounded-lg hover:bg-ki-green-700 transition-colors">Sign Up</a>
+                {% endif %}
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-700 hover:text-ki-green-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden pb-4">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Dashboard</a>
+                <a href="{{ url_for('profile') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Profile</a>
+                <a href="{{ url_for('logout') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Login</a>
+                <a href="{{ url_for('register') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.toggle('hidden');
+    });
+</script>
+
+
+

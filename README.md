@@ -1,299 +1,281 @@
 # Ki Wellness - Self Health Simplified
 
-A simple, safe, and affordable wellness application built by someone who understands your journey. Get personalized guidance from AI and human coaches to track your health, nutrition, and wellness goals.
+A comprehensive self-health application that helps users track nutrition, water intake, and mood with an intuitive and interactive dashboard.
 
-## 🌟 What Makes Ki Wellness Different
+## Features
 
-### 🤖 **AI Health Coach**
-- **Personalized AI Guidance**: Get intelligent insights and recommendations from your AI Health Coach
-- **Pay Only for What You Use**: Buy AI sessions as you need them, no subscriptions required
-- **Evidence-Based Data**: All recommendations based on reputable sources (ISSA, NIH, PubMed, PhD research)
+### 🍎 Nutrition Tracking
+- **Food Search**: Search for foods using Open Food Facts and USDA APIs
+- **Barcode Scanner**: Scan product barcodes to get nutritional information
+- **Manual Entry**: Add custom foods with nutritional data
+- **Serving Size Conversion**: Automatically convert nutrition data based on your serving size
+- **Food Journal**: View and manage your daily food intake
 
-### 👩‍💼 **Built by Someone Who Understands**
-- **Founder's Story**: Created by Kristina, who needed simple wellness tracking herself
-- **Expert Background**: Software development, project management, nutrition, and personal training
-- **Mission-Driven**: Your donations fund health awareness, keep the app affordable, and support education
+### 💧 Water Intake Monitoring
+- **Daily Goal Tracking**: Monitor progress toward 64 oz daily water goal
+- **Quick Add Buttons**: Easily log water intake with one-click buttons
+- **Visual Progress Bar**: See your progress at a glance
 
-### 🛡️ **Safe & Affordable**
-- **Free to Try**: Start your wellness journey completely free
-- **No Hidden Fees**: Transparent pricing, no pressure
-- **Human Coach Available**: Get personalized guidance from a real coach (donation-based)
+### 😊 Mood & Wellness Tracking
+- **Mood Logging**: Track your daily mood on a 1-5 scale
+- **Daily Notes**: Record personal observations and health notes
+- **Visual Feedback**: See your current mood with emojis and descriptions
 
-## 🚀 Key Features
+### 👤 User Management
+- **User Registration**: Create accounts with username, email, and name
+- **Profile Management**: Update personal information, health goals, and measurements
+- **Admin Accounts**: Special admin user with enhanced privileges
+- **Secure Authentication**: Password-protected accounts with session management
 
-### AI Health Coach
-- **Personalized Insights**: Get AI-powered analysis of your nutrition and mood patterns
-- **Smart Recommendations**: Receive customized guidance based on your unique data
-- **Session-Based Pricing**: Buy AI coaching sessions as you need them
+### 🎨 Modern UI/UX
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Quicksand Font**: Clean, modern typography
+- **Interactive Dashboard**: Three vertical cards for quick overview
+- **Real-time Updates**: Instant feedback and data synchronization
+- **Toast Notifications**: User-friendly success and error messages
 
-### Human Coach Support
-- **Real Coach Guidance**: Connect with a certified human coach
-- **Donation-Based Pricing**: Accessible to everyone regardless of budget
-- **Personalized Support**: Get one-on-one guidance for your specific needs
+## Technology Stack
 
-### Simple Wellness Tracking
-- **Food Journal**: Easy meal tracking with nutritional information
-- **Mood Tracking**: Monitor your emotional state and wellness patterns
-- **Dashboard Insights**: Clear overview of your wellness journey
-- **Mobile Friendly**: Access your data anywhere, anytime
+### Backend
+- **Flask**: Python web framework
+- **SQLAlchemy**: Database ORM
+- **Flask-Login**: User authentication
+- **PostgreSQL/SQLite**: Database (PostgreSQL for production, SQLite for development)
 
-### Evidence-Based Approach
-- **Reputable Sources**: Data from ISSA, NIH, PubMed, and peer-reviewed research
-- **Scientific Backing**: All recommendations based on credible health research
-- **Transparent Methods**: Clear explanation of data sources and methodologies
+### Frontend
+- **Tailwind CSS**: Utility-first CSS framework
+- **JavaScript (ES6+)**: Modern JavaScript with async/await
+- **Quicksand Font**: Google Fonts integration
+- **SVG Icons**: Custom and Heroicons
 
-## 🏗️ Technical Architecture
+### APIs
+- **Open Food Facts**: Food database and barcode lookup
+- **USDA FoodData Central**: Nutritional information for basic foods
+- **reCAPTCHA v2**: Conditional spam protection (kiwellness.org only)
 
-### Backend Stack
-- **Python 3.11+**: Core application language
-- **Flask 3.1.1**: Lightweight web framework
-- **SQLAlchemy 2.0.41**: Database ORM
-- **PostgreSQL**: Primary database
-- **Stripe**: Payment processing for AI sessions
-- **OpenAI API**: AI coaching capabilities
-
-### Frontend Stack
-- **TailwindCSS**: Modern, utility-first styling
-- **JavaScript (ES6+)**: Interactive features
-- **HTML5**: Semantic markup
-- **Jinja2**: Template engine
-
-### Security & Privacy
-- **Enterprise-Grade Security**: Your data is protected
-- **Privacy First**: Your wellness journey stays private
-- **Secure Payments**: Stripe-powered payment processing
-- **Data Encryption**: All sensitive data is encrypted
-
-## 📊 Database Schema
-
-### Core Tables
-- **Users**: User accounts and authentication
-- **User Profiles**: Personal details, health metrics, goals
-- **Food Journal**: Meal tracking and nutritional data
-- **Mood Entries**: Emotional state tracking
-- **AI Usage Sessions**: AI coaching session tracking
-- **Session Credits**: AI session credit management
-- **User Subscriptions**: Subscription management
-- **System Settings**: Application configuration
-
-### Payment & Billing
-- **Stripe Integration**: Secure payment processing
-- **Session Credits**: Pay-per-use AI coaching
-- **Donation System**: Human coach accessibility
-- **Subscription Management**: Flexible billing options
-
-## 🚀 Quick Start
+## Installation
 
 ### Prerequisites
-- Python 3.11+
-- PostgreSQL 12+
-- Stripe account (for payments)
-- OpenAI API key (for AI features)
+- Python 3.8+
+- pip
+- PostgreSQL (for production)
 
-### 1. Clone Repository
-```bash
-git clone <repository-url>
-cd ki_wellness
-```
+### Setup
 
-### 2. Set Up Virtual Environment
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd ki_wellness
+   ```
 
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-### 4. Configure Environment
-Create a `.env` file in the project root:
-```env
-# Application
-SECRET_KEY=[YOUR_SECRET_KEY]
-FLASK_ENV=development
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Database
-DATABASE_URL=postgresql://postgres:[PASSWORD]@localhost/ki_wellness
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=[YOUR_PASSWORD]
-POSTGRES_DB=ki_wellness
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+4. **Environment Configuration**
+   Create a `.env` file in the root directory:
+   ```env
+   SECRET_KEY=your-secret-key-here
+   USDA_API_KEY=your-usda-api-key
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=admin-password
+   ADMIN_EMAIL=admin@kiwellness.org
+   DATABASE_URL=postgresql://user:password@localhost/ki_wellness  # For production
+   ```
 
-# Stripe (Live)
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+5. **Initialize the database**
+   ```bash
+   python app.py
+   ```
+   This will create the database tables and the admin user automatically.
 
-# Stripe (Sandbox)
-STRIPE_SANDBOX_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SANDBOX_SECRET_KEY=sk_test_...
-STRIPE_SANDBOX_WEBHOOK_SECRET=whsec_...
+6. **Run the application**
+   ```bash
+   python app.py
+   ```
+   The application will be available at `http://localhost:5000`
 
-# OpenAI
-OPENAI_API_KEY=sk-...
+## API Endpoints
 
-# Google reCAPTCHA
-RECAPTCHA_SITE_KEY=...
-RECAPTCHA_SECRET_KEY=...
-```
+### Authentication
+- `POST /login` - User login
+- `POST /register` - User registration
+- `GET /logout` - User logout
 
-### 5. Initialize Database
-```bash
-python run.py
-```
+### Dashboard
+- `GET /dashboard` - Main dashboard page
+- `GET /profile` - User profile page
+- `GET /api/dashboard-data` - Get dashboard data for a specific date
 
-The application will be available at `http://localhost:5000`
+### Food Management
+- `POST /api/search-food` - Search for food items
+- `GET /api/product/<barcode>` - Get product by barcode
+- `POST /api/food-log` - Add food to daily log
+- `DELETE /api/food-log/<id>` - Remove food from log
 
-## 🎯 Core Features
+### Health Tracking
+- `POST /api/water-log` - Log water intake
+- `POST /api/mood-log` - Log mood
+- `POST /api/notes` - Save daily notes
 
-### AI Health Coach
-- **Chat Interface**: Direct conversation with your AI coach
-- **Nutritional Analysis**: AI-powered food recommendations
-- **Mood Insights**: Pattern recognition and emotional wellness guidance
-- **Goal Setting**: Personalized goal creation and tracking
-- **Progress Monitoring**: AI-driven progress analysis
+### User Profile
+- `GET /api/profile` - Get user profile data
+- `POST /api/profile` - Update user profile
 
-### Human Coach Integration
-- **Coach Matching**: Connect with certified wellness coaches
-- **Donation System**: Flexible pricing based on your budget
-- **Scheduling**: Easy appointment booking
-- **Follow-up Support**: Ongoing guidance and accountability
+### Legal Pages
+- `GET /privacy` - Privacy policy
+- `GET /terms` - Terms of service
+- `GET /disclaimer` - Medical disclaimer
 
-### Wellness Tracking
-- **Food Journal**: Simple meal logging with nutritional data
-- **Mood Tracking**: Daily emotional state monitoring
-- **Sleep Tracking**: Sleep quality and patterns
-- **Activity Logging**: Exercise and movement tracking
-- **Goal Progress**: Visual progress tracking
+## Database Schema
 
-## 🧪 Testing
+### Users
+- `id` (Primary Key)
+- `username` (Unique)
+- `email` (Unique)
+- `password_hash`
+- `name`
+- `age`
+- `weight` (kg)
+- `height` (cm)
+- `health_goals`
+- `is_admin`
+- `created_at`
 
-Run the comprehensive test suite:
-```bash
-# Test admin dashboard functionality
-python tests/test_admin_tabs.py
+### Food Logs
+- `id` (Primary Key)
+- `user_id` (Foreign Key)
+- `name`
+- `brand`
+- `calories`, `protein`, `carbs`, `fat`, `fiber`, `sugar`, `sodium`
+- `serving_size` (grams)
+- `original_amount`, `original_unit`
+- `quantity`
+- `date`
+- `timestamp`
 
-# Test username validation
-python tests/test_username_validation.py
+### Water Logs
+- `id` (Primary Key)
+- `user_id` (Foreign Key)
+- `amount` (cups)
+- `date`
+- `timestamp`
 
-# Test other features
-python tests/test_*.py
-```
+### Mood Logs
+- `id` (Primary Key)
+- `user_id` (Foreign Key)
+- `mood` (1-5 scale)
+- `date`
+- `timestamp`
 
-## 🔧 Development
+### Notes
+- `id` (Primary Key)
+- `user_id` (Foreign Key)
+- `content`
+- `date`
+- `timestamp`
+
+## Configuration
+
+### Environment Variables
+- `SECRET_KEY`: Flask secret key for sessions
+- `USDA_API_KEY`: USDA FoodData Central API key
+- `ADMIN_USERNAME`: Admin account username
+- `ADMIN_PASSWORD`: Admin account password
+- `ADMIN_EMAIL`: Admin account email
+- `DATABASE_URL`: Database connection string (optional, defaults to SQLite)
+
+### reCAPTCHA Configuration
+reCAPTCHA v2 is automatically enabled when the domain is `kiwellness.org`. For other domains, it's bypassed for development purposes.
+
+## Development
 
 ### Project Structure
 ```
 ki_wellness/
-├── app/
-│   ├── main.py              # Flask application & routes
-│   ├── templates/           # HTML templates
-│   │   ├── landing.html     # Homepage
-│   │   ├── dashboard.html   # User dashboard
-│   │   ├── ai_self_health.html # AI coaching interface
-│   │   ├── coaching.html    # Human coaching
-│   │   ├── food_journal.html # Food tracking
-│   │   ├── profile.html     # User profile
-│   │   ├── settings.html    # User settings
-│   │   └── admin_dashboard.html # Admin panel
-│   └── static/              # Static assets
-├── tests/                   # Test suite
-├── docs/                    # Documentation
-│   ├── setup/              # Setup guides
-│   ├── development/        # Development docs
-│   └── private/           # Private documentation
-├── cleanup_backup/         # Migration scripts
-├── config.py              # Configuration
-├── requirements.txt       # Dependencies
-└── run.py                # Application runner
+├── app.py                 # Main Flask application
+├── requirements.txt       # Python dependencies
+├── README.md             # This file
+├── .env                  # Environment variables (not in repo)
+├── templates/            # HTML templates
+│   ├── base.html         # Base template
+│   ├── landing.html      # Landing page
+│   ├── login.html        # Login page
+│   ├── register.html     # Registration page
+│   ├── dashboard.html    # Main dashboard
+│   ├── profile.html      # User profile
+│   ├── privacy.html      # Privacy policy
+│   ├── terms.html        # Terms of service
+│   ├── disclaimer.html   # Medical disclaimer
+│   └── components/       # Modular components
+│       ├── navigation.html
+│       └── footer.html
+└── static/               # Static assets
+    ├── css/
+    │   └── main.css      # Custom styles
+    ├── js/
+    │   └── dashboard.js  # Dashboard functionality
+    └── assets/           # Images and icons
+        ├── leaf.png      # Logo
+        └── favicon.ico   # Favicon
 ```
 
-### Key Components
-- **AI Coaching Engine**: OpenAI-powered health guidance
-- **Payment System**: Stripe integration for session credits
-- **Admin Dashboard**: Business management and monitoring
-- **User Management**: Authentication and profile system
-- **Data Analytics**: Wellness pattern analysis
+### Adding New Features
+1. Create database models in `app.py`
+2. Add API endpoints for new functionality
+3. Update frontend JavaScript in `static/js/dashboard.js`
+4. Modify templates as needed
+5. Update CSS styles in `static/css/main.css`
 
-## 🚀 Deployment
+## Deployment
 
-### Render Deployment
-The application is configured for deployment on Render:
+### Production Setup
+1. Set up PostgreSQL database
+2. Configure environment variables
+3. Set up reverse proxy (nginx)
+4. Use WSGI server (gunicorn)
+5. Enable HTTPS
+6. Configure domain for reCAPTCHA
 
-1. **Connect Repository**: Link your GitHub repository
-2. **Environment Variables**: Set all required environment variables
-3. **Build Command**: `pip install -r requirements.txt`
-4. **Start Command**: `python run.py`
+### Docker Deployment
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+```
 
-### Environment Configuration
-- **Production Database**: PostgreSQL on Render
-- **Payment Processing**: Stripe live keys
-- **AI Services**: OpenAI API
-- **Security**: reCAPTCHA protection
-
-## 💰 Pricing Model
-
-### AI Health Coach
-- **Free Trial**: Start with free features
-- **Session Credits**: $1 per AI coaching session
-- **Custom Quantities**: Buy as many sessions as you need
-- **No Subscriptions**: Pay only for what you use
-
-### Human Coach
-- **Donation-Based**: Pay what you can afford
-- **Flexible Pricing**: No set rates
-- **Accessible**: Available to everyone
-- **Certified Coaches**: Qualified wellness professionals
-
-## 📈 Business Dashboard
-
-### Admin Features
-- **Financial Tracking**: Revenue, costs, and profit monitoring
-- **User Analytics**: User growth and engagement metrics
-- **AI Cost Management**: Token usage and cost optimization
-- **System Settings**: Application configuration
-- **Emergency Controls**: Quick system management
-
-### Key Metrics
-- **Monthly Revenue**: Track income from AI sessions
-- **Monthly Costs**: Monitor AI API costs and expenses
-- **Customer Growth**: User acquisition and retention
-- **Profitability**: Real-time profit/loss analysis
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our contributing guidelines:
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Add tests if applicable
 5. Submit a pull request
 
-## 📞 Support
+## License
 
-- **Email**: Contact through the application
-- **Documentation**: Check `/docs` for detailed guides
-- **Issues**: Report bugs on GitHub
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📝 License
+## Support
 
-This project is licensed under the MIT License.
+For support and questions:
+- Email: support@kiwellness.org
+- Issues: GitHub Issues page
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- **ISSA**: International Sports Sciences Association
-- **NIH**: National Institutes of Health
-- **PubMed**: Medical research database
-- **OpenAI**: AI coaching capabilities
-- **Stripe**: Payment processing
-- **Our Community**: Users who share their wellness journeys
-
----
-
-**Built with ❤️ by Kristina - A developer who understands your wellness journey**
-
-*"Wellness doesn't have to be complicated or expensive. It should be simple, safe, and accessible to everyone."*
+- Open Food Facts for food database
+- USDA FoodData Central for nutritional data
+- Tailwind CSS for styling framework
+- Flask community for the web framework

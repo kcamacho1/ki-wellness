@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ki Wellness - Self Health Simplified{% endblock %}</title>
+    
+    <!-- Meta tags -->
+    <meta name="description" content="Track nutrition, water intake, and mood with Ki Wellness - your comprehensive self-health companion">
+    <meta name="keywords" content="nutrition, health tracking, food journal, wellness, self health">
+    <meta name="author" content="Ki Wellness Team">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/leaf.png') }}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind for Quicksand font
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'quicksand': ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        'ki-green': {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- reCAPTCHA v2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="font-quicksand bg-gray-50 text-gray-900 min-h-screen">
+    <!-- Navigation -->
+    {% include 'components/navigation.html' %}
+    
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    {% include 'components/footer.html' %}
+    
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-ki-green-600"></div>
+            <span class="text-gray-700">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- Utility Functions -->
+    <script>
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+        }
+        
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.add('hidden');
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+            
+            toast.className = `${bgColor} text-white px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            // Show toast
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Check if domain is kiwellness.org for reCAPTCHA
+        function shouldShowRecaptcha() {
+            return window.location.hostname === 'kiwellness.org';
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

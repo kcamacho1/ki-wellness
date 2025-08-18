@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - Ki Wellness{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-ki-green-50 to-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Terms of Service</h1>
+            <p class="text-gray-600 mt-2">Last updated: {{ moment().format('MMMM D, YYYY') }}</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div class="prose max-w-none">
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing and using Ki Wellness, you accept and agree to be bound by the terms and provision of this agreement.</p>
+
+                <h2>2. Description of Service</h2>
+                <p>Ki Wellness is a self-health application that provides:</p>
+                <ul>
+                    <li>Nutrition tracking and food journaling</li>
+                    <li>Water intake monitoring</li>
+                    <li>Mood tracking and wellness insights</li>
+                    <li>Personal health data management</li>
+                </ul>
+
+                <h2>3. User Accounts</h2>
+                <p>To use certain features of Ki Wellness, you must create an account. You agree to:</p>
+                <ul>
+                    <li>Provide accurate and complete information</li>
+                    <li>Maintain the security of your account credentials</li>
+                    <li>Notify us immediately of any unauthorized use</li>
+                    <li>Accept responsibility for all activities under your account</li>
+                </ul>
+
+                <h2>4. Acceptable Use</h2>
+                <p>You agree to use Ki Wellness only for lawful purposes and in accordance with these terms. You agree not to:</p>
+                <ul>
+                    <li>Use the service for any illegal or unauthorized purpose</li>
+                    <li>Attempt to gain unauthorized access to our systems</li>
+                    <li>Interfere with or disrupt the service</li>
+                    <li>Share your account credentials with others</li>
+                    <li>Upload malicious content or attempt to harm the service</li>
+                </ul>
+
+                <h2>5. Health Information Disclaimer</h2>
+                <p>Ki Wellness is designed to help you track your health and wellness, but it is not a substitute for professional medical advice. You acknowledge that:</p>
+                <ul>
+                    <li>The information provided is for educational purposes only</li>
+                    <li>You should consult healthcare professionals for medical advice</li>
+                    <li>We are not responsible for any health decisions you make</li>
+                    <li>Nutritional data may vary and should be used as estimates</li>
+                </ul>
+
+                <h2>6. Data and Privacy</h2>
+                <p>Your privacy is important to us. Our collection and use of your data is governed by our Privacy Policy, which is incorporated into these terms.</p>
+
+                <h2>7. Intellectual Property</h2>
+                <p>The Ki Wellness application, including its content, features, and functionality, is owned by Ki Wellness and is protected by copyright, trademark, and other intellectual property laws.</p>
+
+                <h2>8. Third-Party Services</h2>
+                <p>Ki Wellness integrates with third-party services (Open Food Facts, USDA) to provide nutritional information. These services are subject to their own terms and privacy policies.</p>
+
+                <h2>9. Limitation of Liability</h2>
+                <p>To the maximum extent permitted by law, Ki Wellness shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.</p>
+
+                <h2>10. Service Availability</h2>
+                <p>We strive to maintain high availability but do not guarantee uninterrupted access to the service. We may temporarily suspend or discontinue the service for maintenance or other reasons.</p>
+
+                <h2>11. Termination</h2>
+                <p>We may terminate or suspend your account at any time for violation of these terms. You may also terminate your account at any time by contacting us.</p>
+
+                <h2>12. Changes to Terms</h2>
+                <p>We reserve the right to modify these terms at any time. We will notify users of material changes by posting the updated terms on our website.</p>
+
+                <h2>13. Governing Law</h2>
+                <p>These terms are governed by and construed in accordance with the laws of the jurisdiction in which Ki Wellness operates.</p>
+
+                <h2>14. Contact Information</h2>
+                <p>If you have questions about these terms, please contact us at:</p>
+                <p>Email: legal@kiwellness.org</p>
+            </div>
+        </div>
+        
+        <!-- Back Link -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('index') }}" 
+               class="inline-flex items-center text-ki-green-600 hover:text-ki-green-700 font-medium">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
