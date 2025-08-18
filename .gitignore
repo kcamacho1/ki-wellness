@@ -80,6 +80,13 @@ instance/
 *.sqlite
 *.sqlite3
 
+# AI Training System files (large files)
+training_files/
+training_data/
+embeddings.db
+*.modelfile
+fine_tuning_data.json
+
 # Scrapy stuff:
 .scrapy
 
