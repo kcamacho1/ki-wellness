@@ -338,6 +338,7 @@ def ai_coach():
 
 # Configure Ollama (local AI model)
 OLLAMA_MODEL = "mistral"  # Faster and smaller than llama2
+FINE_TUNED_MODEL = "ki-wellness-mistral"  # Custom fine-tuned model
 
 @app.route('/api/user-data-for-analysis')
 @login_required
@@ -575,6 +576,28 @@ def generate_ai_analysis():
     except Exception as e:
         print(f"AI Analysis Error: {str(e)}")  # Add debugging
         return jsonify({'success': False, 'error': str(e)})
+
+def enhanced_ai_response(question: str, user_data: dict = None) -> str:
+    """Generate enhanced AI response using fine-tuned model and RAG"""
+    try:
+        # Try to use fine-tuned model first
+        try:
+            response = ollama.chat(
+                model=FINE_TUNED_MODEL,
+                messages=[{"role": "user", "content": question}]
+            )
+            return response['message']['content']
+        except:
+            # Fallback to base model
+            response = ollama.chat(
+                model=OLLAMA_MODEL,
+                messages=[{"role": "user", "content": question}]
+            )
+            return response['message']['content']
+            
+    except Exception as e:
+        print(f"❌ Error generating enhanced response: {e}")
+        return "I apologize, but I encountered an error while processing your request."
 
 @app.route('/api/test-ollama')
 @login_required
