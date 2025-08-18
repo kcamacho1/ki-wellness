@@ -93,11 +93,10 @@ class AICoachManager {
                 // Show last updated time if available
                 if (data.updated_at) {
                     const updatedDate = new Date(data.updated_at);
-                    const daysAgo = Math.floor((new Date() - updatedDate) / (1000 * 60 * 60 * 24));
+                    this.displayLastUpdated(updatedDate);
                     
-                    if (daysAgo > 0) {
-                        console.log(`Analysis last updated ${daysAgo} days ago`);
-                    }
+                    const daysAgo = Math.floor((new Date() - updatedDate) / (1000 * 60 * 60 * 24));
+                    console.log(`Analysis last updated ${daysAgo} days ago`);
                 }
             } else {
                 this.showFallbackAnalysis();
@@ -105,6 +104,29 @@ class AICoachManager {
         } catch (error) {
             console.error('Error loading stored analysis:', error);
             this.showFallbackAnalysis();
+        }
+    }
+
+    displayLastUpdated(updatedDate) {
+        const now = new Date();
+        const timeDiff = now - updatedDate;
+        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+        
+        let timeText = '';
+        if (daysDiff > 0) {
+            timeText = `${daysDiff} day${daysDiff > 1 ? 's' : ''} ago`;
+        } else if (hoursDiff > 0) {
+            timeText = `${hoursDiff} hour${hoursDiff > 1 ? 's' : ''} ago`;
+        } else {
+            timeText = 'Just now';
+        }
+        
+        // Update the last updated text in the UI
+        const lastUpdatedElement = document.getElementById('last-updated');
+        if (lastUpdatedElement) {
+            lastUpdatedElement.textContent = `Last updated: ${timeText}`;
+            lastUpdatedElement.style.display = 'block';
         }
     }
 
@@ -417,6 +439,9 @@ class AICoachManager {
             
             // Generate new analysis with comprehensive data
             await this.generateAnalysis();
+            
+            // Update the last updated display
+            this.displayLastUpdated(new Date());
             
             // Show success message briefly
             this.showRefreshSuccess();

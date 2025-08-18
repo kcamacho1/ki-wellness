@@ -101,6 +101,13 @@ class Note(db.Model):
     date = db.Column(db.Date, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class AIAnalysis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    analysis_data = db.Column(db.Text, nullable=False)  # JSON string of analysis
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -419,15 +426,12 @@ def get_user_data_for_analysis():
 def get_stored_analysis():
     """Get stored analysis for the current user"""
     try:
-        # Check if analysis table exists and get stored analysis
-        result = db.session.execute(
-            text("SELECT analysis_data, updated_at FROM user_analysis WHERE user_id = :user_id"),
-            {"user_id": current_user.id}
-        ).fetchone()
+        # Get stored analysis from database
+        analysis_record = AIAnalysis.query.filter_by(user_id=current_user.id).first()
         
-        if result:
-            analysis_data = json.loads(result[0])
-            updated_at = result[1]
+        if analysis_record:
+            analysis_data = json.loads(analysis_record.analysis_data)
+            updated_at = analysis_record.updated_at
             return jsonify({
                 'success': True, 
                 'analysis': analysis_data,
@@ -437,7 +441,7 @@ def get_stored_analysis():
             # No stored analysis, generate fallback
             fallback_analysis = {
                 "patterns": [
-                    {"title": "Getting Started", "description": "Welcome to your AI Health Coach! Your weekly analysis will be ready every Monday."}
+                    {"title": "Getting Started", "description": "Welcome to your AI Health Coach! Start logging your food, water, and mood to get personalized insights."}
                 ],
                 "suggestions": [
                     {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
@@ -541,6 +545,30 @@ def generate_ai_analysis():
                     {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
                 ]
             }
+        
+        # Save analysis to database
+        try:
+            # Check if user already has an analysis record
+            existing_analysis = AIAnalysis.query.filter_by(user_id=current_user.id).first()
+            
+            if existing_analysis:
+                # Update existing analysis
+                existing_analysis.analysis_data = json.dumps(analysis)
+                existing_analysis.updated_at = datetime.utcnow()
+            else:
+                # Create new analysis record
+                new_analysis = AIAnalysis(
+                    user_id=current_user.id,
+                    analysis_data=json.dumps(analysis)
+                )
+                db.session.add(new_analysis)
+            
+            db.session.commit()
+            print(f"✅ AI analysis saved for user {current_user.id}")
+            
+        except Exception as save_error:
+            print(f"❌ Error saving analysis to database: {save_error}")
+            # Continue even if save fails - analysis is still returned to user
         
         return jsonify({'success': True, 'analysis': analysis})
         
