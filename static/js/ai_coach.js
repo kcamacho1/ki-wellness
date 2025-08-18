@@ -110,9 +110,11 @@ class AICoachManager {
 
     async generateAnalysis() {
         try {
-            // Add timeout to prevent hanging
+            // Add timeout to prevent hanging - increased to 60 seconds for comprehensive analysis
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+            
+            console.log('Generating AI analysis with comprehensive data...');
             
             const response = await fetch('/api/generate-ai-analysis', {
                 method: 'POST',
@@ -131,14 +133,34 @@ class AICoachManager {
             if (data.success) {
                 this.analysis = data.analysis;
                 this.displayAnalysis();
+                console.log('Analysis generated successfully');
             } else {
                 console.error('Analysis error:', data.error);
                 this.showFallbackAnalysis();
             }
         } catch (error) {
             console.error('Error generating analysis:', error);
-            this.showFallbackAnalysis();
+            
+            // Check if it's a timeout error
+            if (error.name === 'AbortError') {
+                console.log('Analysis timed out - showing fallback');
+                this.showTimeoutMessage();
+            } else {
+                this.showFallbackAnalysis();
+            }
         }
+    }
+
+    showTimeoutMessage() {
+        this.analysis = {
+            patterns: [
+                {"title": "Analysis in Progress", "description": "Your comprehensive analysis is taking longer than expected. This usually means you have a lot of data to analyze! Try refreshing in a moment or check back later."}
+            ],
+            suggestions: [
+                {"title": "Try Again", "description": "The AI is processing your detailed wellness data. You can try refreshing the analysis again, or continue using the app while it processes in the background."}
+            ]
+        };
+        this.displayAnalysis();
     }
 
     showFallbackAnalysis() {
@@ -374,14 +396,63 @@ class AICoachManager {
     }
 
     async refreshAnalysis() {
+        // Show loading state with progress message
         document.getElementById('loading-state').classList.remove('hidden');
         document.getElementById('main-content').classList.add('hidden');
         
-        await this.loadUserData();
-        await this.generateAnalysis();
+        // Update loading message to show progress
+        const loadingText = document.querySelector('#loading-state p');
+        if (loadingText) {
+            loadingText.textContent = 'Loading your wellness data...';
+        }
         
-        document.getElementById('loading-state').classList.add('hidden');
-        document.getElementById('main-content').classList.remove('hidden');
+        try {
+            // Load fresh user data first
+            await this.loadUserData();
+            
+            // Update loading message
+            if (loadingText) {
+                loadingText.textContent = 'Analyzing your patterns and trends...';
+            }
+            
+            // Generate new analysis with comprehensive data
+            await this.generateAnalysis();
+            
+            // Show success message briefly
+            this.showRefreshSuccess();
+        } catch (error) {
+            console.error('Error refreshing analysis:', error);
+            // Show error message
+            this.showRefreshError();
+        } finally {
+            // Hide loading state
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+    }
+
+    showRefreshSuccess() {
+        // Show a brief success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        successDiv.textContent = 'Analysis refreshed successfully!';
+        document.body.appendChild(successDiv);
+        
+        setTimeout(() => {
+            successDiv.remove();
+        }, 3000);
+    }
+
+    showRefreshError() {
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        errorDiv.textContent = 'Failed to refresh analysis. Please try again.';
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
     }
 
     showMainContent() {

@@ -99,7 +99,7 @@ class DailyLogManager {
         const container = document.getElementById('notes-history');
         const noNotes = document.getElementById('no-notes');
         
-        if (!notes || notes.trim() === '') {
+        if (!notes || (typeof notes === 'string' && notes.trim() === '')) {
             container.innerHTML = '';
             noNotes.style.display = 'block';
             return;
@@ -107,10 +107,19 @@ class DailyLogManager {
 
         noNotes.style.display = 'none';
         
+        // Support both legacy string notes and new object with timestamp
+        const content = typeof notes === 'string' ? notes : (notes.content || '');
+        const time = typeof notes === 'object' && notes.timestamp
+            ? new Date(notes.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            : null;
+
         container.innerHTML = `
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div class="prose max-w-none">
-                    <p class="text-gray-700 whitespace-pre-wrap">${notes}</p>
+                <div class="flex items-start justify-between gap-4">
+                    <div class="prose max-w-none flex-1">
+                        <p class="text-gray-700 whitespace-pre-wrap">${content}</p>
+                    </div>
+                    ${time ? `<div class="text-xs text-gray-500 whitespace-nowrap">${time}</div>` : ''}
                 </div>
             </div>
         `;

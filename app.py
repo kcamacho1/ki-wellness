@@ -4,6 +4,7 @@ import json
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -463,32 +464,57 @@ def generate_ai_analysis():
         if not user_data:
             return jsonify({'success': False, 'error': 'No user data provided'})
         
-        # Prepare data for AI analysis - optimized for speed
-        # Summarize data to reduce token count
-        food_summary = f"Total food entries: {len(user_data.get('food_logs', []))}"
-        water_summary = f"Total water entries: {len(user_data.get('water_logs', []))}"
-        mood_summary = f"Total mood entries: {len(user_data.get('mood_logs', []))}"
+        # Prepare comprehensive data for AI analysis
+        profile = user_data.get('profile', {})
+        food_logs = user_data.get('food_logs', [])
+        water_logs = user_data.get('water_logs', [])
+        mood_logs = user_data.get('mood_logs', [])
+        notes = user_data.get('notes', [])
+        
+        # Calculate totals and averages
+        total_calories = sum(log.get('calories', 0) for log in food_logs)
+        avg_calories = total_calories / len(food_logs) if food_logs else 0
+        total_water = sum(log.get('amount', 0) for log in water_logs)
+        avg_water = total_water / len(water_logs) if water_logs else 0
+        avg_mood = sum(log.get('mood', 3) for log in mood_logs) / len(mood_logs) if mood_logs else 3
+        
+        # Group food by time of day and get top foods
+        food_by_time = {}
+        for log in food_logs:
+            time_of_day = log.get('time_of_day', 'snack')
+            if time_of_day not in food_by_time:
+                food_by_time[time_of_day] = []
+            food_by_time[time_of_day].append(log)
+        
+        # Get most recent and frequent foods (limit to prevent token overflow)
+        recent_foods = food_logs[-3:] if len(food_logs) > 3 else food_logs
+        recent_notes = notes[-2:] if len(notes) > 2 else notes
         
         analysis_prompt = f"""
         Health Coach Analysis - Be concise and actionable.
 
-        User: {user_data.get('profile', {}).get('name', 'User')}
-        Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
-        
-        Data Summary:
-        - Food: {food_summary}
-        - Water: {water_summary} 
-        - Mood: {mood_summary}
+        USER: {profile.get('name', 'User')} | Age: {profile.get('age', 'N/A')} | Goals: {profile.get('health_goals', 'Not specified')}
 
-        Provide 2-3 key patterns and 2-3 actionable suggestions. Keep descriptions brief.
+        DATA SUMMARY:
+        Food: {len(food_logs)} entries, {avg_calories:.0f} avg cal/day
+        Water: {len(water_logs)} entries, {avg_water:.1f} cups/day
+        Mood: {len(mood_logs)} entries, {avg_mood:.1f}/5 avg
+        Notes: {len(notes)} entries
+
+        RECENT ACTIVITY:
+        Food: {[f"{log.get('name', 'Unknown')} ({log.get('time_of_day', 'snack')})" for log in recent_foods]}
+        Mood: {[log.get('mood') for log in mood_logs[-2:]]}
+        Notes: {[note.get('content', '')[:50] + '...' if len(note.get('content', '')) > 50 else note.get('content', '') for note in recent_notes]}
+
+        Provide 2-3 specific patterns and 2-3 actionable suggestions based on this data.
 
         JSON format:
         {{
             "patterns": [
-                {{"title": "Brief Title", "description": "Short description"}}
+                {{"title": "Pattern Title", "description": "Brief description"}}
             ],
             "suggestions": [
-                {{"title": "Brief Title", "description": "Short actionable advice"}}
+                {{"title": "Suggestion Title", "description": "Brief actionable advice"}}
             ]
         }}
         """
@@ -738,11 +764,14 @@ def save_notes():
     
     if existing_note:
         existing_note.content = data['content']
+        # Update the timestamp to reflect the time of this save
+        existing_note.timestamp = datetime.utcnow()
     else:
         note = Note(
             user_id=current_user.id,
             content=data['content'],
-            date=datetime.strptime(data['date'], '%Y-%m-%d').date()
+            date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+            timestamp=datetime.utcnow()
         )
         db.session.add(note)
     
@@ -814,7 +843,10 @@ def get_dashboard_data():
                 'mood': log.mood,
                 'timestamp': log.timestamp.isoformat()
             } for log in mood_logs],
-            'notes': note.content if note else '',
+            'notes': ({
+                'content': note.content,
+                'timestamp': note.timestamp.isoformat()
+            } if note else ''),
             'totals': {
                 'calories': total_calories,
                 'protein': total_protein,
