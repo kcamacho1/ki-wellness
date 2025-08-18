@@ -13,6 +13,8 @@
             <div class="hidden md:flex items-center space-x-8">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Dashboard</a>
+                    <a href="{{ url_for('daily_log') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Daily Log</a>
+                    <a href="{{ url_for('ai_coach') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">AI Coach</a>
                     <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Profile</a>
                     <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-ki-green-600 transition-colors">Logout</a>
                 {% else %}
@@ -35,6 +37,8 @@
         <div id="mobile-menu" class="md:hidden hidden pb-4">
             {% if current_user.is_authenticated %}
                 <a href="{{ url_for('dashboard') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Dashboard</a>
+                <a href="{{ url_for('daily_log') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Daily Log</a>
+                <a href="{{ url_for('ai_coach') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">AI Coach</a>
                 <a href="{{ url_for('profile') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Profile</a>
                 <a href="{{ url_for('logout') }}" class="block py-2 text-gray-700 hover:text-ki-green-600">Logout</a>
             {% else %}

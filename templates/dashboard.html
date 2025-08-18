@@ -31,23 +31,23 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <!-- Three Vertical Cards -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
             <!-- Water Intake Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">Water Intake</h2>
-                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <div class="text-center mb-4 sm:mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Water Intake</h2>
                 </div>
                 
-                <div class="text-center mb-6">
-                    <div class="text-5xl font-bold text-blue-600 mb-2" id="water-display">0 oz</div>
-                    <p class="text-gray-500 text-sm">Daily Goal: 64 oz</p>
+                <div class="text-center mb-4 sm:mb-6">
+                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-2" id="water-display">0 oz</div>
+                    <p class="text-gray-500 text-xs sm:text-sm">Daily Goal: 64 oz</p>
                 </div>
                 
                 <!-- Water Progress Bar -->
@@ -56,25 +56,20 @@
                 </div>
                 
                 <!-- Quick Add Buttons -->
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="addWater(1)" class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
+                <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                    <button onclick="addWater(1)" class="bg-blue-50 text-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
                         +8 oz
                     </button>
-                    <button onclick="addWater(2)" class="bg-blue-50 text-blue-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
+                    <button onclick="addWater(2)" class="bg-blue-50 text-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
                         +16 oz
                     </button>
                 </div>
             </div>
 
             <!-- Macronutrients Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">Macronutrients</h2>
-                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <div class="text-center mb-4 sm:mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Macronutrients</h2>
                 </div>
                 
                 <!-- Pie Chart -->
@@ -83,66 +78,61 @@
                 </div>
                 
                 <!-- Macro Breakdown -->
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between bg-red-50 p-3 rounded-xl border border-red-100">
+                <div class="space-y-2 sm:space-y-3">
+                    <div class="flex items-center justify-between bg-red-50 p-2 sm:p-3 rounded-xl border border-red-100">
                         <div class="flex items-center">
-                            <div class="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
-                            <span class="text-sm font-medium text-gray-700">Protein</span>
+                            <div class="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full mr-2 sm:mr-3"></div>
+                            <span class="text-xs sm:text-sm font-medium text-gray-700">Protein</span>
                         </div>
-                        <span class="text-sm font-bold text-red-600" id="protein-display">0g</span>
+                        <span class="text-xs sm:text-sm font-bold text-red-600" id="protein-display">0g</span>
                     </div>
-                    <div class="flex items-center justify-between bg-yellow-50 p-3 rounded-xl border border-yellow-100">
+                    <div class="flex items-center justify-between bg-yellow-50 p-2 sm:p-3 rounded-xl border border-yellow-100">
                         <div class="flex items-center">
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full mr-3"></div>
-                            <span class="text-sm font-medium text-gray-700">Carbs</span>
+                            <div class="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full mr-2 sm:mr-3"></div>
+                            <span class="text-xs sm:text-sm font-medium text-gray-700">Carbs</span>
                         </div>
-                        <span class="text-sm font-bold text-yellow-600" id="carbs-display">0g</span>
+                        <span class="text-xs sm:text-sm font-bold text-yellow-600" id="carbs-display">0g</span>
                     </div>
-                    <div class="flex items-center justify-between bg-green-50 p-3 rounded-xl border border-green-100">
+                    <div class="flex items-center justify-between bg-green-50 p-2 sm:p-3 rounded-xl border border-green-100">
                         <div class="flex items-center">
-                            <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                            <span class="text-sm font-medium text-gray-700">Fat</span>
+                            <div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full mr-2 sm:mr-3"></div>
+                            <span class="text-xs sm:text-sm font-medium text-gray-700">Fat</span>
                         </div>
-                        <span class="text-sm font-bold text-green-600" id="fat-display">0g</span>
+                        <span class="text-xs sm:text-sm font-bold text-green-600" id="fat-display">0g</span>
                     </div>
                 </div>
             </div>
 
             <!-- Mood & Notes Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">Mood & Notes</h2>
-                    <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+                <div class="text-center mb-4 sm:mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Mood & Notes</h2>
                 </div>
                 
 
                 
                 <!-- Mood Section -->
-                <div class="mb-8">
-                    <div class="text-center mb-6">
-                        <div class="text-5xl mb-3" id="current-mood-emoji">😊</div>
-                        <div class="text-lg font-medium text-gray-700" id="current-mood-text">Good</div>
+                <div class="mb-6 sm:mb-8">
+                    <div class="text-center mb-4 sm:mb-6">
+                        <div class="text-4xl sm:text-5xl mb-2 sm:mb-3" id="current-mood-emoji">😊</div>
+                        <div class="text-base sm:text-lg font-medium text-gray-700" id="current-mood-text">Good</div>
                     </div>
-                    <div class="grid grid-cols-5 gap-3">
-                        <button onclick="logMood(1)" class="mood-btn text-2xl p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Terrible">😢</button>
-                        <button onclick="logMood(2)" class="mood-btn text-2xl p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Bad">😕</button>
-                        <button onclick="logMood(3)" class="mood-btn text-2xl p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Okay">😐</button>
-                        <button onclick="logMood(4)" class="mood-btn text-2xl p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Good">😊</button>
-                        <button onclick="logMood(5)" class="mood-btn text-2xl p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Excellent">😄</button>
+                    <div class="grid grid-cols-5 gap-2 sm:gap-3">
+                        <button onclick="logMood(1)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Terrible">😢</button>
+                        <button onclick="logMood(2)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Bad">😕</button>
+                        <button onclick="logMood(3)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Okay">😐</button>
+                        <button onclick="logMood(4)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Good">😊</button>
+                        <button onclick="logMood(5)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Excellent">😄</button>
                     </div>
                 </div>
                 
                 <!-- Notes Section -->
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Daily Notes</h3>
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Daily Notes</h3>
                     <textarea id="daily-notes" placeholder="How was your day? Any health observations?" 
-                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
+                              class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
                               rows="3"></textarea>
-                    <button onclick="saveNotes()" class="mt-4 w-full bg-ki-green-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-ki-green-700 transition-all duration-200">
+                    <button onclick="saveNotes()" class="mt-3 sm:mt-4 w-full bg-ki-green-600 text-white py-2 sm:py-3 px-4 rounded-xl font-medium hover:bg-ki-green-700 transition-all duration-200">
                         Save Notes
                     </button>
                 </div>
@@ -151,25 +141,25 @@
 
         <!-- Food Journal Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div class="p-8 border-b border-gray-100">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-semibold text-gray-900">Food Journal</h2>
-                    <div class="w-10 h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="p-4 sm:p-6 lg:p-8 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-4 sm:mb-6">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Food Journal</h2>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
                         </svg>
                     </div>
                 </div>
                 
                 <!-- Food Search Tabs -->
-                <div class="flex space-x-1 mb-8 bg-gray-50 p-1 rounded-xl">
-                    <button id="search-tab" class="px-6 py-3 text-sm font-medium text-ki-green-600 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="flex space-x-1 mb-6 sm:mb-8 bg-gray-50 p-1 rounded-xl">
+                    <button id="search-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-ki-green-600 bg-white rounded-lg shadow-sm border border-gray-200">
                         Search Food
                     </button>
-                    <button id="barcode-tab" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
+                    <button id="barcode-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
                         Barcode Scanner
                     </button>
-                    <button id="manual-tab" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
+                    <button id="manual-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
                         Manual Entry
                     </button>
                 </div>
@@ -236,7 +226,13 @@
                         <input type="number" id="manual-fat" placeholder="Fat (g)" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                     </div>
-                    <div class="grid grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <select id="manual-time-of-day" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
                         <input type="number" id="manual-amount" placeholder="Amount" value="1" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                         <select id="manual-unit" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
@@ -256,17 +252,17 @@
             </div>
 
             <!-- Food Log -->
-            <div class="p-8">
-                <h3 class="text-lg font-semibold text-gray-900 mb-6">Today's Food Log</h3>
-                <div id="food-log" class="space-y-4">
-                    <div class="text-center py-12 text-gray-500">
-                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="p-4 sm:p-6 lg:p-8">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Today's Food Log</h3>
+                <div id="food-log" class="space-y-3 sm:space-y-4">
+                    <div class="text-center py-8 sm:py-12 text-gray-500">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </div>
-                        <p class="text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
-                        <p class="text-sm text-gray-500">Start by searching for food or adding manually</p>
+                        <p class="text-base sm:text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
+                        <p class="text-xs sm:text-sm text-gray-500">Start by searching for food or adding manually</p>
                     </div>
                 </div>
             </div>
@@ -293,6 +289,15 @@
                 </div>
                 
                 <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time of Day</label>
+                        <select id="modal-time-of-day" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
+                            <option value="breakfast">Breakfast</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="dinner">Dinner</option>
+                            <option value="snack">Snack</option>
+                        </select>
+                    </div>
                     <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>

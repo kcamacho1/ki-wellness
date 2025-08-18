@@ -255,37 +255,40 @@ class DashboardManager {
         
         if (foodLogs.length === 0) {
                     container.innerHTML = `
-            <div class="text-center py-12 text-gray-500">
-                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="text-center py-8 sm:py-12 text-gray-500">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                 </div>
-                <p class="text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
-                <p class="text-sm text-gray-500">Start by searching for food or adding manually</p>
+                <p class="text-base sm:text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
+                <p class="text-xs sm:text-sm text-gray-500">Start by searching for food or adding manually</p>
             </div>
         `;
             return;
         }
 
         container.innerHTML = foodLogs.map(log => `
-            <div class="food-log-item bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div class="food-log-item bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-100">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900 text-lg mb-1">${log.name}</h4>
-                        <p class="text-sm text-gray-500 mb-3">${log.brand || 'Unknown Brand'}</p>
-                        <div class="flex space-x-6 mb-2">
-                            <span class="text-red-600 font-medium">${Math.round(log.protein)}g protein</span>
-                            <span class="text-yellow-600 font-medium">${Math.round(log.carbs)}g carbs</span>
-                            <span class="text-green-600 font-medium">${Math.round(log.fat)}g fat</span>
-                            <span class="text-purple-600 font-medium">${Math.round(log.calories)} cal</span>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-semibold text-gray-900 text-base sm:text-lg">${log.name}</h4>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full capitalize ${this.getTimeOfDayBadgeClass(log.time_of_day || 'snack')}">${log.time_of_day || 'snack'}</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">${log.brand || 'Unknown Brand'}</p>
+                        <div class="flex flex-wrap gap-2 sm:gap-4 mb-2">
+                            <span class="text-red-600 font-medium text-xs sm:text-sm">${Math.round(log.protein)}g protein</span>
+                            <span class="text-yellow-600 font-medium text-xs sm:text-sm">${Math.round(log.carbs)}g carbs</span>
+                            <span class="text-green-600 font-medium text-xs sm:text-sm">${Math.round(log.fat)}g fat</span>
+                            <span class="text-purple-600 font-medium text-xs sm:text-sm">${Math.round(log.calories)} cal</span>
                         </div>
                         <p class="text-xs text-gray-400">
-                            ${log.original_amount} ${log.original_unit} × ${log.quantity} = ${Math.round(log.serving_size)}g
+                            Serving: ${log.original_amount} ${log.original_unit} × ${log.quantity} = ${Math.round(log.serving_size)}g
                         </p>
                     </div>
-                    <button onclick="dashboardManager.removeFoodItem(${log.id})" class="text-gray-400 hover:text-red-500 ml-4 p-2 hover:bg-red-50 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onclick="dashboardManager.removeFoodItem(${log.id})" class="text-gray-400 hover:text-red-500 ml-2 sm:ml-4 p-1 sm:p-2 hover:bg-red-50 rounded-lg transition-colors">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                     </button>
@@ -435,6 +438,8 @@ class DashboardManager {
         const totalGrams = grams * quantity;
         const multiplier = totalGrams / 100; // Assuming nutrition is per 100g
 
+        const timeOfDay = document.getElementById('modal-time-of-day').value;
+        
         const foodData = {
             name: this.selectedFood.name,
             brand: this.selectedFood.brand,
@@ -449,6 +454,7 @@ class DashboardManager {
             original_amount: amount,
             original_unit: unit,
             quantity: quantity,
+            time_of_day: timeOfDay,
             date: this.currentDate.toISOString().split('T')[0]
         };
 
@@ -502,6 +508,8 @@ class DashboardManager {
 
         const totalGrams = grams * quantity;
 
+        const timeOfDay = document.getElementById('manual-time-of-day').value;
+        
         const foodData = {
             name: name,
             brand: brand,
@@ -513,6 +521,7 @@ class DashboardManager {
             original_amount: amount,
             original_unit: unit,
             quantity: quantity,
+            time_of_day: timeOfDay,
             date: this.currentDate.toISOString().split('T')[0]
         };
 
@@ -538,6 +547,20 @@ class DashboardManager {
         }
     }
 
+    getTimeOfDayBadgeClass(timeOfDay) {
+        switch (timeOfDay.toLowerCase()) {
+            case 'breakfast':
+                return 'bg-orange-100 text-orange-700';
+            case 'lunch':
+                return 'bg-green-100 text-green-700';
+            case 'dinner':
+                return 'bg-purple-100 text-purple-700';
+            case 'snack':
+            default:
+                return 'bg-blue-100 text-blue-700';
+        }
+    }
+
     clearManualForm() {
         document.getElementById('manual-name').value = '';
         document.getElementById('manual-brand').value = '';
@@ -545,8 +568,23 @@ class DashboardManager {
         document.getElementById('manual-protein').value = '';
         document.getElementById('manual-carbs').value = '';
         document.getElementById('manual-fat').value = '';
+        document.getElementById('manual-time-of-day').value = 'snack';
         document.getElementById('manual-amount').value = '1';
         document.getElementById('manual-quantity').value = '1';
+    }
+
+    getTimeOfDayBadgeClass(timeOfDay) {
+        switch (timeOfDay.toLowerCase()) {
+            case 'breakfast':
+                return 'bg-orange-100 text-orange-700';
+            case 'lunch':
+                return 'bg-green-100 text-green-700';
+            case 'dinner':
+                return 'bg-purple-100 text-purple-700';
+            case 'snack':
+            default:
+                return 'bg-blue-100 text-blue-700';
+        }
     }
 
     async startBarcodeScanner() {

@@ -1,12 +1,14 @@
 import os
 import requests
-from datetime import datetime, date
+import json
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import sqlite3
+import ollama
 
 # Load environment variables
 load_dotenv()
@@ -73,6 +75,7 @@ class FoodLog(db.Model):
     original_amount = db.Column(db.Float)
     original_unit = db.Column(db.String(20))
     quantity = db.Column(db.Float, default=1)
+    time_of_day = db.Column(db.String(20), nullable=False, default='snack')  # breakfast, lunch, dinner, snack
     date = db.Column(db.Date, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -315,6 +318,292 @@ def dashboard():
 def profile():
     return render_template('profile.html')
 
+@app.route('/daily-log')
+@login_required
+def daily_log():
+    return render_template('daily_log.html')
+
+@app.route('/ai-coach')
+@login_required
+def ai_coach():
+    return render_template('ai_coach.html')
+
+# Configure Ollama (local AI model)
+OLLAMA_MODEL = "mistral"  # Faster and smaller than llama2
+
+@app.route('/api/user-data-for-analysis')
+@login_required
+def get_user_data_for_analysis():
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        if not start_date or not end_date:
+            return jsonify({'success': False, 'error': 'Start and end dates required'})
+        
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        
+        # Get user profile
+        user_profile = {
+            'name': current_user.name,
+            'age': current_user.age,
+            'weight': current_user.weight,
+            'height': current_user.height,
+            'health_goals': current_user.health_goals
+        }
+        
+        # Get food logs
+        food_logs = FoodLog.query.filter(
+            FoodLog.user_id == current_user.id,
+            FoodLog.date >= start_date,
+            FoodLog.date <= end_date
+        ).all()
+        
+        # Get water logs
+        water_logs = WaterLog.query.filter(
+            WaterLog.user_id == current_user.id,
+            WaterLog.date >= start_date,
+            WaterLog.date <= end_date
+        ).all()
+        
+        # Get mood logs
+        mood_logs = MoodLog.query.filter(
+            MoodLog.user_id == current_user.id,
+            MoodLog.date >= start_date,
+            MoodLog.date <= end_date
+        ).all()
+        
+        # Get notes
+        notes = Note.query.filter(
+            Note.user_id == current_user.id,
+            Note.date >= start_date,
+            Note.date <= end_date
+        ).all()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'profile': user_profile,
+                'food_logs': [{
+                    'name': log.name,
+                    'brand': log.brand,
+                    'calories': log.calories,
+                    'protein': log.protein,
+                    'carbs': log.carbs,
+                    'fat': log.fat,
+                    'time_of_day': log.time_of_day,
+                    'date': log.date.isoformat(),
+                    'quantity': log.quantity
+                } for log in food_logs],
+                'water_logs': [{
+                    'amount': log.amount,
+                    'date': log.date.isoformat()
+                } for log in water_logs],
+                'mood_logs': [{
+                    'mood': log.mood,
+                    'date': log.date.isoformat()
+                } for log in mood_logs],
+                'notes': [{
+                    'content': log.content,
+                    'date': log.date.isoformat()
+                } for log in notes]
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/get-stored-analysis')
+@login_required
+def get_stored_analysis():
+    """Get stored analysis for the current user"""
+    try:
+        # Check if analysis table exists and get stored analysis
+        result = db.session.execute(
+            text("SELECT analysis_data, updated_at FROM user_analysis WHERE user_id = :user_id"),
+            {"user_id": current_user.id}
+        ).fetchone()
+        
+        if result:
+            analysis_data = json.loads(result[0])
+            updated_at = result[1]
+            return jsonify({
+                'success': True, 
+                'analysis': analysis_data,
+                'updated_at': updated_at.isoformat() if updated_at else None
+            })
+        else:
+            # No stored analysis, generate fallback
+            fallback_analysis = {
+                "patterns": [
+                    {"title": "Getting Started", "description": "Welcome to your AI Health Coach! Your weekly analysis will be ready every Monday."}
+                ],
+                "suggestions": [
+                    {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
+                ]
+            }
+            return jsonify({
+                'success': True, 
+                'analysis': fallback_analysis,
+                'updated_at': None
+            })
+            
+    except Exception as e:
+        print(f"Error getting stored analysis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/generate-ai-analysis', methods=['POST'])
+@login_required
+def generate_ai_analysis():
+    """Generate fresh analysis (for manual refresh)"""
+    try:
+        data = request.get_json()
+        user_data = data.get('user_data')
+        
+        if not user_data:
+            return jsonify({'success': False, 'error': 'No user data provided'})
+        
+        # Prepare data for AI analysis - optimized for speed
+        # Summarize data to reduce token count
+        food_summary = f"Total food entries: {len(user_data.get('food_logs', []))}"
+        water_summary = f"Total water entries: {len(user_data.get('water_logs', []))}"
+        mood_summary = f"Total mood entries: {len(user_data.get('mood_logs', []))}"
+        
+        analysis_prompt = f"""
+        Health Coach Analysis - Be concise and actionable.
+
+        User: {user_data.get('profile', {}).get('name', 'User')}
+        Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
+        
+        Data Summary:
+        - Food: {food_summary}
+        - Water: {water_summary} 
+        - Mood: {mood_summary}
+
+        Provide 2-3 key patterns and 2-3 actionable suggestions. Keep descriptions brief.
+
+        JSON format:
+        {{
+            "patterns": [
+                {{"title": "Brief Title", "description": "Short description"}}
+            ],
+            "suggestions": [
+                {{"title": "Brief Title", "description": "Short actionable advice"}}
+            ]
+        }}
+        """
+        
+        response = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=[
+                {"role": "user", "content": analysis_prompt}
+            ]
+        )
+        
+        ai_response = response['message']['content']
+        
+        # Parse the JSON response
+        try:
+            analysis = json.loads(ai_response)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, create a fallback response
+            analysis = {
+                "patterns": [
+                    {"title": "Data Analysis", "description": "We're analyzing your wellness patterns. Keep logging to get more personalized insights!"}
+                ],
+                "suggestions": [
+                    {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
+                ]
+            }
+        
+        return jsonify({'success': True, 'analysis': analysis})
+        
+    except Exception as e:
+        print(f"AI Analysis Error: {str(e)}")  # Add debugging
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/test-ollama')
+@login_required
+def test_ollama():
+    try:
+        response = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=[
+                {"role": "user", "content": "Say 'Hello, AI is working!'"}
+            ]
+        )
+        
+        return jsonify({'success': True, 'response': response['message']['content']})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/warmup-ollama')
+@login_required
+def warmup_ollama():
+    """Warm up the Ollama model for faster subsequent requests"""
+    try:
+        # Simple warmup call
+        response = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=[
+                {"role": "user", "content": "Hello"}
+            ]
+        )
+        return jsonify({'success': True, 'message': 'Model warmed up'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-chat', methods=['POST'])
+@login_required
+def ai_chat():
+    try:
+        data = request.get_json()
+        message = data.get('message')
+        user_data = data.get('user_data')
+        analysis = data.get('analysis')
+        chat_history = data.get('chat_history', [])
+        
+        if not message:
+            return jsonify({'success': False, 'error': 'No message provided'})
+        
+        # Prepare context for the AI
+        context = f"""
+        You are a supportive and knowledgeable AI Health Coach for a wellness app. The user's name is {user_data.get('profile', {}).get('name', 'User')}.
+        
+        User Profile:
+        - Age: {user_data.get('profile', {}).get('age', 'Not specified')}
+        - Weight: {user_data.get('profile', {}).get('weight', 'Not specified')} kg
+        - Height: {user_data.get('profile', {}).get('height', 'Not specified')} cm
+        - Health Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
+        
+        Recent Analysis:
+        Patterns: {json.dumps(analysis.get('patterns', []) if analysis else [], indent=2)}
+        Suggestions: {json.dumps(analysis.get('suggestions', []) if analysis else [], indent=2)}
+        
+        Chat History:
+        {json.dumps(chat_history, indent=2)}
+        
+        User's current question: {message}
+        
+        Provide a helpful, encouraging, and actionable response. Be conversational but professional. 
+        Reference their specific data when relevant and provide practical advice.
+        """
+        
+        response = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=[
+                {"role": "user", "content": context}
+            ]
+        )
+        
+        ai_response = response['message']['content']
+        
+        return jsonify({'success': True, 'response': ai_response})
+        
+    except Exception as e:
+        print(f"AI Chat Error: {str(e)}")  # Add debugging
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/search-food', methods=['POST'])
 @login_required
 def search_food():
@@ -395,6 +684,7 @@ def add_food_log():
         original_amount=data['original_amount'],
         original_unit=data['original_unit'],
         quantity=data['quantity'],
+        time_of_day=data.get('time_of_day', 'snack'),
         date=datetime.strptime(data['date'], '%Y-%m-%d').date()
     )
     
@@ -507,6 +797,7 @@ def get_dashboard_data():
                 'protein': log.protein,
                 'carbs': log.carbs,
                 'fat': log.fat,
+                'time_of_day': log.time_of_day,
                 'serving_size': log.serving_size,
                 'original_amount': log.original_amount,
                 'original_unit': log.original_unit,
