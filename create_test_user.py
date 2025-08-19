@@ -35,6 +35,7 @@ def create_test_user():
                 weight=70.0,
                 height=170.0,
                 health_goals='Lose weight and improve mood',
+                ailments_concerns='Diabetes management, Blood pressure control',
                 # Auto-agreement for test user
                 agreed_to_terms=True,
                 agreed_to_privacy=True,

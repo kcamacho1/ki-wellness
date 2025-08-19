@@ -25,16 +25,23 @@
                 </div>
             {% endif %}
             
-                        <!-- Profile Image Section -->
+            <!-- Profile Image Section -->
             <div class="mb-8 text-center">
                 <div class="relative inline-block">
                     <!-- Profile Image Display -->
                     <div id="profile-image-container" class="relative">
                         <div id="profile-image" class="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-gray-200">
-                            <img src="{{ url_for('static', filename=current_user.profile_image) if current_user.profile_image else url_for('static', filename='assets/avatars/default-avatar.png') }}" 
-                                 alt="Profile Image" 
-                                 class="w-full h-full object-cover"
-                                 onerror="this.src='{{ url_for('static', filename='assets/avatars/default-avatar.png') }}'">
+                            {% if current_user.profile_image %}
+                                <img src="{{ url_for('static', filename=current_user.profile_image) }}" 
+                                     alt="Profile Image" 
+                                     class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-gradient-to-br from-ki-green-500 to-ki-green-600 flex items-center justify-center">
+                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                            {% endif %}
                         </div>
                         
                         <!-- Upload Button Overlay -->
@@ -51,42 +58,14 @@
                     
                     <!-- Image Actions -->
                     <div class="flex justify-center space-x-2 mt-2">
-                        <button type="button" id="select-avatar-btn" 
-                                class="text-sm text-ki-green-600 hover:text-ki-green-700 font-medium">
-                            Choose Avatar
-                        </button>
                         <button type="button" id="remove-image-btn" 
-                                class="text-sm text-red-600 hover:text-red-700 font-medium {% if not current_user.profile_image or current_user.profile_image.startswith('assets/avatars/') %}hidden{% endif %}">
-                            Remove Custom Image
+                                class="text-sm text-red-600 hover:text-red-700 font-medium {% if not current_user.profile_image %}hidden{% endif %}">
+                            Remove Image
                         </button>
                     </div>
                 </div>
                 
-                <p class="text-sm text-gray-500 mt-2">Click the + button to upload a custom image or "Choose Avatar" to select from predefined options</p>
-            </div>
-            
-            <!-- Avatar Selection Modal -->
-            <div id="avatar-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-                <div class="flex items-center justify-center min-h-screen p-4">
-                    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                        <div class="p-6 border-b border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-semibold text-gray-900">Choose Your Avatar</h3>
-                                <button type="button" id="close-avatar-modal" class="text-gray-400 hover:text-gray-600">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="p-6">
-                            <div id="avatar-grid" class="grid grid-cols-3 md:grid-cols-4 gap-4">
-                                <!-- Avatars will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <p class="text-sm text-gray-500 mt-2">Click the + button to upload a profile image</p>
             </div>
             
             <form id="profile-form">
@@ -147,21 +126,6 @@
                     <textarea id="health_goals" name="health_goals" rows="4"
                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
                               placeholder="Describe your health and wellness goals...">{{ current_user.health_goals or '' }}</textarea>
-                </div>
-                
-                <!-- Ailments or Areas of Concern -->
-                <div class="mt-6">
-                    <label for="ailments_concerns" class="block text-sm font-medium text-gray-700 mb-2">Ailments or Areas of Concern</label>
-                    <textarea id="ailments_concerns" name="ailments_concerns" rows="4"
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
-                              placeholder="Describe any health conditions, ailments, or areas of concern you'd like to address...">{{ current_user.ailments_concerns or '' }}</textarea>
-                    <p class="text-sm text-gray-500 mt-1">This information helps us provide more personalized health recommendations.</p>
-                    <p class="text-sm text-amber-600 mt-1">
-                        <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                        </svg>
-                        <strong>Medical Disclaimer:</strong> For serious symptoms, severe pain, or medical emergencies, please seek immediate medical attention from a healthcare professional.
-                    </p>
                 </div>
                 
                 <!-- Account Info -->
@@ -354,8 +318,7 @@
             age: document.getElementById('age').value ? parseInt(document.getElementById('age').value) : null,
             weight: document.getElementById('weight').value ? parseFloat(document.getElementById('weight').value) : null,
             height: document.getElementById('height').value ? parseFloat(document.getElementById('height').value) : null,
-            health_goals: document.getElementById('health_goals').value,
-            ailments_concerns: document.getElementById('ailments_concerns').value
+            health_goals: document.getElementById('health_goals').value
         };
         
         try {
@@ -383,92 +346,5 @@
             hideLoading();
         }
     });
-
-    // Avatar selection functionality
-    document.getElementById('select-avatar-btn').addEventListener('click', function() {
-        loadAvatars();
-        document.getElementById('avatar-modal').classList.remove('hidden');
-    });
-    
-    document.getElementById('close-avatar-modal').addEventListener('click', function() {
-        document.getElementById('avatar-modal').classList.add('hidden');
-    });
-    
-    // Close modal when clicking outside
-    document.getElementById('avatar-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('hidden');
-        }
-    });
-    
-    async function loadAvatars() {
-        try {
-            const response = await fetch('/api/profile/avatars');
-            const data = await response.json();
-            
-            if (data.success) {
-                const avatarGrid = document.getElementById('avatar-grid');
-                avatarGrid.innerHTML = '';
-                
-                data.avatars.forEach(avatar => {
-                    const avatarElement = document.createElement('div');
-                    avatarElement.className = 'text-center cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors';
-                    avatarElement.innerHTML = `
-                        <div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2 border-2 ${data.current_avatar === avatar.path ? 'border-ki-green-500' : 'border-gray-200'}">
-                            <img src="{{ url_for('static', filename='') }}${avatar.path}" 
-                                 alt="${avatar.name}" 
-                                 class="w-full h-full object-cover"
-                                 onerror="this.src='{{ url_for('static', filename='assets/avatars/default-avatar.png') }}'">
-                        </div>
-                        <p class="text-xs text-gray-600">${avatar.name}</p>
-                    `;
-                    
-                    avatarElement.addEventListener('click', () => selectAvatar(avatar.id));
-                    avatarGrid.appendChild(avatarElement);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading avatars:', error);
-            showToast('Failed to load avatars', 'error');
-        }
-    }
-    
-    async function selectAvatar(avatarId) {
-        try {
-            showLoading();
-            
-            const response = await fetch('/api/profile/select-avatar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ avatar_id: avatarId })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                // Update the profile image display
-                const profileImageContainer = document.getElementById('profile-image');
-                profileImageContainer.innerHTML = `<img src="${data.image_url}" alt="Profile Image" class="w-full h-full object-cover">`;
-                
-                // Hide remove button for avatars
-                document.getElementById('remove-image-btn').classList.add('hidden');
-                
-                // Close modal
-                document.getElementById('avatar-modal').classList.add('hidden');
-                
-                showToast('Avatar selected successfully!', 'success');
-            } else {
-                showToast(data.message || 'Failed to select avatar', 'error');
-            }
-        } catch (error) {
-            console.error('Error selecting avatar:', error);
-            showToast('Failed to select avatar', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
-
 </script>
 {% endblock %}

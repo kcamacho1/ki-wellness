@@ -83,6 +83,9 @@ class AdminDashboardManager {
                 } else if (key === 'maintenance_mode') {
                     const status = value ? 'enabled' : 'disabled';
                     this.showNotification(`Maintenance mode ${status}`, 'warning');
+                } else if (key === 'allowed_emails') {
+                    const emailCount = value ? value.split(',').filter(email => email.trim()).length : 0;
+                    this.showNotification(`Allowed emails updated: ${emailCount} email(s) configured`, 'info');
                 }
             } else {
                 this.showNotification('Failed to update setting: ' + data.error, 'error');

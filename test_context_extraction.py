@@ -19,7 +19,8 @@ def test_context_extraction():
         'profile': {
             'name': 'Test User',
             'age': 30,
-            'health_goals': 'Lose weight and improve mood'
+            'health_goals': 'Lose weight and improve mood',
+            'ailments_concerns': 'Diabetes management, Blood pressure control'
         },
         'food_summary': {
             'total_entries': 5,
@@ -45,6 +46,8 @@ def test_context_extraction():
         ('Is my mood improving?', 'mood'),
         ('Am I drinking enough water?', 'water'),
         ('What are my health goals?', 'minimal'),
+        ('What are my health concerns?', 'minimal'),
+        ('How can I manage my diabetes?', 'minimal'),
         ('Hello, how are you?', 'minimal')
     ]
     

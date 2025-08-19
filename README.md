@@ -146,6 +146,7 @@ A comprehensive self-health application that helps users track nutrition, water 
 - `weight` (kg)
 - `height` (cm)
 - `health_goals`
+- `ailments_concerns`
 - `is_admin`
 - `created_at`
 

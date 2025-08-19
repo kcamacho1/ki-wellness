@@ -73,6 +73,7 @@ class User(UserMixin, db.Model):
     weight = db.Column(db.Float)  # in kg
     height = db.Column(db.Float)  # in cm
     health_goals = db.Column(db.Text)
+    ailments_concerns = db.Column(db.Text)  # Ailments or areas of concern
     profile_image = db.Column(db.String(255))  # Path to profile image
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -195,6 +196,38 @@ def delete_profile_image(filename):
             print(f"Error deleting profile image: {e}")
     return False
 
+def get_profile_image_url(profile_image_path):
+    """Get profile image URL with fallback to default image"""
+    if not profile_image_path:
+        return url_for('static', filename='assets/avatars/default-avatar.png')
+
+def get_available_avatars():
+    """Get list of available avatar options"""
+    avatars = [
+        {'id': 'default', 'name': 'Default', 'path': 'assets/avatars/default-avatar.png'},
+        {'id': 'man1', 'name': 'Man 1', 'path': 'assets/avatars/man1.png'},
+        {'id': 'man2', 'name': 'Man 2', 'path': 'assets/avatars/man2.png'},
+        {'id': 'man3', 'name': 'Man 3', 'path': 'assets/avatars/man3.png'},
+        {'id': 'man4', 'name': 'Man 4', 'path': 'assets/avatars/man4.png'},
+        {'id': 'man5', 'name': 'Man 5', 'path': 'assets/avatars/man5.png'},
+        {'id': 'girl1', 'name': 'Woman 1', 'path': 'assets/avatars/girl1.png'},
+        {'id': 'girl2', 'name': 'Woman 2', 'path': 'assets/avatars/girl2.png'},
+        {'id': 'girl3', 'name': 'Woman 3', 'path': 'assets/avatars/girl3.png'},
+        {'id': 'girl4', 'name': 'Woman 4', 'path': 'assets/avatars/girl4.png'},
+        {'id': 'girl5', 'name': 'Woman 5', 'path': 'assets/avatars/girl5.png'}
+    ]
+    return avatars
+
+    
+    # Check if the profile image file exists
+    filepath = os.path.join('static', profile_image_path)
+    if os.path.exists(filepath):
+        return url_for('static', filename=profile_image_path)
+    else:
+        # Return default image if the specified image doesn't exist
+        return url_for('static', filename='assets/avatars/default-avatar.png')
+
+
 def create_admin_user():
     """Create admin user if it doesn't exist"""
     admin_username = os.getenv('ADMIN_USERNAME')
@@ -255,6 +288,12 @@ def get_app_setting(key, default=None):
 
 def set_app_setting(key, value):
     """Set an app setting value"""
+    # Convert boolean values to lowercase strings for consistency
+    if isinstance(value, bool):
+        value = str(value).lower()
+    elif isinstance(value, str) and value.lower() in ['true', 'false']:
+        value = value.lower()
+    
     setting = AppSettings.query.filter_by(key=key).first()
     if setting:
         setting.value = value
@@ -440,22 +479,20 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     # Check if new account creation is enabled
-    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true') == 'true'
+    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true').lower() == 'true'
     allowed_emails = get_app_setting('allowed_emails', '').split(',')
     allowed_emails = [email.strip().lower() for email in allowed_emails if email.strip()]
+    
+    # Always show the registration form, but pass registration status to template
+    registration_disabled = not new_accounts_enabled
     
     if request.method == 'POST':
         email = request.form.get('email', '').lower()
         
         # Check if registration is disabled and email is not in allowed list
         if not new_accounts_enabled and email not in allowed_emails:
-            flash('New account registration is currently disabled. Please contact the administrator.', 'error')
-            return render_template('register.html', registration_disabled=True)
-    
-    # Show disabled message if registration is disabled and no email is being submitted
-    if not new_accounts_enabled and request.method == 'GET':
-        flash('New account registration is currently disabled. Please contact the administrator.', 'error')
-        return render_template('register.html', registration_disabled=True)
+            flash('New account registration is currently disabled. Your email address is not on the allowed list. Please contact the administrator.', 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -471,24 +508,24 @@ def register():
         # Check if all agreements are accepted
         if not agree_terms:
             flash('You must agree to the Terms of Service', 'error')
-            return render_template('register.html')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
         if not agree_privacy:
             flash('You must agree to the Privacy Policy', 'error')
-            return render_template('register.html')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
         if not agree_disclaimer:
             flash('You must acknowledge the Medical Disclaimer', 'error')
-            return render_template('register.html')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
         # Check if user already exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists', 'error')
-            return render_template('register.html')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'error')
-            return render_template('register.html')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
         # Create new user
         user = User(
@@ -507,7 +544,7 @@ def register():
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
     
-    return render_template('register.html')
+    return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
 
 @app.route('/logout')
 @login_required
@@ -546,8 +583,8 @@ def admin_dashboard():
     total_mood_logs = MoodLog.query.count()
     
     # Get app settings
-    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true') == 'true'
-    maintenance_mode = get_app_setting('maintenance_mode', 'false') == 'true'
+    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true').lower() == 'true'
+    maintenance_mode = get_app_setting('maintenance_mode', 'false').lower() == 'true'
     max_users = get_app_setting('max_users', '1000')
     allowed_emails = get_app_setting('allowed_emails', '')
     human_help_payment_type = get_app_setting('human_help_payment_type', '30min_session')
@@ -608,7 +645,8 @@ def get_user_data_for_analysis():
             'age': current_user.age,
             'weight': current_user.weight,
             'height': current_user.height,
-            'health_goals': current_user.health_goals
+            'health_goals': current_user.health_goals,
+            'ailments_concerns': current_user.ailments_concerns
         }
         
         # Get food logs
@@ -756,7 +794,7 @@ def generate_ai_analysis():
             """
         Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
 
-        USER: {user_name} | Age: {user_age} | Goals: {user_goals}
+        USER: {user_name} | Age: {user_age} | Goals: {user_goals} | Health Concerns: {user_ailments}
 
         DATA SUMMARY (last 30 days):
         - Food: {food_count} entries, ~{avg_cal:.0f} kcal/day
@@ -797,6 +835,7 @@ def generate_ai_analysis():
             user_name=profile.get('name', 'User'),
             user_age=profile.get('age', 'N/A'),
             user_goals=profile.get('health_goals', 'Not specified'),
+            user_ailments=profile.get('ailments_concerns', 'Not specified'),
             food_count=len(food_logs),
             avg_cal=avg_calories,
             water_count=len(water_logs),
@@ -931,7 +970,8 @@ def get_user_summary():
             'age': current_user.age,
             'weight': current_user.weight,
             'height': current_user.height,
-            'health_goals': current_user.health_goals
+            'health_goals': current_user.health_goals,
+            'ailments_concerns': current_user.ailments_concerns
         }
         
         # Get summarized food data
@@ -1293,6 +1333,13 @@ def _extract_relevant_context(message, context, context_type):
             goals = context['profile']['health_goals']
             if any(word in message_lower for word in ['goal', 'target', 'objective', 'aim']):
                 relevant_parts.append(f"Health goals: {goals}")
+        
+        # Ailments/concerns context (for health-related questions)
+        if context.get('profile', {}).get('ailments_concerns'):
+            ailments = context['profile']['ailments_concerns']
+            # More specific keywords to avoid conflicts with health goals
+            if any(word in message_lower for word in ['condition', 'ailment', 'concern', 'medical', 'symptom', 'issue', 'diabetes', 'blood pressure', 'pressure', 'disease', 'chronic', 'manage', 'management', 'avoid', 'safe', 'affect']):
+                relevant_parts.append(f"Health concerns: {ailments}")
         
         # Age context (for age-specific advice)
         if context.get('profile', {}).get('age'):
@@ -1719,6 +1766,7 @@ def profile_api():
         current_user.weight = data.get('weight')
         current_user.height = data.get('height')
         current_user.health_goals = data.get('health_goals')
+        current_user.ailments_concerns = data.get('ailments_concerns')
         
         db.session.commit()
         return jsonify({'success': True})
@@ -1731,6 +1779,7 @@ def profile_api():
             'weight': current_user.weight,
             'height': current_user.height,
             'health_goals': current_user.health_goals,
+            'ailments_concerns': current_user.ailments_concerns,
             'profile_image': current_user.profile_image,
             'is_admin': current_user.is_admin
         }
@@ -1787,6 +1836,54 @@ def remove_profile_image():
     except Exception as e:
         print(f"Error removing profile image: {e}")
         return jsonify({'success': False, 'message': 'Failed to remove image'})
+
+@app.route('/api/profile/select-avatar', methods=['POST'])
+@login_required
+def select_avatar():
+    """Select a predefined avatar"""
+    data = request.get_json()
+    avatar_id = data.get('avatar_id')
+    
+    if not avatar_id:
+        return jsonify({'success': False, 'message': 'Avatar ID is required'})
+    
+    # Get available avatars
+    avatars = get_available_avatars()
+    selected_avatar = next((avatar for avatar in avatars if avatar['id'] == avatar_id), None)
+    
+    if not selected_avatar:
+        return jsonify({'success': False, 'message': 'Invalid avatar selection'})
+    
+    try:
+        # Delete old custom profile image if exists
+        if current_user.profile_image and not current_user.profile_image.startswith('assets/avatars/'):
+            delete_profile_image(current_user.profile_image)
+        
+        # Set the selected avatar
+        current_user.profile_image = selected_avatar['path']
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Avatar selected successfully',
+            'image_url': url_for('static', filename=selected_avatar['path'])
+        })
+        
+    except Exception as e:
+        print(f"Error selecting avatar: {e}")
+        return jsonify({'success': False, 'message': 'Failed to select avatar'})
+
+@app.route('/api/profile/avatars', methods=['GET'])
+@login_required
+def get_avatars():
+    """Get available avatars"""
+    avatars = get_available_avatars()
+    return jsonify({
+        'success': True,
+        'avatars': avatars,
+        'current_avatar': current_user.profile_image
+    })
+
 
 @app.route('/api/food-log/<int:food_id>', methods=['DELETE'])
 @login_required

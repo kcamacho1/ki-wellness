@@ -15,23 +15,26 @@
         <!-- Registration Form -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             {% if registration_disabled %}
-                <!-- Registration Disabled Warning Banner -->
-                <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-yellow-800">Registration Currently Disabled</h3>
-                            <p class="text-sm text-yellow-700 mt-1">
-                                New account creation is currently disabled. Only authorized email addresses can register.
-                            </p>
-                        </div>
+                <!-- Registration Disabled Message -->
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Registration Temporarily Disabled</h3>
+                    <p class="text-gray-600 mb-4">New account creation is currently disabled by the administrator.</p>
+                    <p class="text-sm text-gray-500 mb-6">If you have been invited, please try registering with your authorized email address.</p>
+                    <div class="space-y-3">
+                        <a href="{{ url_for('login') }}" class="inline-flex items-center px-6 py-3 bg-ki-green-600 text-white font-medium rounded-lg hover:bg-ki-green-700 transition-colors">
+                            ← Back to Login
+                        </a>
+                        <button onclick="window.location.reload()" class="block w-full px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            Try Again
+                        </button>
                     </div>
                 </div>
-            {% endif %}
+            {% else %}
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -223,6 +226,7 @@
                     <a href="{{ url_for('login') }}" class="text-ki-green-600 hover:text-ki-green-700 font-medium">Sign in here</a>
                 </p>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -239,34 +243,21 @@
     });
     
     function updateStepDisplay() {
-        // Check if elements exist before accessing them
-        const progressBar = document.getElementById('progress-bar');
-        const currentStepElement = document.getElementById('current-step');
-        const stepTitleElement = document.getElementById('step-title');
+        // Update progress bar
+        const progress = (currentStep / totalSteps) * 100;
+        document.getElementById('progress-bar').style.width = progress + '%';
         
-        // Only update if elements exist (registration not disabled)
-        if (progressBar) {
-            const progress = (currentStep / totalSteps) * 100;
-            progressBar.style.width = progress + '%';
-        }
-        
-        if (currentStepElement) {
-            currentStepElement.textContent = currentStep;
-        }
-        
-        if (stepTitleElement) {
-            stepTitleElement.textContent = stepTitles[currentStep - 1];
-        }
+        // Update step counter and title
+        document.getElementById('current-step').textContent = currentStep;
+        document.getElementById('step-title').textContent = stepTitles[currentStep - 1];
         
         // Show/hide step content
         for (let i = 1; i <= totalSteps; i++) {
             const stepElement = document.getElementById(`step-${i}`);
-            if (stepElement) {
-                if (i === currentStep) {
-                    stepElement.classList.remove('hidden');
-                } else {
-                    stepElement.classList.add('hidden');
-                }
+            if (i === currentStep) {
+                stepElement.classList.remove('hidden');
+            } else {
+                stepElement.classList.add('hidden');
             }
         }
         
@@ -275,90 +266,77 @@
         const nextBtn = document.getElementById('next-btn');
         const submitBtn = document.getElementById('submit-btn');
         
-        if (prevBtn) {
-            if (currentStep === 1) {
-                prevBtn.classList.add('hidden');
-            } else {
-                prevBtn.classList.remove('hidden');
-            }
+        if (currentStep === 1) {
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.classList.remove('hidden');
         }
         
-        if (nextBtn && submitBtn) {
-            if (currentStep === totalSteps) {
-                nextBtn.classList.add('hidden');
-                submitBtn.classList.remove('hidden');
-            } else {
-                nextBtn.classList.remove('hidden');
-                submitBtn.classList.add('hidden');
-            }
+        if (currentStep === totalSteps) {
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
         }
     }
     
     function setupEventListeners() {
         // Next button
-        const nextBtn = document.getElementById('next-btn');
-        if (nextBtn) {
-            nextBtn.addEventListener('click', function() {
-                if (validateCurrentStep()) {
-                    currentStep++;
-                    updateStepDisplay();
-                }
-            });
-        }
+        document.getElementById('next-btn').addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                currentStep++;
+                updateStepDisplay();
+            }
+        });
         
         // Previous button
-        const prevBtn = document.getElementById('prev-btn');
-        if (prevBtn) {
-            prevBtn.addEventListener('click', function() {
-                currentStep--;
-                updateStepDisplay();
-            });
-        }
+        document.getElementById('prev-btn').addEventListener('click', function() {
+            currentStep--;
+            updateStepDisplay();
+        });
         
         // Form submission
-        const registerForm = document.getElementById('register-form');
-        if (registerForm) {
-            registerForm.addEventListener('submit', function(e) {
-                if (!validateCurrentStep()) {
-                    e.preventDefault();
-                    return false;
-                }
-                
-                // Final validation before submission
-                const password = document.getElementById('password')?.value || '';
-                const email = document.getElementById('email')?.value || '';
-                const agreeTerms = document.getElementById('agree_terms')?.checked || false;
-                const agreePrivacy = document.getElementById('agree_privacy')?.checked || false;
-                const agreeDisclaimer = document.getElementById('agree_disclaimer')?.checked || false;
-                
-                if (password.length < 8) {
-                    e.preventDefault();
-                    showToast('Password must be at least 8 characters long', 'error');
-                    return false;
-                }
-                
-                if (!email.includes('@')) {
-                    e.preventDefault();
-                    showToast('Please enter a valid email address', 'error');
-                    return false;
-                }
-                
-                if (!agreeTerms || !agreePrivacy || !agreeDisclaimer) {
-                    e.preventDefault();
-                    showToast('You must agree to all terms and conditions', 'error');
-                    return false;
-                }
-            });
-        }
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            if (!validateCurrentStep()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Final validation before submission
+            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value;
+            const agreeTerms = document.getElementById('agree_terms').checked;
+            const agreePrivacy = document.getElementById('agree_privacy').checked;
+            const agreeDisclaimer = document.getElementById('agree_disclaimer').checked;
+            
+            if (password.length < 8) {
+                e.preventDefault();
+                showToast('Password must be at least 8 characters long', 'error');
+                return false;
+            }
+            
+            if (!email.includes('@')) {
+                e.preventDefault();
+                showToast('Please enter a valid email address', 'error');
+                return false;
+            }
+            
+            if (!agreeTerms || !agreePrivacy || !agreeDisclaimer) {
+                e.preventDefault();
+                showToast('You must agree to all terms and conditions', 'error');
+                return false;
+            }
+        });
     }
     
     function validateCurrentStep() {
         switch(currentStep) {
             case 1:
-                const username = document.getElementById('username')?.value?.trim() || '';
-                const email = document.getElementById('email')?.value?.trim() || '';
-                const name = document.getElementById('name')?.value?.trim() || '';
-                const password = document.getElementById('password')?.value || '';
+                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const name = document.getElementById('name').value.trim();
+                const password = document.getElementById('password').value;
                 
                 if (!username || !email || !name || !password) {
                     showToast('Please fill in all required fields', 'error');
@@ -377,21 +355,21 @@
                 break;
                 
             case 2:
-                if (!document.getElementById('agree_terms')?.checked) {
+                if (!document.getElementById('agree_terms').checked) {
                     showToast('You must agree to the Terms of Service', 'error');
                     return false;
                 }
                 break;
                 
             case 3:
-                if (!document.getElementById('agree_privacy')?.checked) {
+                if (!document.getElementById('agree_privacy').checked) {
                     showToast('You must agree to the Privacy Policy', 'error');
                     return false;
                 }
                 break;
                 
             case 4:
-                if (!document.getElementById('agree_disclaimer')?.checked) {
+                if (!document.getElementById('agree_disclaimer').checked) {
                     showToast('You must acknowledge the Medical Disclaimer', 'error');
                     return false;
                 }

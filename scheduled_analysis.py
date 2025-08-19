@@ -37,7 +37,7 @@ def get_user_data(session, user_id, start_date, end_date):
     """Get user data for analysis"""
     # Get user profile
     user_result = session.execute(
-        text('SELECT name, age, weight, height, health_goals FROM "user" WHERE "id" = :user_id'),
+        text('SELECT name, age, weight, height, health_goals, ailments_concerns FROM "user" WHERE "id" = :user_id'),
         {"user_id": user_id}
     ).fetchone()
     
@@ -49,7 +49,8 @@ def get_user_data(session, user_id, start_date, end_date):
         'age': user_result[1],
         'weight': user_result[2],
         'height': user_result[3],
-        'health_goals': user_result[4]
+        'health_goals': user_result[4],
+        'ailments_concerns': user_result[5]
     }
     
     # Get food logs
@@ -112,6 +113,7 @@ def generate_analysis(user_data):
 
     User: {user_data.get('profile', {}).get('name', 'User')}
     Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
+    Health Concerns: {user_data.get('profile', {}).get('ailments_concerns', 'Not specified')}
     
     Data Summary:
     - {food_summary}
