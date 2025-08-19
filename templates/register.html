@@ -243,21 +243,34 @@
     });
     
     function updateStepDisplay() {
-        // Update progress bar
-        const progress = (currentStep / totalSteps) * 100;
-        document.getElementById('progress-bar').style.width = progress + '%';
+        // Check if elements exist before accessing them
+        const progressBar = document.getElementById('progress-bar');
+        const currentStepElement = document.getElementById('current-step');
+        const stepTitleElement = document.getElementById('step-title');
         
-        // Update step counter and title
-        document.getElementById('current-step').textContent = currentStep;
-        document.getElementById('step-title').textContent = stepTitles[currentStep - 1];
+        // Only update if elements exist (registration not disabled)
+        if (progressBar) {
+            const progress = (currentStep / totalSteps) * 100;
+            progressBar.style.width = progress + '%';
+        }
+        
+        if (currentStepElement) {
+            currentStepElement.textContent = currentStep;
+        }
+        
+        if (stepTitleElement) {
+            stepTitleElement.textContent = stepTitles[currentStep - 1];
+        }
         
         // Show/hide step content
         for (let i = 1; i <= totalSteps; i++) {
             const stepElement = document.getElementById(`step-${i}`);
-            if (i === currentStep) {
-                stepElement.classList.remove('hidden');
-            } else {
-                stepElement.classList.add('hidden');
+            if (stepElement) {
+                if (i === currentStep) {
+                    stepElement.classList.remove('hidden');
+                } else {
+                    stepElement.classList.add('hidden');
+                }
             }
         }
         
@@ -266,77 +279,90 @@
         const nextBtn = document.getElementById('next-btn');
         const submitBtn = document.getElementById('submit-btn');
         
-        if (currentStep === 1) {
-            prevBtn.classList.add('hidden');
-        } else {
-            prevBtn.classList.remove('hidden');
+        if (prevBtn) {
+            if (currentStep === 1) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
         }
         
-        if (currentStep === totalSteps) {
-            nextBtn.classList.add('hidden');
-            submitBtn.classList.remove('hidden');
-        } else {
-            nextBtn.classList.remove('hidden');
-            submitBtn.classList.add('hidden');
+        if (nextBtn && submitBtn) {
+            if (currentStep === totalSteps) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
         }
     }
     
     function setupEventListeners() {
         // Next button
-        document.getElementById('next-btn').addEventListener('click', function() {
-            if (validateCurrentStep()) {
-                currentStep++;
-                updateStepDisplay();
-            }
-        });
+        const nextBtn = document.getElementById('next-btn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                if (validateCurrentStep()) {
+                    currentStep++;
+                    updateStepDisplay();
+                }
+            });
+        }
         
         // Previous button
-        document.getElementById('prev-btn').addEventListener('click', function() {
-            currentStep--;
-            updateStepDisplay();
-        });
+        const prevBtn = document.getElementById('prev-btn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                currentStep--;
+                updateStepDisplay();
+            });
+        }
         
         // Form submission
-        document.getElementById('register-form').addEventListener('submit', function(e) {
-            if (!validateCurrentStep()) {
-                e.preventDefault();
-                return false;
-            }
-            
-            // Final validation before submission
-            const password = document.getElementById('password').value;
-            const email = document.getElementById('email').value;
-            const agreeTerms = document.getElementById('agree_terms').checked;
-            const agreePrivacy = document.getElementById('agree_privacy').checked;
-            const agreeDisclaimer = document.getElementById('agree_disclaimer').checked;
-            
-            if (password.length < 8) {
-                e.preventDefault();
-                showToast('Password must be at least 8 characters long', 'error');
-                return false;
-            }
-            
-            if (!email.includes('@')) {
-                e.preventDefault();
-                showToast('Please enter a valid email address', 'error');
-                return false;
-            }
-            
-            if (!agreeTerms || !agreePrivacy || !agreeDisclaimer) {
-                e.preventDefault();
-                showToast('You must agree to all terms and conditions', 'error');
-                return false;
-            }
-        });
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(e) {
+                if (!validateCurrentStep()) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Final validation before submission
+                const password = document.getElementById('password')?.value || '';
+                const email = document.getElementById('email')?.value || '';
+                const agreeTerms = document.getElementById('agree_terms')?.checked || false;
+                const agreePrivacy = document.getElementById('agree_privacy')?.checked || false;
+                const agreeDisclaimer = document.getElementById('agree_disclaimer')?.checked || false;
+                
+                if (password.length < 8) {
+                    e.preventDefault();
+                    showToast('Password must be at least 8 characters long', 'error');
+                    return false;
+                }
+                
+                if (!email.includes('@')) {
+                    e.preventDefault();
+                    showToast('Please enter a valid email address', 'error');
+                    return false;
+                }
+                
+                if (!agreeTerms || !agreePrivacy || !agreeDisclaimer) {
+                    e.preventDefault();
+                    showToast('You must agree to all terms and conditions', 'error');
+                    return false;
+                }
+            });
+        }
     }
     
     function validateCurrentStep() {
         switch(currentStep) {
             case 1:
-                const username = document.getElementById('username').value.trim();
-                const email = document.getElementById('email').value.trim();
-                const name = document.getElementById('name').value.trim();
-                const password = document.getElementById('password').value;
+                const username = document.getElementById('username')?.value?.trim() || '';
+                const email = document.getElementById('email')?.value?.trim() || '';
+                const name = document.getElementById('name')?.value?.trim() || '';
+                const password = document.getElementById('password')?.value || '';
                 
                 if (!username || !email || !name || !password) {
                     showToast('Please fill in all required fields', 'error');
@@ -355,21 +381,21 @@
                 break;
                 
             case 2:
-                if (!document.getElementById('agree_terms').checked) {
+                if (!document.getElementById('agree_terms')?.checked) {
                     showToast('You must agree to the Terms of Service', 'error');
                     return false;
                 }
                 break;
                 
             case 3:
-                if (!document.getElementById('agree_privacy').checked) {
+                if (!document.getElementById('agree_privacy')?.checked) {
                     showToast('You must agree to the Privacy Policy', 'error');
                     return false;
                 }
                 break;
                 
             case 4:
-                if (!document.getElementById('agree_disclaimer').checked) {
+                if (!document.getElementById('agree_disclaimer')?.checked) {
                     showToast('You must acknowledge the Medical Disclaimer', 'error');
                     return false;
                 }
