@@ -1049,7 +1049,14 @@ def ai_chat():
             
         except Exception as ollama_error:
             print(f"AI Chat - Ollama error: {str(ollama_error)}")
-            return jsonify({'success': False, 'error': f'Ollama error: {str(ollama_error)}'})
+            
+            # Provide a helpful fallback response when Ollama is not available
+            fallback_response = _get_fallback_response(message, context_type)
+            return jsonify({
+                'success': True, 
+                'response': fallback_response,
+                'note': 'Using fallback response - AI model temporarily unavailable'
+            })
         
     except Exception as e:
         print(f"AI Chat - General error: {str(e)}")
@@ -1143,6 +1150,51 @@ def _determine_topic(message):
     
     # Default to general
     return 'general'
+
+def _get_fallback_response(message, context_type):
+    """Provide helpful fallback responses when AI model is unavailable"""
+    
+    message_lower = message.lower()
+    
+    # Anti-inflammation responses
+    if any(word in message_lower for word in ['anti-inflammation', 'anti-inflammatory', 'inflammation']):
+        return """For anti-inflammatory meals, focus on foods rich in omega-3s, antioxidants, and fiber. Try a salmon salad with leafy greens, berries, and walnuts, or a turmeric-spiced lentil soup with ginger.
+
+📚 Helpful Resources:
+- [Anti-Inflammatory Diet Guide](https://kiwellness.medium.com/anti-inflammatory-foods) - Ki Wellness blog
+- [Mayo Clinic: Anti-inflammatory diet](https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/anti-inflammatory-diet/art-20457586) - Medical guidance"""
+    
+    # Energy and nutrition
+    elif any(word in message_lower for word in ['energy', 'energizing', 'boost', 'meal', 'food', 'nutrition']):
+        return """For sustained energy, combine complex carbs with protein and healthy fats. Try oatmeal with nuts and berries, or a quinoa bowl with vegetables and lean protein.
+
+📚 Helpful Resources:
+- [Energy-Boosting Foods](https://kiwellness.medium.com/energy-foods) - Ki Wellness blog
+- [Harvard Health: Foods that fight fatigue](https://www.health.harvard.edu/healthbeat/foods-that-fight-fatigue) - Expert advice"""
+    
+    # Water and hydration
+    elif any(word in message_lower for word in ['water', 'hydrate', 'drink']):
+        return """Stay hydrated by drinking water throughout the day. Aim for 8-10 glasses daily, and include hydrating foods like cucumbers, watermelon, and citrus fruits.
+
+📚 Helpful Resources:
+- [Hydration Tips](https://kiwellness.medium.com/hydration-guide) - Ki Wellness blog
+- [WebMD: How much water should you drink?](https://www.webmd.com/diet/how-much-water-to-drink) - Daily recommendations"""
+    
+    # Mood and wellness
+    elif any(word in message_lower for word in ['mood', 'feel', 'stress', 'anxiety', 'wellness']):
+        return """Support your mood with regular exercise, adequate sleep, and mood-boosting foods like dark chocolate, fatty fish, and leafy greens. Practice stress management techniques daily.
+
+📚 Helpful Resources:
+- [Mood-Boosting Habits](https://kiwellness.medium.com/mood-wellness) - Ki Wellness blog
+- [Mayo Clinic: Stress management](https://www.mayoclinic.org/healthy-lifestyle/stress-management) - Expert guidance"""
+    
+    # General health
+    else:
+        return """I'm here to support your wellness journey! For personalized guidance, try logging your meals, water intake, and mood regularly. This helps identify patterns and make informed health decisions.
+
+📚 Helpful Resources:
+- [Wellness Tips](https://kiwellness.medium.com/wellness-guide) - Ki Wellness blog
+- [Personalized Health Coaching](https://kiwellness.org/human-help) - Book a session with our certified nutritionist"""
 
 def _extract_relevant_context(message, context, context_type):
     """Extract only context that's relevant to the user's specific question"""

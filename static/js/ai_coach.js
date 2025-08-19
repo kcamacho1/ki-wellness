@@ -404,7 +404,14 @@ class AICoachManager {
             this.removeTypingIndicator();
             
             if (data.success) {
-                this.addMessageToChat('assistant', data.response);
+                let responseText = data.response;
+                
+                // Add note if using fallback response
+                if (data.note) {
+                    responseText += `\n\n💡 *${data.note}*`;
+                }
+                
+                this.addMessageToChat('assistant', responseText);
                 this.chatHistory.push({ role: 'user', content: message });
                 this.chatHistory.push({ role: 'assistant', content: data.response });
             } else {
