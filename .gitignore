@@ -87,6 +87,9 @@ embeddings.db
 *.modelfile
 fine_tuning_data.json
 
+# User uploads
+static/uploads/
+
 # Scrapy stuff:
 .scrapy
 

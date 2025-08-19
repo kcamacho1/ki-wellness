@@ -284,7 +284,31 @@ body {
 .barcode-video {
     width: 100%;
     border-radius: 8px;
-    border: 2px solid var(--ki-green-500);
+    border: 2px solid #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.barcode-video.scanning-active {
+    border: 3px solid #16a34a;
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.3);
+}
+
+/* QuaggaJS Viewport */
+.viewport {
+    position: relative;
+    width: 100%;
+    height: auto;
+}
+
+.viewport > video, .viewport > canvas {
+    max-width: 100%;
+    width: 100%;
+}
+
+.viewport > canvas.drawingBuffer {
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 .barcode-overlay {
@@ -302,14 +326,58 @@ body {
     left: 0;
     width: 100%;
     height: 2px;
-    background: var(--ki-green-500);
+    background: #16a34a;
     animation: scan 2s infinite;
+}
+
+.barcode-corner {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #16a34a;
+}
+
+.barcode-corner.top-left {
+    top: 20px;
+    left: 20px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.barcode-corner.top-right {
+    top: 20px;
+    right: 20px;
+    border-left: none;
+    border-bottom: none;
+}
+
+.barcode-corner.bottom-left {
+    bottom: 20px;
+    left: 20px;
+    border-right: none;
+    border-top: none;
+}
+
+.barcode-corner.bottom-right {
+    bottom: 20px;
+    right: 20px;
+    border-left: none;
+    border-top: none;
 }
 
 @keyframes scan {
     0% { transform: translateY(-50px); }
     50% { transform: translateY(50px); }
     100% { transform: translateY(-50px); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.scanning-indicator {
+    animation: pulse 1.5s infinite;
 }
 
 /* Mood Buttons */
@@ -439,55 +507,6 @@ body {
 
 .shadow { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
 .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-
-/* Enhanced Component Styles */
-.water-btn {
-    @apply bg-blue-100 text-blue-700 px-4 py-3 rounded-lg text-base font-medium hover:bg-blue-200 transition-all duration-200 cursor-pointer border-2 border-transparent;
-}
-
-.water-btn:hover {
-    @apply bg-blue-200 transform scale-105 shadow-md;
-}
-
-.water-btn:active {
-    @apply transform scale-95;
-}
-
-.mood-btn {
-    @apply p-3 rounded-lg hover:bg-gray-100 transition-all duration-200 cursor-pointer border-2 border-transparent;
-}
-
-.mood-btn:hover {
-    @apply bg-gray-100 transform scale-110 shadow-md;
-}
-
-.mood-btn:active {
-    @apply transform scale-95;
-}
-
-.mood-btn.selected {
-    @apply bg-ki-green-100 border-2 border-ki-green-300;
-}
-
-.food-result {
-    @apply transition-all duration-200;
-}
-
-.food-result:hover {
-    @apply transform scale-[1.02];
-}
-
-.progress-bar {
-    @apply transition-all duration-300 ease-out;
-}
-
-.form-checkbox {
-    @apply rounded border-gray-300 text-ki-green-600 focus:ring-ki-green-500 focus:ring-2;
-}
-
-.loading {
-    @apply opacity-50 pointer-events-none;
-}
 
 /* Chart Styles */
 #macro-chart {

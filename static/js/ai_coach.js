@@ -3,6 +3,8 @@ class AICoachManager {
         this.userData = null;
         this.analysis = null;
         this.chatHistory = [];
+        this.userSummary = null;
+        this.contextCache = new Map();
         this.init();
     }
 
@@ -10,8 +12,8 @@ class AICoachManager {
         // Load stored analysis first (fast)
         await this.loadStoredAnalysis();
         
-        // Load user data in background
-        this.loadUserData();
+        // Load minimal user summary in background
+        this.loadUserSummary();
         
         this.setupEventListeners();
         this.showMainContent();
@@ -32,6 +34,7 @@ class AICoachManager {
         
         // Chat modal controls
         document.getElementById('chat-button').addEventListener('click', () => this.openChat());
+        document.getElementById('chat-button-hero').addEventListener('click', () => this.openChat());
         document.getElementById('close-chat').addEventListener('click', () => this.closeChat());
         
         // Chat functionality
@@ -57,6 +60,28 @@ class AICoachManager {
 
     closeChat() {
         document.getElementById('chat-modal').classList.add('hidden');
+    }
+
+    async loadUserSummary() {
+        try {
+            console.log('Loading user summary...');
+            const response = await fetch('/api/user-summary');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.userSummary = data.summary;
+                this.userData = data.summary; // Use summary as userData for chat
+                console.log('User summary loaded:', this.userSummary);
+                
+                if (!this.hasAnyLogs()) {
+                    this.displayNoLogsCTA();
+                }
+            } else {
+                console.error('Failed to load user summary:', data.error);
+            }
+        } catch (error) {
+            console.error('Error loading user summary:', error);
+        }
     }
 
     async loadUserData() {
@@ -98,6 +123,9 @@ class AICoachManager {
                     const daysAgo = Math.floor((new Date() - updatedDate) / (1000 * 60 * 60 * 24));
                     console.log(`Analysis last updated ${daysAgo} days ago`);
                 }
+
+                // If analysis exists, do not show CTA unless there are no logs in the last 7 days
+                // We will compute that once userData is loaded
             } else {
                 this.showFallbackAnalysis();
             }
@@ -202,13 +230,32 @@ class AICoachManager {
         this.displayAnalysis();
     }
 
-    // Returns true if there is at least one log entry across food, water, or mood
-    hasAnyLogs() {
-        if (!this.userData) return false;
-        const foodCount = Array.isArray(this.userData.food_logs) ? this.userData.food_logs.length : 0;
-        const waterCount = Array.isArray(this.userData.water_logs) ? this.userData.water_logs.length : 0;
-        const moodCount = Array.isArray(this.userData.mood_logs) ? this.userData.mood_logs.length : 0;
-        return (foodCount + waterCount + moodCount) > 0;
+    // Returns true if there is at least one log entry across food, water, or mood (last 7 days by default)
+    hasAnyLogs(daysWindow = 7) {
+        if (!this.userData && !this.userSummary) return false;
+        
+        const data = this.userSummary || this.userData;
+        if (!data) return false;
+        
+        const now = new Date();
+        const isRecent = (iso) => {
+            const d = new Date(iso);
+            return (now - d) <= daysWindow * 24 * 60 * 60 * 1000;
+        };
+        
+        // Check food logs
+        const foodRecent = (data.food_logs || []).some(l => isRecent(l.date)) || 
+                          (data.food_summary && data.food_summary.total_entries > 0);
+        
+        // Check water logs
+        const waterRecent = (data.water_logs || []).some(l => isRecent(l.date)) || 
+                           (data.water_summary && data.water_summary.total_entries > 0);
+        
+        // Check mood logs
+        const moodRecent = (data.mood_logs || []).some(l => isRecent(l.date)) || 
+                          (data.mood_summary && data.mood_summary.total_entries > 0);
+        
+        return foodRecent || waterRecent || moodRecent;
     }
 
     // Renders a clear call-to-action prompting the user to log entries
@@ -232,8 +279,8 @@ class AICoachManager {
     }
 
     displayAnalysis() {
-        // If no logs, show CTA instead of analysis
-        if (!this.hasAnyLogs()) {
+        // Show CTA only if there are no logs in the last 7 days AND no saved analysis
+        if (!this.hasAnyLogs(7) && (!this.analysis || (!this.analysis.patterns && !this.analysis.suggestions))) {
             this.displayNoLogsCTA();
             return;
         }
@@ -293,6 +340,15 @@ class AICoachManager {
                     <div>
                         <h4 class="font-medium text-gray-900 mb-1">${suggestion.title}</h4>
                         <p class="text-sm text-gray-600">${suggestion.description}</p>
+                        ${Array.isArray(suggestion.sources) && suggestion.sources.length > 0 ? `
+                        <div class="mt-2 space-y-1">
+                            ${suggestion.sources.slice(0,3).map(src => `
+                                <a href="${src.url}" target="_blank" rel="noopener" class="inline-block text-xs text-blue-600 hover:underline">
+                                    Source: ${src.title || src.url}
+                                </a>
+                            `).join('')}
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -313,13 +369,17 @@ class AICoachManager {
         this.showTypingIndicator();
 
         try {
+            // Determine what context is needed based on the message
+            const contextType = this.determineContextType(message);
+            const context = await this.getOptimizedContext(contextType, message);
+            
             console.log('Sending message to AI:', message);
-            console.log('User data:', this.userData);
-            console.log('Analysis:', this.analysis);
+            console.log('Context type:', contextType);
+            console.log('Context:', context);
             
             // Add timeout to prevent hanging
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced to 10 seconds
             
             const response = await fetch('/api/ai-chat', {
                 method: 'POST',
@@ -328,9 +388,9 @@ class AICoachManager {
                 },
                 body: JSON.stringify({
                     message: message,
-                    user_data: this.userData,
-                    analysis: this.analysis,
-                    chat_history: this.chatHistory
+                    context: context,
+                    context_type: contextType,
+                    chat_history: this.chatHistory.slice(-5) // Only last 5 messages
                 }),
                 signal: controller.signal
             });
@@ -354,8 +414,84 @@ class AICoachManager {
         } catch (error) {
             console.error('Error sending message:', error);
             this.removeTypingIndicator();
-            this.addMessageToChat('assistant', 'Network error. Please check your connection and try again.');
+            
+            if (error.name === 'AbortError') {
+                this.addMessageToChat('assistant', 'The request took too long. Please try asking a more specific question or try again in a moment.');
+            } else {
+                this.addMessageToChat('assistant', 'Network error. Please check your connection and try again.');
+            }
         }
+    }
+
+    determineContextType(message) {
+        const lowerMessage = message.toLowerCase();
+        
+        // Food-related questions
+        if (lowerMessage.includes('food') || lowerMessage.includes('eat') || lowerMessage.includes('meal') || 
+            lowerMessage.includes('calorie') || lowerMessage.includes('nutrition') || lowerMessage.includes('diet')) {
+            return 'food';
+        }
+        
+        // Mood-related questions
+        if (lowerMessage.includes('mood') || lowerMessage.includes('feel') || lowerMessage.includes('emotion') || 
+            lowerMessage.includes('happy') || lowerMessage.includes('sad') || lowerMessage.includes('stress')) {
+            return 'mood';
+        }
+        
+        // Water-related questions
+        if (lowerMessage.includes('water') || lowerMessage.includes('hydrate') || lowerMessage.includes('drink') || 
+            lowerMessage.includes('fluid')) {
+            return 'water';
+        }
+        
+        // General wellness questions
+        if (lowerMessage.includes('pattern') || lowerMessage.includes('trend') || lowerMessage.includes('progress') || 
+            lowerMessage.includes('analysis') || lowerMessage.includes('insight')) {
+            return 'analysis';
+        }
+        
+        // Default to minimal context
+        return 'minimal';
+    }
+
+    async getOptimizedContext(contextType, message) {
+        // Check cache first
+        const cacheKey = `${contextType}_${this.userSummary?.profile?.id || 'default'}`;
+        if (this.contextCache.has(cacheKey)) {
+            console.log('Using cached context for:', contextType);
+            return this.contextCache.get(cacheKey);
+        }
+
+        let context = {
+            profile: this.userSummary?.profile || {},
+            analysis: this.analysis || {},
+            chat_history: this.chatHistory.slice(-3)
+        };
+
+        // Add specific data based on context type
+        switch (contextType) {
+            case 'food':
+                context.food_summary = this.userSummary?.food_summary || {};
+                break;
+            case 'mood':
+                context.mood_summary = this.userSummary?.mood_summary || {};
+                break;
+            case 'water':
+                context.water_summary = this.userSummary?.water_summary || {};
+                break;
+            case 'analysis':
+                context.recent_patterns = this.userSummary?.recent_patterns || [];
+                break;
+            case 'minimal':
+            default:
+                // Keep minimal context
+                break;
+        }
+
+        // Cache the context
+        this.contextCache.set(cacheKey, context);
+        console.log('Cached context for:', contextType);
+        return context;
     }
 
     addMessageToChat(role, content) {

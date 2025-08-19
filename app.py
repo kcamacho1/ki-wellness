@@ -1,15 +1,20 @@
 import os
 import requests
 import json
+import uuid
 from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
 import ollama
+import stripe
+from food_data import BASIC_FOODS, COMMON_FOODS_DB
+from health_resources import get_relevant_resources, format_resources_for_prompt
 
 # Load environment variables
 load_dotenv()
@@ -18,14 +23,26 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Database configuration
-if os.getenv('DATABASE_URL'):
-    # Production - PostgreSQL
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+db_url = os.getenv('DATABASE_URL')
+if db_url:
+    # Normalize old Heroku-style URLs
+    if db_url.startswith('postgres://'):
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 else:
-    # Development - SQLite
+    # Development - SQLite fallback
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# File upload configuration
+UPLOAD_FOLDER = 'static/uploads/profile_images'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -37,8 +54,13 @@ OPENFOODFACTS_API = "https://world.openfoodfacts.org/cgi/search.pl"
 USDA_API_KEY = os.getenv('USDA_API_KEY')
 USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1"
 
-# Basic foods to prioritize USDA search
-BASIC_FOODS = ['apple', 'banana', 'chicken', 'rice', 'bread', 'milk', 'eggs', 'beef', 'fish', 'pork', 'carrot', 'broccoli', 'spinach', 'tomato', 'potato', 'onion', 'garlic', 'cilantro', 'coriander']
+# Stripe Configuration
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_PRICE_ID_30MIN = os.getenv('STRIPE_PRICE_ID_30MIN')  # $20 for 30 minutes
+STRIPE_PRICE_ID_DONATION = os.getenv('STRIPE_PRICE_ID_DONATION')  # Donation link
+
+# Food data imported from food_data.py
 
 # Database Models
 class User(UserMixin, db.Model):
@@ -51,8 +73,15 @@ class User(UserMixin, db.Model):
     weight = db.Column(db.Float)  # in kg
     height = db.Column(db.Float)  # in cm
     health_goals = db.Column(db.Text)
+    profile_image = db.Column(db.String(255))  # Path to profile image
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Agreement tracking
+    agreed_to_terms = db.Column(db.Boolean, default=False)
+    agreed_to_privacy = db.Column(db.Boolean, default=False)
+    agreed_to_disclaimer = db.Column(db.Boolean, default=False)
+    agreements_date = db.Column(db.DateTime)  # When agreements were accepted
     
     # Relationships
     food_logs = db.relationship('FoodLog', backref='user', lazy=True)
@@ -108,9 +137,63 @@ class AIAnalysis(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class AppSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(200))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class PaymentSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Can be null for non-logged in users
+    email = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    payment_type = db.Column(db.String(50), nullable=False)  # '30min_session' or 'donation'
+    stripe_payment_intent_id = db.Column(db.String(255), nullable=True)
+    amount = db.Column(db.Integer, nullable=False)  # Amount in cents
+    status = db.Column(db.String(50), default='pending')  # pending, completed, failed, cancelled
+    calendly_link_sent = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='payment_sessions')
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_profile_image(file, user_id):
+    """Save uploaded profile image and return the filename"""
+    if file and allowed_file(file.filename):
+        # Generate unique filename
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"profile_{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save file
+        file.save(filepath)
+        return f"uploads/profile_images/{filename}"
+    return None
+
+def delete_profile_image(filename):
+    """Delete profile image file"""
+    if filename:
+        try:
+            filepath = os.path.join('static', filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                return True
+        except Exception as e:
+            print(f"Error deleting profile image: {e}")
+    return False
 
 def create_admin_user():
     """Create admin user if it doesn't exist"""
@@ -126,11 +209,62 @@ def create_admin_user():
                 email=admin_email,
                 password_hash=generate_password_hash(admin_password),
                 name="Admin User",
-                is_admin=True
+                is_admin=True,
+                # Auto-agreement for admin account
+                agreed_to_terms=True,
+                agreed_to_privacy=True,
+                agreed_to_disclaimer=True,
+                agreements_date=datetime.utcnow()
             )
             db.session.add(admin_user)
             db.session.commit()
-            print(f"✅ Admin user '{admin_username}' created successfully")
+            print(f"✅ Admin user '{admin_username}' created successfully with auto-agreement")
+        else:
+            # Update existing admin user with agreements if not already set
+            if not admin_user.agreed_to_terms:
+                admin_user.agreed_to_terms = True
+                admin_user.agreed_to_privacy = True
+                admin_user.agreed_to_disclaimer = True
+                admin_user.agreements_date = datetime.utcnow()
+                db.session.commit()
+                print(f"✅ Admin user '{admin_username}' updated with auto-agreement")
+
+def initialize_app_settings():
+    """Initialize default app settings"""
+    settings = [
+        ('new_accounts_enabled', 'true', 'Enable or disable new user account creation'),
+        ('maintenance_mode', 'false', 'Enable maintenance mode for the application'),
+        ('max_users', '1000', 'Maximum number of users allowed in the system'),
+        ('allowed_emails', '', 'Comma-separated list of email addresses allowed to register even when disabled'),
+        ('human_help_payment_type', '30min_session', 'Payment type for human help: 30min_session or donation'),
+        ('calendly_link', 'https://calendly.com/ki-wellness/human-health-coach', 'Calendly link for scheduling appointments')
+    ]
+    
+    for key, value, description in settings:
+        setting = AppSettings.query.filter_by(key=key).first()
+        if not setting:
+            setting = AppSettings(key=key, value=value, description=description)
+            db.session.add(setting)
+    
+    db.session.commit()
+
+def get_app_setting(key, default=None):
+    """Get an app setting value"""
+    setting = AppSettings.query.filter_by(key=key).first()
+    return setting.value if setting else default
+
+def set_app_setting(key, value):
+    """Set an app setting value"""
+    setting = AppSettings.query.filter_by(key=key).first()
+    if setting:
+        setting.value = value
+        setting.updated_at = datetime.utcnow()
+    else:
+        setting = AppSettings(key=key, value=value)
+        db.session.add(setting)
+    
+    db.session.commit()
+    return setting
 
 def search_usda_api(query):
     """Search USDA FoodData Central API"""
@@ -142,13 +276,13 @@ def search_usda_api(query):
         params = {
             'api_key': USDA_API_KEY,
             'query': query,
-            'pageSize': 5,
+            'pageSize': 3,  # Reduced for speed
             'dataType': 'Foundation',
             'sortBy': 'dataType.keyword',
             'sortOrder': 'asc'
         }
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, timeout=3)  # Reduced timeout
         response.raise_for_status()
         data = response.json()
         
@@ -199,20 +333,33 @@ def search_openfoodfacts_api(query):
     try:
         # Create search terms for better results
         search_terms = [query]
-        if query.lower() in ['chicken', 'apple', 'banana']:
-            search_terms.extend([f'fresh {query}', f'{query} raw', f'{query} natural'])
+        
+        # Add variations for common foods (limited for speed)
+        query_lower = query.lower()
+        if 'coconut' in query_lower:
+            search_terms.extend(['coconut milk', 'coconut cream'])
+        elif 'milk' in query_lower:
+            search_terms.extend(['almond milk', 'soy milk'])
+        elif 'chicken' in query_lower:
+            search_terms.extend(['chicken breast'])
+        elif 'rice' in query_lower:
+            search_terms.extend(['brown rice', 'white rice'])
+        elif 'olive' in query_lower and 'oil' in query_lower:
+            search_terms.extend(['olive oil extra virgin', 'olive oil pure'])
+        elif 'oil' in query_lower:
+            search_terms.extend(['cooking oil', 'vegetable oil'])
         
         all_results = []
-        for search_term in search_terms:
+        for search_term in search_terms[:2]:  # Limit to 2 search terms for speed
             params = {
                 'search_terms': search_term,
                 'search_simple': 1,
                 'action': 'process',
                 'json': 1,
-                'page_size': 10
+                'page_size': 8  # Reduced for speed
             }
             
-            response = requests.get(OPENFOODFACTS_API, params=params, timeout=10)
+            response = requests.get(OPENFOODFACTS_API, params=params, timeout=3)  # Reduced timeout
             response.raise_for_status()
             data = response.json()
             
@@ -222,6 +369,14 @@ def search_openfoodfacts_api(query):
                     continue
                 
                 nutriments = product['nutriments']
+                
+                # Skip products with very low nutrition data
+                if (nutriments.get('energy-kcal_100g', 0) < 10 and 
+                    nutriments.get('proteins_100g', 0) < 1 and 
+                    nutriments.get('carbohydrates_100g', 0) < 1 and 
+                    nutriments.get('fat_100g', 0) < 1):
+                    continue
+                
                 result = {
                     'name': product.get('product_name', 'Unknown Product'),
                     'brand': product.get('brands', 'Unknown Brand'),
@@ -235,11 +390,15 @@ def search_openfoodfacts_api(query):
                     'source': 'openfoodfacts'
                 }
                 
-                # Filter out processed products for basic foods
-                if query.lower() in ['chicken', 'apple', 'banana']:
-                    product_name = result['name'].lower()
-                    if any(exclude in product_name for exclude in ['broth', 'soup', 'juice', 'sauce', 'candy', 'chips']):
-                        continue
+                # Filter out highly processed products for basic foods
+                product_name = result['name'].lower()
+                exclude_terms = ['broth', 'soup', 'juice', 'sauce', 'candy', 'chips', 'cookies', 'cake', 'ice cream']
+                
+                # Don't exclude oils and fats
+                if 'oil' in query_lower or 'butter' in query_lower or 'ghee' in query_lower:
+                    pass  # Allow oils and fats through
+                elif any(exclude in product_name for exclude in exclude_terms):
+                    continue
                 
                 all_results.append(result)
         
@@ -251,7 +410,7 @@ def search_openfoodfacts_api(query):
                 unique_results.append(result)
                 seen_names.add(result['name'])
         
-        return unique_results[:7]  # Return up to 7 results
+        return unique_results[:6]  # Return up to 6 results for speed
     except Exception as e:
         print(f"Open Food Facts API error: {e}")
         return []
@@ -280,11 +439,47 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Check if new account creation is enabled
+    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true') == 'true'
+    allowed_emails = get_app_setting('allowed_emails', '').split(',')
+    allowed_emails = [email.strip().lower() for email in allowed_emails if email.strip()]
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').lower()
+        
+        # Check if registration is disabled and email is not in allowed list
+        if not new_accounts_enabled and email not in allowed_emails:
+            flash('New account registration is currently disabled. Please contact the administrator.', 'error')
+            return render_template('register.html', registration_disabled=True)
+    
+    # Show disabled message if registration is disabled and no email is being submitted
+    if not new_accounts_enabled and request.method == 'GET':
+        flash('New account registration is currently disabled. Please contact the administrator.', 'error')
+        return render_template('register.html', registration_disabled=True)
+    
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         name = request.form.get('name')
         password = request.form.get('password')
+        
+        # Validate agreements
+        agree_terms = request.form.get('agree_terms') == 'on'
+        agree_privacy = request.form.get('agree_privacy') == 'on'
+        agree_disclaimer = request.form.get('agree_disclaimer') == 'on'
+        
+        # Check if all agreements are accepted
+        if not agree_terms:
+            flash('You must agree to the Terms of Service', 'error')
+            return render_template('register.html')
+        
+        if not agree_privacy:
+            flash('You must agree to the Privacy Policy', 'error')
+            return render_template('register.html')
+        
+        if not agree_disclaimer:
+            flash('You must acknowledge the Medical Disclaimer', 'error')
+            return render_template('register.html')
         
         # Check if user already exists
         if User.query.filter_by(username=username).first():
@@ -300,7 +495,11 @@ def register():
             username=username,
             email=email,
             name=name,
-            password_hash=generate_password_hash(password)
+            password_hash=generate_password_hash(password),
+            agreed_to_terms=True,
+            agreed_to_privacy=True,
+            agreed_to_disclaimer=True,
+            agreements_date=datetime.utcnow()
         )
         db.session.add(user)
         db.session.commit()
@@ -326,15 +525,65 @@ def dashboard():
 def profile():
     return render_template('profile.html')
 
-@app.route('/daily-log')
-@login_required
-def daily_log():
-    return render_template('daily_log.html')
+
 
 @app.route('/ai-coach')
 @login_required
 def ai_coach():
     return render_template('ai_coach.html')
+
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get app statistics
+    total_users = User.query.count()
+    total_food_logs = FoodLog.query.count()
+    total_water_logs = WaterLog.query.count()
+    total_mood_logs = MoodLog.query.count()
+    
+    # Get app settings
+    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true') == 'true'
+    maintenance_mode = get_app_setting('maintenance_mode', 'false') == 'true'
+    max_users = get_app_setting('max_users', '1000')
+    allowed_emails = get_app_setting('allowed_emails', '')
+    human_help_payment_type = get_app_setting('human_help_payment_type', '30min_session')
+    calendly_link = get_app_setting('calendly_link', 'https://calendly.com/ki-wellness/human-health-coach')
+    
+    return render_template('admin_dashboard.html',
+                         total_users=total_users,
+                         total_food_logs=total_food_logs,
+                         total_water_logs=total_water_logs,
+                         total_mood_logs=total_mood_logs,
+                         new_accounts_enabled=new_accounts_enabled,
+                         maintenance_mode=maintenance_mode,
+                         max_users=max_users,
+                         allowed_emails=allowed_emails,
+                         human_help_payment_type=human_help_payment_type,
+                         calendly_link=calendly_link)
+
+@app.route('/api/admin/settings', methods=['POST'])
+@login_required
+def update_admin_settings():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        data = request.get_json()
+        setting_key = data.get('key')
+        setting_value = data.get('value')
+        
+        if setting_key and setting_value is not None:
+            set_app_setting(setting_key, str(setting_value))
+            return jsonify({'success': True, 'message': 'Setting updated successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Invalid data'}), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Configure Ollama (local AI model)
 OLLAMA_MODEL = "mistral"  # Faster and smaller than llama2
@@ -495,34 +744,70 @@ def generate_ai_analysis():
         recent_foods = food_logs[-3:] if len(food_logs) > 3 else food_logs
         recent_notes = notes[-2:] if len(notes) > 2 else notes
         
-        analysis_prompt = f"""
-        Health Coach Analysis - Be concise and actionable.
+        # Build recent activity strings safely to avoid deep f-string nesting
+        recent_foods_list = [f"{log.get('name', 'Unknown')} ({log.get('time_of_day', 'snack')})" for log in recent_foods]
+        recent_moods_list = [log.get('mood') for log in mood_logs[-2:]]
+        recent_notes_list = [
+            (note.get('content', '')[:80] + '...') if len(note.get('content', '') or '') > 80 else (note.get('content', '') or '')
+            for note in recent_notes
+        ]
 
-        USER: {profile.get('name', 'User')} | Age: {profile.get('age', 'N/A')} | Goals: {profile.get('health_goals', 'Not specified')}
+        analysis_template = (
+            """
+        Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
 
-        DATA SUMMARY:
-        Food: {len(food_logs)} entries, {avg_calories:.0f} avg cal/day
-        Water: {len(water_logs)} entries, {avg_water:.1f} cups/day
-        Mood: {len(mood_logs)} entries, {avg_mood:.1f}/5 avg
-        Notes: {len(notes)} entries
+        USER: {user_name} | Age: {user_age} | Goals: {user_goals}
+
+        DATA SUMMARY (last 30 days):
+        - Food: {food_count} entries, ~{avg_cal:.0f} kcal/day
+        - Water: {water_count} entries, ~{avg_water:.1f} cups/day
+        - Mood: {mood_count} entries, ~{avg_mood:.1f}/5
+        - Notes: {notes_count} entries
 
         RECENT ACTIVITY:
-        Food: {[f"{log.get('name', 'Unknown')} ({log.get('time_of_day', 'snack')})" for log in recent_foods]}
-        Mood: {[log.get('mood') for log in mood_logs[-2:]]}
-        Notes: {[note.get('content', '')[:50] + '...' if len(note.get('content', '')) > 50 else note.get('content', '') for note in recent_notes]}
+        - Food (most recent): {recent_foods}
+        - Mood (most recent): {recent_moods}
+        - Notes (snippets): {recent_notes}
 
-        Provide 2-3 specific patterns and 2-3 actionable suggestions based on this data.
+        TASK:
+        - Find specific, data-backed patterns connecting mood & notes to food & water intake (e.g., low water -> lower mood next day, high sugar late at night -> poorer mood).
+        - Provide short explanations for likely reasons behind how the user is feeling based on these links.
+        - Create 2-3 actionable, personalized suggestions to try this week.
+        - Ground suggestions in resources the model was trained on (nutrition, hydration, behavior change). Include brief source citations.
 
-        JSON format:
+        OUTPUT STRICT JSON ONLY:
         {{
-            "patterns": [
-                {{"title": "Pattern Title", "description": "Brief description"}}
-            ],
-            "suggestions": [
-                {{"title": "Suggestion Title", "description": "Brief actionable advice"}}
-            ]
+          "patterns": [
+            {{"title": "Pattern Title", "description": "Brief description of the data-backed link (mood vs. notes, food, water)."}}
+          ],
+          "suggestions": [
+            {{
+              "title": "Suggestion Title",
+              "description": "Brief, actionable advice tailored to the user's situation.",
+              "sources": [
+                {{"title": "Short Source Name", "url": "https://example.com"}}
+              ]
+            }}
+          ]
         }}
         """
+        )
+
+        analysis_prompt = analysis_template.format(
+            user_name=profile.get('name', 'User'),
+            user_age=profile.get('age', 'N/A'),
+            user_goals=profile.get('health_goals', 'Not specified'),
+            food_count=len(food_logs),
+            avg_cal=avg_calories,
+            water_count=len(water_logs),
+            avg_water=avg_water,
+            mood_count=len(mood_logs),
+            avg_mood=avg_mood,
+            notes_count=len(notes),
+            recent_foods=json.dumps(recent_foods_list),
+            recent_moods=json.dumps(recent_moods_list),
+            recent_notes=json.dumps(recent_notes_list),
+        )
         
         response = ollama.chat(
             model=OLLAMA_MODEL,
@@ -630,56 +915,398 @@ def warmup_ollama():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/user-summary')
+@login_required
+def get_user_summary():
+    """Get summarized user data for AI chat (last 7 days)"""
+    try:
+        from datetime import timedelta
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=7)
+        
+        # Get user profile
+        user_profile = {
+            'id': current_user.id,
+            'name': current_user.name,
+            'age': current_user.age,
+            'weight': current_user.weight,
+            'height': current_user.height,
+            'health_goals': current_user.health_goals
+        }
+        
+        # Get summarized food data
+        food_logs = FoodLog.query.filter(
+            FoodLog.user_id == current_user.id,
+            FoodLog.date >= start_date,
+            FoodLog.date <= end_date
+        ).all()
+        
+        food_summary = {
+            'total_entries': len(food_logs),
+            'avg_calories': sum(log.calories for log in food_logs) / len(food_logs) if food_logs else 0,
+            'total_calories': sum(log.calories for log in food_logs),
+            'common_foods': _get_common_foods(food_logs),
+            'recent_meals': [{
+                'name': log.name,
+                'calories': log.calories,
+                'date': log.date.isoformat(),
+                'time_of_day': log.time_of_day
+            } for log in food_logs[-5:]]  # Last 5 meals
+        }
+        
+        # Get summarized mood data
+        mood_logs = MoodLog.query.filter(
+            MoodLog.user_id == current_user.id,
+            MoodLog.date >= start_date,
+            MoodLog.date <= end_date
+        ).all()
+        
+        mood_summary = {
+            'total_entries': len(mood_logs),
+            'avg_mood': sum(log.mood for log in mood_logs) / len(mood_logs) if mood_logs else 0,
+            'mood_trend': _get_mood_trend(mood_logs),
+            'recent_moods': [{
+                'mood': log.mood,
+                'date': log.date.isoformat()
+            } for log in mood_logs[-5:]]
+        }
+        
+        # Get summarized water data
+        water_logs = WaterLog.query.filter(
+            WaterLog.user_id == current_user.id,
+            WaterLog.date >= start_date,
+            WaterLog.date <= end_date
+        ).all()
+        
+        water_summary = {
+            'total_entries': len(water_logs),
+            'total_water': sum(log.amount for log in water_logs),
+            'avg_daily_water': sum(log.amount for log in water_logs) / 7 if water_logs else 0,
+            'recent_water': [{
+                'amount': log.amount,
+                'date': log.date.isoformat()
+            } for log in water_logs[-5:]]
+        }
+        
+        # Get recent patterns from stored analysis
+        recent_patterns = []
+        analysis_record = AIAnalysis.query.filter_by(user_id=current_user.id).first()
+        if analysis_record:
+            analysis_data = json.loads(analysis_record.analysis_data)
+            recent_patterns = analysis_data.get('patterns', [])[:3]  # Top 3 patterns
+        
+        return jsonify({
+            'success': True,
+            'summary': {
+                'profile': user_profile,
+                'food_summary': food_summary,
+                'mood_summary': mood_summary,
+                'water_summary': water_summary,
+                'recent_patterns': recent_patterns
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/ai-chat', methods=['POST'])
 @login_required
 def ai_chat():
     try:
         data = request.get_json()
         message = data.get('message')
-        user_data = data.get('user_data')
-        analysis = data.get('analysis')
+        context = data.get('context', {})
+        context_type = data.get('context_type', 'minimal')
         chat_history = data.get('chat_history', [])
+        
+        print(f"AI Chat Request - Message: {message}")
+        print(f"AI Chat Request - Context Type: {context_type}")
+        print(f"AI Chat Request - Context Keys: {list(context.keys()) if context else 'None'}")
         
         if not message:
             return jsonify({'success': False, 'error': 'No message provided'})
         
-        # Prepare context for the AI
-        context = f"""
-        You are a supportive and knowledgeable AI Health Coach for a wellness app. The user's name is {user_data.get('profile', {}).get('name', 'User')}.
+        # Create optimized prompt based on context type
+        try:
+            prompt = _create_optimized_prompt(message, context, context_type, chat_history)
+            print(f"AI Chat - Prompt length: {len(prompt)} characters")
+        except Exception as prompt_error:
+            print(f"AI Chat - Prompt creation error: {str(prompt_error)}")
+            return jsonify({'success': False, 'error': f'Prompt creation failed: {str(prompt_error)}'})
         
-        User Profile:
-        - Age: {user_data.get('profile', {}).get('age', 'Not specified')}
-        - Weight: {user_data.get('profile', {}).get('weight', 'Not specified')} kg
-        - Height: {user_data.get('profile', {}).get('height', 'Not specified')} cm
-        - Health Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
-        
-        Recent Analysis:
-        Patterns: {json.dumps(analysis.get('patterns', []) if analysis else [], indent=2)}
-        Suggestions: {json.dumps(analysis.get('suggestions', []) if analysis else [], indent=2)}
-        
-        Chat History:
-        {json.dumps(chat_history, indent=2)}
-        
-        User's current question: {message}
-        
-        Provide a helpful, encouraging, and actionable response. Be conversational but professional. 
-        Reference their specific data when relevant and provide practical advice.
-        """
-        
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "user", "content": context}
-            ]
-        )
-        
-        ai_response = response['message']['content']
-        
-        return jsonify({'success': True, 'response': ai_response})
+        # Call Ollama with simple timeout
+        try:
+            response = ollama.chat(
+                model=OLLAMA_MODEL,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            ai_response = response['message']['content']
+            print(f"AI Chat - Response received, length: {len(ai_response)} characters")
+            
+            return jsonify({'success': True, 'response': ai_response})
+            
+        except Exception as ollama_error:
+            print(f"AI Chat - Ollama error: {str(ollama_error)}")
+            return jsonify({'success': False, 'error': f'Ollama error: {str(ollama_error)}'})
         
     except Exception as e:
-        print(f"AI Chat Error: {str(e)}")  # Add debugging
+        print(f"AI Chat - General error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
+
+def _create_optimized_prompt(message, context, context_type, chat_history):
+    """Create an optimized prompt based on context type"""
+    
+    # Safely get context values with error handling
+    try:
+        profile = context.get('profile', {}) if context else {}
+        profile_name = profile.get('name', 'User') if profile else 'User'
+    except Exception as e:
+        print(f"Error extracting profile data: {e}")
+        profile_name = 'User'
+    
+    # Start with a concise base prompt
+    base_prompt = f"You are a supportive AI Health Coach for {profile_name}. Keep responses short, helpful, and actionable.\n\nQuestion: {message}\n\n"
+    
+    # Add only relevant context based on the specific question
+    relevant_context = _extract_relevant_context(message, context, context_type)
+    if relevant_context:
+        base_prompt += f"Relevant Data: {relevant_context}\n"
+        print(f"Extracted relevant context: {relevant_context}")
+    else:
+        print("No relevant context extracted")
+    
+    # Add relevant resources
+    resources = get_relevant_resources(context_type, _determine_topic(message))
+    if resources:
+        base_prompt += format_resources_for_prompt(resources)
+        print(f"Added {len(resources)} relevant resources")
+    
+    base_prompt += """Provide a short, helpful response (max 2-3 sentences) and include relevant links. Format your response as:
+    
+    [Your helpful response here]
+    
+    📚 Helpful Resources:
+    - [Link 1: Brief description]
+    - [Link 2: Brief description]
+    
+    Always include at least one link to our Medium blog (kiwellness.medium.com) when relevant, and cite authoritative health sources like Mayo Clinic, WebMD, or Harvard Health for medical advice."""
+    
+    # Limit prompt size to prevent timeouts
+    if len(base_prompt) > 1000:
+        print(f"Warning: Prompt too large ({len(base_prompt)} chars), truncating...")
+        # Keep only essential parts
+        base_prompt = f"""You are a supportive AI Health Coach for {profile_name}. Keep responses short, helpful, and actionable.
+
+Question: {message}
+
+Provide a short, helpful response (max 2-3 sentences) and include relevant links. Format your response as:
+
+[Your helpful response here]
+
+📚 Helpful Resources:
+- [Link 1: Brief description]
+- [Link 2: Brief description]
+
+Always include at least one link to our Medium blog (kiwellness.medium.com) when relevant, and cite authoritative health sources like Mayo Clinic, WebMD, or Harvard Health for medical advice."""
+    
+    print(f"Final prompt length: {len(base_prompt)} characters")
+    return base_prompt
+
+def _determine_topic(message):
+    """Determine the specific topic of the user's question for resource matching"""
+    
+    message_lower = message.lower()
+    
+    # Nutrition topics
+    if any(word in message_lower for word in ['energy', 'energizing', 'boost', 'power', 'fuel']):
+        return 'nutrition'
+    elif any(word in message_lower for word in ['calorie', 'calories', 'weight', 'diet', 'meal', 'eating', 'food']):
+        return 'nutrition'
+    
+    # Mood topics
+    elif any(word in message_lower for word in ['mood', 'feel', 'emotion', 'happy', 'sad', 'stress', 'anxiety', 'depression']):
+        return 'mood'
+    
+    # Hydration topics
+    elif any(word in message_lower for word in ['water', 'hydrate', 'drink', 'fluid', 'dehydrated']):
+        return 'hydration'
+    
+    # Exercise topics
+    elif any(word in message_lower for word in ['exercise', 'workout', 'fitness', 'activity', 'training']):
+        return 'exercise'
+    
+    # General wellness
+    elif any(word in message_lower for word in ['health', 'wellness', 'habit', 'lifestyle', 'goal']):
+        return 'wellness'
+    
+    # Default to general
+    return 'general'
+
+def _extract_relevant_context(message, context, context_type):
+    """Extract only context that's relevant to the user's specific question"""
+    
+    message_lower = message.lower()
+    relevant_parts = []
+    
+    try:
+        # Food-related questions
+        if context_type == 'food' and context.get('food_summary'):
+            food_data = context['food_summary']
+            
+            # Check for specific food-related keywords
+            if any(word in message_lower for word in ['energy', 'energizing', 'boost', 'power']):
+                # For energy questions, focus on calorie intake and meal frequency
+                relevant_parts.append(f"Logged {food_data.get('total_entries', 0)} meals")
+                if food_data.get('avg_calories', 0) > 0:
+                    relevant_parts.append(f"avg {food_data.get('avg_calories', 0):.0f} cal/meal")
+                    
+            elif any(word in message_lower for word in ['calorie', 'calories', 'weight', 'diet']):
+                # For calorie/weight questions, focus on total calories
+                total_cals = food_data.get('total_calories', 0)
+                relevant_parts.append(f"Total calories: {total_cals:.0f}")
+                if food_data.get('avg_calories', 0) > 0:
+                    relevant_parts.append(f"avg {food_data.get('avg_calories', 0):.0f} cal/meal")
+                    
+            elif any(word in message_lower for word in ['meal', 'eating', 'food', 'nutrition']):
+                # For general food questions, provide basic summary
+                relevant_parts.append(f"Logged {food_data.get('total_entries', 0)} meals")
+                if food_data.get('common_foods'):
+                    common_foods = food_data.get('common_foods', [])[:3]
+                    relevant_parts.append(f"common foods: {', '.join(common_foods)}")
+                    
+            else:
+                # Default food context
+                relevant_parts.append(f"Logged {food_data.get('total_entries', 0)} meals")
+        
+        # Mood-related questions
+        elif context_type == 'mood' and context.get('mood_summary'):
+            mood_data = context['mood_summary']
+            
+            if any(word in message_lower for word in ['trend', 'pattern', 'improving', 'declining']):
+                # For trend questions, focus on mood trend
+                relevant_parts.append(f"Mood trend: {mood_data.get('mood_trend', 'stable')}")
+                if mood_data.get('avg_mood', 0) > 0:
+                    relevant_parts.append(f"avg {mood_data.get('avg_mood', 0):.1f}/10")
+                    
+            elif any(word in message_lower for word in ['happy', 'sad', 'stress', 'anxiety', 'depression']):
+                # For emotional state questions, focus on current mood
+                if mood_data.get('avg_mood', 0) > 0:
+                    relevant_parts.append(f"Current avg mood: {mood_data.get('avg_mood', 0):.1f}/10")
+                if mood_data.get('mood_trend', 'stable') != 'stable':
+                    relevant_parts.append(f"trend: {mood_data.get('mood_trend', 'stable')}")
+                    
+            else:
+                # Default mood context
+                if mood_data.get('avg_mood', 0) > 0:
+                    relevant_parts.append(f"Avg mood: {mood_data.get('avg_mood', 0):.1f}/10")
+        
+        # Water-related questions
+        elif context_type == 'water' and context.get('water_summary'):
+            water_data = context['water_summary']
+            
+            if any(word in message_lower for word in ['enough', 'adequate', 'sufficient', 'dehydrated']):
+                # For hydration adequacy questions, compare to recommended intake
+                avg_daily = water_data.get('avg_daily_water', 0)
+                relevant_parts.append(f"Daily avg: {avg_daily:.0f}ml")
+                if avg_daily < 2000:
+                    relevant_parts.append("(below recommended 2000ml)")
+                elif avg_daily > 3000:
+                    relevant_parts.append("(above recommended)")
+                    
+            elif any(word in message_lower for word in ['increase', 'more', 'boost']):
+                # For increasing water intake
+                current_avg = water_data.get('avg_daily_water', 0)
+                relevant_parts.append(f"Current daily avg: {current_avg:.0f}ml")
+                
+            else:
+                # Default water context
+                relevant_parts.append(f"Daily avg: {water_data.get('avg_daily_water', 0):.0f}ml")
+        
+        # Analysis/pattern questions
+        elif context_type == 'analysis' and context.get('recent_patterns'):
+            recent_patterns = context.get('recent_patterns', [])
+            
+            if any(word in message_lower for word in ['pattern', 'trend', 'insight', 'analysis']):
+                if recent_patterns:
+                    # Extract key insights from patterns
+                    pattern_titles = [p.get('title', '') for p in recent_patterns[:2]]
+                    relevant_parts.append(f"Key patterns: {', '.join(pattern_titles)}")
+                else:
+                    relevant_parts.append("No recent patterns identified")
+        
+        # Health goals context (for any question)
+        if context.get('profile', {}).get('health_goals'):
+            goals = context['profile']['health_goals']
+            if any(word in message_lower for word in ['goal', 'target', 'objective', 'aim']):
+                relevant_parts.append(f"Health goals: {goals}")
+        
+        # Age context (for age-specific advice)
+        if context.get('profile', {}).get('age'):
+            age = context['profile']['age']
+            if any(word in message_lower for word in ['age', 'older', 'younger', 'senior', 'teen']):
+                relevant_parts.append(f"Age: {age}")
+        
+    except Exception as e:
+        print(f"Error extracting relevant context: {e}")
+        return None
+    
+    return '; '.join(relevant_parts) if relevant_parts else None
+
+def _get_common_foods(food_logs):
+    """Get most common foods from logs"""
+    food_counts = {}
+    for log in food_logs:
+        food_name = log.name.lower()
+        food_counts[food_name] = food_counts.get(food_name, 0) + 1
+    
+    return [food for food, count in sorted(food_counts.items(), key=lambda x: x[1], reverse=True)[:5]]
+
+def _get_mood_trend(mood_logs):
+    """Determine mood trend from recent logs"""
+    if len(mood_logs) < 2:
+        return 'insufficient_data'
+    
+    recent_moods = [log.mood for log in mood_logs[-3:]]
+    if len(recent_moods) >= 2:
+        if recent_moods[-1] > recent_moods[0]:
+            return 'improving'
+        elif recent_moods[-1] < recent_moods[0]:
+            return 'declining'
+        else:
+            return 'stable'
+    return 'stable'
+
+import asyncio
+import concurrent.futures
+from functools import lru_cache
+import time
+
+# Simple in-memory cache for food search results
+food_search_cache = {}
+CACHE_DURATION = 300  # 5 minutes
+MAX_CACHE_SIZE = 100  # Maximum number of cached items
+
+def cleanup_cache():
+    """Clean up old cache entries to prevent memory issues"""
+    global food_search_cache
+    current_time = time.time()
+    expired_keys = []
+    
+    for key, (_, cache_time) in food_search_cache.items():
+        if current_time - cache_time > CACHE_DURATION:
+            expired_keys.append(key)
+    
+    for key in expired_keys:
+        del food_search_cache[key]
+    
+    # If cache is still too large, remove oldest entries
+    if len(food_search_cache) > MAX_CACHE_SIZE:
+        sorted_items = sorted(food_search_cache.items(), key=lambda x: x[1][1])
+        items_to_remove = len(food_search_cache) - MAX_CACHE_SIZE
+        for i in range(items_to_remove):
+            del food_search_cache[sorted_items[i][0]]
 
 @app.route('/api/search-food', methods=['POST'])
 @login_required
@@ -690,23 +1317,81 @@ def search_food():
     if not query:
         return jsonify({'success': False, 'message': 'Query is required'})
     
+    # Clean up cache periodically
+    if len(food_search_cache) > MAX_CACHE_SIZE * 0.8:  # Clean when 80% full
+        cleanup_cache()
+    
+    # Check cache first
+    cache_key = query.lower()
+    current_time = time.time()
+    if cache_key in food_search_cache:
+        cached_result, cache_time = food_search_cache[cache_key]
+        if current_time - cache_time < CACHE_DURATION:
+            return jsonify({'success': True, 'results': cached_result, 'cached': True})
+    
+    # Check fallback database first for exact matches (instant)
+    fallback_results = []
+    query_lower = query.lower()
+    for food_key, food_data in COMMON_FOODS_DB.items():
+        if query_lower in food_key or food_key in query_lower:
+            fallback_results.append(food_data)
+    
+    # If we have good fallback results, return them immediately
+    if len(fallback_results) >= 3:
+        result = fallback_results[:8]
+        food_search_cache[cache_key] = (result, current_time)
+        return jsonify({'success': True, 'results': result, 'fast': True})
+    
     # Determine if this is a basic food
     is_basic_food = any(basic_food in query.lower() for basic_food in BASIC_FOODS)
     
-    # Search USDA first for basic foods
-    usda_results = []
-    if is_basic_food and USDA_API_KEY:
-        usda_results = search_usda_api(query)
+    # Run API searches in parallel using ThreadPoolExecutor
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {}
+        
+        # Submit USDA search if applicable
+        if is_basic_food and USDA_API_KEY:
+            futures['usda'] = executor.submit(search_usda_api, query)
+        
+        # Submit Open Food Facts search
+        futures['openfoodfacts'] = executor.submit(search_openfoodfacts_api, query)
+        
+        # Collect results as they complete
+        usda_results = []
+        openfoodfacts_results = []
+        
+        for name, future in futures.items():
+            try:
+                result = future.result(timeout=3)  # 3 second timeout per API
+                if name == 'usda':
+                    usda_results = result
+                elif name == 'openfoodfacts':
+                    openfoodfacts_results = result
+            except concurrent.futures.TimeoutError:
+                print(f"Timeout for {name} API")
+            except Exception as e:
+                print(f"Error in {name} API: {e}")
     
-    # Search Open Food Facts
-    openfoodfacts_results = search_openfoodfacts_api(query)
+    # Combine results (fallback first, then USDA, then Open Food Facts)
+    combined_results = fallback_results + usda_results + openfoodfacts_results
     
-    # Combine results (USDA first, then Open Food Facts)
-    combined_results = usda_results + openfoodfacts_results
+    # Remove duplicates based on name
+    unique_results = []
+    seen_names = set()
+    for result in combined_results:
+        if result['name'] not in seen_names:
+            unique_results.append(result)
+            seen_names.add(result['name'])
+    
+    final_results = unique_results[:8]
+    
+    # Cache the results
+    food_search_cache[cache_key] = (final_results, current_time)
     
     return jsonify({
         'success': True,
-        'results': combined_results[:5]  # Return top 5 results
+        'results': final_results,
+        'cached': False
     })
 
 @app.route('/api/product/<barcode>')
@@ -805,29 +1490,89 @@ def add_mood_log():
 @app.route('/api/notes', methods=['POST'])
 @login_required
 def save_notes():
-    data = request.get_json()
-    
-    # Check if note already exists for today
-    existing_note = Note.query.filter_by(
-        user_id=current_user.id,
-        date=datetime.strptime(data['date'], '%Y-%m-%d').date()
-    ).first()
-    
-    if existing_note:
-        existing_note.content = data['content']
-        # Update the timestamp to reflect the time of this save
-        existing_note.timestamp = datetime.utcnow()
-    else:
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data or 'content' not in data or 'date' not in data:
+            return jsonify({'success': False, 'error': 'Missing required fields: content and date'}), 400
+        
+        # Parse and validate date
+        try:
+            note_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        
+        # Validate content is not empty
+        if not data['content'].strip():
+            return jsonify({'success': False, 'error': 'Note content cannot be empty'}), 400
+        
+        # Create new note entry
         note = Note(
             user_id=current_user.id,
-            content=data['content'],
-            date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+            content=data['content'].strip(),
+            date=note_date,
             timestamp=datetime.utcnow()
         )
+        
+        # Add to database
         db.session.add(note)
-    
-    db.session.commit()
-    return jsonify({'success': True})
+        db.session.commit()
+        
+        # Log successful save
+        print(f"✅ Note saved successfully - User: {current_user.username}, Date: {note_date}, Content: {data['content'][:50]}...")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Note saved successfully',
+            'note_id': note.id,
+            'timestamp': note.timestamp.isoformat()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error saving note: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to save note. Please try again.'}), 500
+
+@app.route('/api/mood-notes-history')
+@login_required
+def get_mood_notes_history():
+    try:
+        date_str = request.args.get('date', date.today().isoformat())
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        # Get mood logs for the selected date
+        mood_logs = MoodLog.query.filter_by(
+            user_id=current_user.id,
+            date=selected_date
+        ).order_by(MoodLog.timestamp.desc()).all()
+        
+        # Get notes for the selected date
+        notes = Note.query.filter_by(
+            user_id=current_user.id,
+            date=selected_date
+        ).order_by(Note.timestamp.desc()).all()
+        
+        # Log the retrieval
+        print(f"📋 Retrieved {len(notes)} notes and {len(mood_logs)} mood logs for User: {current_user.username}, Date: {selected_date}")
+        
+        return jsonify({
+            'success': True,
+            'mood_logs': [{
+                'id': log.id,
+                'mood': log.mood,
+                'timestamp': log.timestamp.isoformat()
+            } for log in mood_logs],
+            'notes': [{
+                'id': note.id,
+                'content': note.content,
+                'timestamp': note.timestamp.isoformat()
+            } for note in notes]
+        })
+        
+    except Exception as e:
+        print(f"❌ Error retrieving mood/notes history: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve history'}), 500
 
 @app.route('/api/dashboard-data')
 @login_required
@@ -854,10 +1599,10 @@ def get_dashboard_data():
     ).all()
     
     # Get notes
-    note = Note.query.filter_by(
+    notes = Note.query.filter_by(
         user_id=current_user.id,
         date=selected_date
-    ).first()
+    ).order_by(Note.timestamp.desc()).all()
     
     # Calculate totals
     total_calories = sum(log.calories for log in food_logs)
@@ -882,6 +1627,7 @@ def get_dashboard_data():
                 'original_amount': log.original_amount,
                 'original_unit': log.original_unit,
                 'quantity': log.quantity,
+                'date': log.date.isoformat(),
                 'timestamp': log.timestamp.isoformat()
             } for log in food_logs],
             'water_logs': [{
@@ -894,10 +1640,11 @@ def get_dashboard_data():
                 'mood': log.mood,
                 'timestamp': log.timestamp.isoformat()
             } for log in mood_logs],
-            'notes': ({
+            'notes': [{
+                'id': note.id,
                 'content': note.content,
                 'timestamp': note.timestamp.isoformat()
-            } if note else ''),
+            } for note in notes],
             'totals': {
                 'calories': total_calories,
                 'protein': total_protein,
@@ -932,9 +1679,62 @@ def profile_api():
             'weight': current_user.weight,
             'height': current_user.height,
             'health_goals': current_user.health_goals,
+            'profile_image': current_user.profile_image,
             'is_admin': current_user.is_admin
         }
     })
+
+@app.route('/api/profile/upload-image', methods=['POST'])
+@login_required
+def upload_profile_image():
+    """Upload profile image"""
+    if 'profile_image' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'})
+    
+    file = request.files['profile_image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected'})
+    
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'message': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WebP'})
+    
+    try:
+        # Delete old profile image if exists
+        if current_user.profile_image:
+            delete_profile_image(current_user.profile_image)
+        
+        # Save new profile image
+        filename = save_profile_image(file, current_user.id)
+        if filename:
+            current_user.profile_image = filename
+            db.session.commit()
+            return jsonify({
+                'success': True, 
+                'message': 'Profile image uploaded successfully',
+                'image_url': url_for('static', filename=filename)
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Failed to save image'})
+            
+    except Exception as e:
+        print(f"Error uploading profile image: {e}")
+        return jsonify({'success': False, 'message': 'Failed to upload image'})
+
+@app.route('/api/profile/remove-image', methods=['POST'])
+@login_required
+def remove_profile_image():
+    """Remove profile image"""
+    try:
+        if current_user.profile_image:
+            delete_profile_image(current_user.profile_image)
+            current_user.profile_image = None
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Profile image removed successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'No profile image to remove'})
+    except Exception as e:
+        print(f"Error removing profile image: {e}")
+        return jsonify({'success': False, 'message': 'Failed to remove image'})
 
 @app.route('/api/food-log/<int:food_id>', methods=['DELETE'])
 @login_required
@@ -949,6 +1749,39 @@ def delete_food_log(food_id):
     
     return jsonify({'success': True})
 
+@app.route('/api/food-log/<int:food_id>/edit', methods=['PUT'])
+@login_required
+def edit_food_log(food_id):
+    food_log = FoodLog.query.filter_by(id=food_id, user_id=current_user.id).first()
+    
+    if not food_log:
+        return jsonify({'success': False, 'message': 'Food log not found'})
+    
+    data = request.get_json()
+    new_date = data.get('date')
+    new_time_of_day = data.get('time_of_day')
+    
+    if not new_date:
+        return jsonify({'success': False, 'message': 'New date is required'})
+    
+    try:
+        # Convert string date to date object
+        new_date_obj = datetime.strptime(new_date, '%Y-%m-%d').date()
+        food_log.date = new_date_obj
+        
+        # Update time of day if provided
+        if new_time_of_day:
+            food_log.time_of_day = new_time_of_day
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Food item updated successfully'})
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid date format'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': 'Failed to update food item'})
+
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
@@ -961,9 +1794,140 @@ def terms():
 def disclaimer():
     return render_template('disclaimer.html')
 
+@app.route('/human-help')
+def human_help():
+    """Human help page with payment integration"""
+    return render_template('human_help.html', stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
+
+@app.route('/create-payment-intent', methods=['POST'])
+def create_payment_intent():
+    """Create a Stripe payment intent"""
+    try:
+        data = request.get_json()
+        payment_type = data.get('payment_type', '30min_session')
+        amount = data.get('amount', 2000)  # Default to $20.00
+        
+        # Create payment session
+        session_id = str(uuid.uuid4())
+        payment_session = PaymentSession(
+            session_id=session_id,
+            user_id=current_user.id if current_user.is_authenticated else None,
+            email=data.get('email', ''),
+            name=data.get('name', ''),
+            payment_type=payment_type,
+            amount=amount,
+            status='pending'
+        )
+        db.session.add(payment_session)
+        db.session.commit()
+        
+        # Create Stripe payment intent
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency='usd',
+            metadata={
+                'session_id': session_id,
+                'payment_type': payment_type,
+                'user_id': str(current_user.id) if current_user.is_authenticated else 'anonymous'
+            }
+        )
+        
+        return jsonify({
+            'clientSecret': intent.client_secret,
+            'session_id': session_id
+        })
+        
+    except Exception as e:
+        print(f"Error creating payment intent: {e}")
+        return jsonify({'error': 'Failed to create payment intent'}), 500
+
+@app.route('/payment-success')
+def payment_success():
+    """Handle successful payment and show success page"""
+    try:
+        payment_intent_id = request.args.get('payment_intent')
+        
+        if not payment_intent_id:
+            return redirect(url_for('human_help'))
+        
+        # Retrieve payment intent from Stripe
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        
+        if intent.status != 'succeeded':
+            return redirect(url_for('human_help'))
+        
+        # Find payment session
+        payment_session = PaymentSession.query.filter_by(
+            stripe_payment_intent_id=payment_intent_id
+        ).first()
+        
+        if not payment_session:
+            # Create payment session if not found
+            payment_session = PaymentSession(
+                session_id=str(uuid.uuid4()),
+                user_id=current_user.id if current_user.is_authenticated else None,
+                email=intent.receipt_email or '',
+                name=intent.metadata.get('name', ''),
+                payment_type=intent.metadata.get('payment_type', '30min_session'),
+                stripe_payment_intent_id=payment_intent_id,
+                amount=intent.amount,
+                status='completed'
+            )
+            db.session.add(payment_session)
+        else:
+            # Update existing session
+            payment_session.status = 'completed'
+            payment_session.stripe_payment_intent_id = payment_intent_id
+        
+        db.session.commit()
+        
+        # Get app settings
+        calendly_link = get_app_setting('calendly_link', 'https://calendly.com/ki-wellness/human-health-coach')
+        
+        return render_template('payment_success.html', 
+                             payment_intent_id=payment_intent_id,
+                             payment_amount=intent.amount,
+                             payment_type=payment_session.payment_type,
+                             payment_date=datetime.utcnow(),
+                             calendly_link=calendly_link)
+        
+    except Exception as e:
+        print(f"Error processing payment success: {e}")
+        return redirect(url_for('human_help'))
+
+@app.route('/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhooks for payment status updates"""
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get('Stripe-Signature')
+    
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, os.getenv('STRIPE_WEBHOOK_SECRET', '')
+        )
+    except ValueError as e:
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError as e:
+        return 'Invalid signature', 400
+    
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        
+        # Update payment session status
+        payment_session = PaymentSession.query.filter_by(
+            stripe_payment_intent_id=payment_intent['id']
+        ).first()
+        
+        if payment_session:
+            payment_session.status = 'completed'
+            db.session.commit()
+    
+    return '', 200
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         create_admin_user()
+        initialize_app_settings()
     
     app.run(debug=True)

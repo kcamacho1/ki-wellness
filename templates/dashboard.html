@@ -4,42 +4,36 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b border-gray-100">
+    <!-- Compact Header -->
+    <div class="bg-gradient-to-r from-ki-green-50 to-blue-50 border-b border-ki-green-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div class="flex items-center space-x-6">
+            <div class="flex items-center justify-between py-4">
+                <div class="flex items-center space-x-4">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-900">{{ current_user.name }}'s Wellness</h1>
-                        <p class="text-gray-500 mt-1" id="current-date"></p>
+                        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ current_user.name }}'s Wellness</h1>
+                        <p class="text-sm text-gray-600" id="current-date"></p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <button id="date-prev" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                <div class="flex items-center space-x-2">
+                    <div class="hidden sm:flex items-center space-x-1 text-sm text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                    </button>
-                    <button id="date-next" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-                    <button id="today-btn" class="px-4 py-2 bg-ki-green-600 text-white text-sm font-medium rounded-lg hover:bg-ki-green-700 transition-colors">Today</button>
+                        <span>Dashboard</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <!-- Three Vertical Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Water Intake Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6">
                 <div class="text-center mb-4 sm:mb-6">
                     <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Water Intake</h2>
                 </div>
-                
                 <div class="text-center mb-4 sm:mb-6">
                     <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                         <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
@@ -67,7 +61,7 @@
             </div>
 
             <!-- Macronutrients Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6">
                 <div class="text-center mb-4 sm:mb-6">
                     <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Macronutrients</h2>
                 </div>
@@ -104,36 +98,83 @@
             </div>
 
             <!-- Mood & Notes Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6">
                 <div class="text-center mb-4 sm:mb-6">
                     <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Mood & Notes</h2>
                 </div>
                 
-
-                
-                <!-- Mood Section -->
-                <div class="mb-6 sm:mb-8">
-                    <div class="text-center mb-4 sm:mb-6">
-                        <div class="text-4xl sm:text-5xl mb-2 sm:mb-3" id="current-mood-emoji">😊</div>
-                        <div class="text-base sm:text-lg font-medium text-gray-700" id="current-mood-text">Good</div>
-                    </div>
-                    <div class="grid grid-cols-5 gap-2 sm:gap-3">
-                        <button onclick="logMood(1)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Terrible">😢</button>
-                        <button onclick="logMood(2)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Bad">😕</button>
-                        <button onclick="logMood(3)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Okay">😐</button>
-                        <button onclick="logMood(4)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Good">😊</button>
-                        <button onclick="logMood(5)" class="mood-btn text-xl sm:text-2xl p-2 sm:p-3 rounded-xl hover:bg-gray-100 transition-all duration-200 border border-transparent hover:border-gray-200" title="Excellent">😄</button>
+                <!-- Mood Selection -->
+                <div class="text-center mb-6">
+                    <div class="text-4xl mb-2" id="current-mood">😊</div>
+                    <div class="text-sm font-medium text-gray-700 mb-4" id="mood-text">Excellent</div>
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="setMood('😢', 'Terrible')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                            <span class="text-2xl">😢</span>
+                        </button>
+                        <button onclick="setMood('😐', 'Okay')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                            <span class="text-2xl">😐</span>
+                        </button>
+                        <button onclick="setMood('🙂', 'Good')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                            <span class="text-2xl">🙂</span>
+                        </button>
+                        <button onclick="setMood('😀', 'Great')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                            <span class="text-2xl">😀</span>
+                        </button>
+                        <button onclick="setMood('😊', 'Excellent')" class="mood-btn p-2 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                            <span class="text-2xl">😊</span>
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Notes Section -->
-                <div>
-                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Daily Notes</h3>
+                <!-- Daily Notes -->
+                <div class="space-y-3">
+                    <label for="daily-notes" class="block text-sm font-medium text-gray-700">Daily Notes</label>
                     <textarea id="daily-notes" placeholder="How was your day? Any health observations?" 
                               class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
                               rows="3"></textarea>
-                    <button onclick="saveNotes()" class="mt-3 sm:mt-4 w-full bg-ki-green-600 text-white py-2 sm:py-3 px-4 rounded-xl font-medium hover:bg-ki-green-700 transition-all duration-200">
+                    <button onclick="saveNotes()" class="w-full bg-ki-green-600 text-white py-2 sm:py-3 px-4 rounded-xl font-medium hover:bg-ki-green-700 transition-all duration-200">
                         Save Notes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Navigation -->
+        <div class="bg-gradient-to-r from-ki-green-50 to-blue-50 rounded-2xl shadow-sm border border-ki-green-100 p-4 sm:p-6 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Date Navigation</h2>
+                        <p class="text-sm text-gray-600 mt-1">Browse your wellness data across different dates</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <button id="date-prev" class="w-10 h-10 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Previous day">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="px-4 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-sm">
+                        <span class="text-sm font-medium text-gray-700">Navigate</span>
+                    </div>
+                    
+                    <button id="date-next" class="w-10 h-10 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Next day">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                    
+                    <div class="w-px h-8 bg-gray-300 mx-2"></div>
+                    
+                    <button id="today-btn" class="px-6 py-2.5 bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white text-sm font-semibold rounded-xl hover:from-ki-green-600 hover:to-ki-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                        Today
                     </button>
                 </div>
             </div>
@@ -141,7 +182,7 @@
 
         <!-- Food Journal Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div class="p-4 sm:p-6 lg:p-8 border-b border-gray-100">
+            <div class="p-4 sm:p-5 lg:p-6 border-b border-gray-100">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
                     <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Food Journal</h2>
                     <div class="w-8 h-8 sm:w-10 sm:h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
@@ -162,10 +203,13 @@
                     <button id="manual-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
                         Manual Entry
                     </button>
+                    <button id="mood-notes-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
+                        Mood & Notes
+                    </button>
                 </div>
 
                 <!-- Search Food Tab -->
-                <div id="search-content" class="space-y-4">
+                <div id="search-content" class="space-y-6">
                     <div class="flex space-x-2">
                         <input type="text" id="food-search" placeholder="Search for food items..." 
                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
@@ -174,6 +218,19 @@
                         </button>
                     </div>
                     <div id="search-results" class="hidden space-y-2 max-h-64 overflow-y-auto"></div>
+                    
+                    <!-- Daily Food Log -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 text-ki-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Today's Food Log
+                        </h3>
+                        <div id="food-log" class="space-y-3">
+                            <!-- Food log entries will be populated here -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Barcode Scanner Tab -->
@@ -188,8 +245,26 @@
                         <button id="start-barcode-scanner" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors mb-4">
                             Start Camera Scanner
                         </button>
+                        <div class="text-xs text-gray-500 mb-4">
+                            💡 If camera doesn't work, check browser permissions or try manual entry below
+                        </div>
                         <div id="barcode-scanner-container" class="hidden">
-                            <video id="barcode-video" class="w-full max-w-md mx-auto rounded-lg border-2 border-gray-300 mb-4"></video>
+                            <div class="relative w-full max-w-md mx-auto mb-4">
+                                <div id="interactive" class="viewport">
+                                    <video id="barcode-video" class="w-full rounded-lg border-2 border-gray-300"></video>
+                                    <canvas class="drawingBuffer"></canvas>
+                                </div>
+                                <div class="barcode-overlay">
+                                    <div class="barcode-corner top-left"></div>
+                                    <div class="barcode-corner top-right"></div>
+                                    <div class="barcode-corner bottom-left"></div>
+                                    <div class="barcode-corner bottom-right"></div>
+                                    <div class="barcode-line"></div>
+                                </div>
+                                <div class="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                                    Point camera at barcode
+                                </div>
+                            </div>
                             <button id="stop-barcode-scanner" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
                                 Stop Scanner
                             </button>
@@ -210,6 +285,23 @@
 
                 <!-- Manual Entry Tab -->
                 <div id="manual-content" class="hidden space-y-4">
+                    <!-- Date Selection for Manual Entry -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-blue-800">Add to date:</span>
+                            </div>
+                            <button id="use-current-date" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                Use dashboard date
+                            </button>
+                        </div>
+                        <input type="date" id="manual-date" 
+                               class="mt-2 w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    </div>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="manual-name" placeholder="Food name" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
@@ -249,20 +341,44 @@
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Food Log -->
-            <div class="p-4 sm:p-6 lg:p-8">
-                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Today's Food Log</h3>
-                <div id="food-log" class="space-y-3 sm:space-y-4">
-                    <div class="text-center py-8 sm:py-12 text-gray-500">
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Mood & Notes Tab -->
+                <div id="mood-notes-content" class="hidden space-y-6">
+                    <!-- Date Info -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-purple-800">Viewing entries for: <span id="mood-notes-date-display" class="font-semibold"></span></span>
+                        </div>
+                        <p class="text-xs text-purple-600 mt-1">Use the dashboard date navigation arrows to change dates</p>
+                    </div>
+
+                    <!-- Mood History -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            Mood History
+                        </h3>
+                        <div id="mood-history" class="space-y-3">
+                            <!-- Mood entries will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Notes History -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
+                            Notes History
+                        </h3>
+                        <div id="notes-history" class="space-y-3">
+                            <!-- Notes entries will be populated here -->
                         </div>
-                        <p class="text-base sm:text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
-                        <p class="text-xs sm:text-sm text-gray-500">Start by searching for food or adding manually</p>
                     </div>
                 </div>
             </div>
@@ -289,6 +405,23 @@
                 </div>
                 
                 <div class="space-y-4">
+                    <!-- Date Selection for Modal -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-blue-800">Add to date:</span>
+                            </div>
+                            <button id="modal-use-current-date" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Use dashboard date
+                            </button>
+                        </div>
+                        <input type="date" id="modal-date" 
+                               class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm">
+                    </div>
+                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time of Day</label>
                         <select id="modal-time-of-day" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
@@ -330,6 +463,68 @@
                         <button id="add-to-log" class="bg-ki-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">Add to Log</button>
                         <button id="cancel-modal" class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">Cancel</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Move Food Modal -->
+<div id="move-food-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Edit Food Item</h3>
+                    <button id="close-move-modal" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-gray-600 mb-4">Edit <span id="move-food-name" class="font-medium text-gray-900"></span>:</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Date Selection -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium text-blue-800">Date:</span>
+                                </div>
+                                <button id="move-use-current-date" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                    Use dashboard date
+                                </button>
+                            </div>
+                            <input type="date" id="move-date" 
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        </div>
+                        
+                        <!-- Time of Day Selection -->
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center space-x-2 mb-3">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-green-800">Time of Day:</span>
+                            </div>
+                            <select id="move-time-of-day" class="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white">
+                                <option value="breakfast">Breakfast</option>
+                                <option value="lunch">Lunch</option>
+                                <option value="dinner">Dinner</option>
+                                <option value="snack">Snack</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="confirm-move" class="bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">Save Changes</button>
+                    <button id="cancel-move" class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">Cancel</button>
                 </div>
             </div>
         </div>

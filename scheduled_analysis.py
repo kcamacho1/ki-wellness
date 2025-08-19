@@ -80,11 +80,21 @@ def get_user_data(session, user_id, start_date, end_date):
         {"user_id": user_id, "start_date": start_date, "end_date": end_date}
     ).fetchall()
     
+    # Get notes
+    notes = session.execute(
+        text("""
+            SELECT content, date FROM note 
+            WHERE user_id = :user_id AND date >= :start_date AND date <= :end_date
+        """),
+        {"user_id": user_id, "start_date": start_date, "end_date": end_date}
+    ).fetchall()
+
     return {
         'profile': user_profile,
         'food_logs': [dict(zip(['name', 'brand', 'calories', 'protein', 'carbs', 'fat', 'time_of_day', 'quantity'], row)) for row in food_logs],
         'water_logs': [{'amount': row[0]} for row in water_logs],
-        'mood_logs': [{'mood': row[0]} for row in mood_logs]
+        'mood_logs': [{'mood': row[0]} for row in mood_logs],
+        'notes': [dict(zip(['content', 'date'], row)) for row in notes]
     }
 
 def generate_analysis(user_data):
@@ -98,27 +108,36 @@ def generate_analysis(user_data):
     mood_summary = f"Total mood entries: {len(user_data.get('mood_logs', []))}"
     
     analysis_prompt = f"""
-    Health Coach Analysis - Be concise and actionable.
+    Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
 
     User: {user_data.get('profile', {}).get('name', 'User')}
     Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
     
     Data Summary:
-    - Food: {food_summary}
-    - Water: {water_summary} 
-    - Mood: {mood_summary}
+    - {food_summary}
+    - {water_summary}
+    - {mood_summary}
 
-    Provide 2-3 key patterns and 2-3 actionable suggestions. Keep descriptions brief.
+    Task:
+    - Find specific, data-backed patterns connecting mood & notes to food & water intake.
+    - Provide short reasons for how the user may be feeling based on these links.
+    - Create 2-3 actionable, personalized suggestions to try this week with brief source citations.
 
-    JSON format:
-    {{
-        "patterns": [
-            {{"title": "Brief Title", "description": "Short description"}}
-        ],
-        "suggestions": [
-            {{"title": "Brief Title", "description": "Short actionable advice"}}
-        ]
-    }}
+    OUTPUT STRICT JSON ONLY:
+    {
+      "patterns": [
+        {"title": "Pattern Title", "description": "Brief explanation of correlation (mood vs notes, food, water)."}
+      ],
+      "suggestions": [
+        {
+          "title": "Suggestion Title",
+          "description": "Brief, actionable advice.",
+          "sources": [
+            {"title": "Short Source Name", "url": "https://example.com"}
+          ]
+        }
+      ]
+    }
     """
     
     try:
@@ -154,7 +173,7 @@ def store_analysis(session, user_id, analysis):
     try:
         # Check if analysis already exists for this user
         existing = session.execute(
-            text("SELECT id FROM user_analysis WHERE user_id = :user_id"),
+            text("SELECT id FROM ai_analysis WHERE user_id = :user_id"),
             {"user_id": user_id}
         ).fetchone()
         
@@ -162,7 +181,7 @@ def store_analysis(session, user_id, analysis):
             # Update existing analysis
             session.execute(
                 text("""
-                    UPDATE user_analysis 
+                    UPDATE ai_analysis 
                     SET analysis_data = :analysis_data, updated_at = :updated_at 
                     WHERE user_id = :user_id
                 """),
@@ -176,7 +195,7 @@ def store_analysis(session, user_id, analysis):
             # Insert new analysis
             session.execute(
                 text("""
-                    INSERT INTO user_analysis (user_id, analysis_data, created_at, updated_at)
+                    INSERT INTO ai_analysis (user_id, analysis_data, created_at, updated_at)
                     VALUES (:user_id, :analysis_data, :created_at, :updated_at)
                 """),
                 {
@@ -201,7 +220,7 @@ def create_analysis_table(session):
         if 'postgresql' in DATABASE_URL:
             # PostgreSQL syntax
             session.execute(text("""
-                CREATE TABLE IF NOT EXISTS user_analysis (
+                CREATE TABLE IF NOT EXISTS ai_analysis (
                     id SERIAL PRIMARY KEY,
                     user_id INTEGER NOT NULL,
                     analysis_data TEXT NOT NULL,
@@ -213,7 +232,7 @@ def create_analysis_table(session):
         else:
             # SQLite syntax
             session.execute(text("""
-                CREATE TABLE IF NOT EXISTS user_analysis (
+                CREATE TABLE IF NOT EXISTS ai_analysis (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     analysis_data TEXT NOT NULL,

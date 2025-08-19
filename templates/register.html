@@ -14,56 +14,208 @@
         
         <!-- Registration Form -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
-            <form method="POST" id="register-form">
+            {% if registration_disabled %}
+                <!-- Registration Disabled Message -->
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Registration Temporarily Disabled</h3>
+                    <p class="text-gray-600 mb-4">New account creation is currently disabled by the administrator.</p>
+                    <p class="text-sm text-gray-500 mb-6">If you have been invited, please try registering with your authorized email address.</p>
+                    <div class="space-y-3">
+                        <a href="{{ url_for('login') }}" class="inline-flex items-center px-6 py-3 bg-ki-green-600 text-white font-medium rounded-lg hover:bg-ki-green-700 transition-colors">
+                            ← Back to Login
+                        </a>
+                        <button onclick="window.location.reload()" class="block w-full px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            {% else %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Step <span id="current-step">1</span> of 4</span>
+                        <span class="text-sm text-gray-500" id="step-title">Account Details</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-ki-green-600 h-2 rounded-full transition-all duration-300" id="progress-bar" style="width: 25%"></div>
+                    </div>
+                </div>
+                
+                <form method="POST" id="register-form">
                 <div class="space-y-6">
-                    <!-- Username -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                        <input type="text" id="username" name="username" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
-                               placeholder="Choose a unique username">
+                    <!-- Step 1: Account Details -->
+                    <div id="step-1" class="step-content">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Create Your Account</h3>
+                        
+                        <!-- Username -->
+                        <div class="mb-4">
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                            <input type="text" id="username" name="username" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="Choose a unique username">
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-4">
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" id="email" name="email" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="Enter your email address">
+                        </div>
+                        
+                        <!-- Full Name -->
+                        <div class="mb-4">
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" id="name" name="name" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="Enter your full name">
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="mb-4">
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <input type="password" id="password" name="password" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="Create a strong password">
+                            <p class="text-sm text-gray-500 mt-1">Password should be at least 8 characters long</p>
+                        </div>
                     </div>
                     
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                        <input type="email" id="email" name="email" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
-                               placeholder="Enter your email address">
+                    <!-- Step 2: Terms of Service -->
+                    <div id="step-2" class="step-content hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Terms of Service</h3>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto">
+                            <div class="prose prose-sm max-w-none">
+                                <h4 class="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h4>
+                                <p class="text-gray-700 mb-3">By accessing and using Ki Wellness, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">2. Description of Service</h4>
+                                <p class="text-gray-700 mb-3">Ki Wellness is a self-health application that provides nutrition tracking, water intake monitoring, mood tracking, and personal health data management.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">3. User Accounts</h4>
+                                <p class="text-gray-700 mb-3">You agree to provide accurate information, maintain account security, and accept responsibility for all activities under your account.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">4. Health Information Disclaimer</h4>
+                                <p class="text-gray-700 mb-3">Ki Wellness is not a substitute for professional medical advice. You should consult healthcare professionals for medical advice.</p>
+                                
+                                <p class="text-sm text-gray-600 mt-4">
+                                    <a href="{{ url_for('terms') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                        Read full Terms of Service →
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <input type="checkbox" id="agree_terms" name="agree_terms" required
+                                   class="mt-1 h-4 w-4 text-ki-green-600 focus:ring-ki-green-500 border-gray-300 rounded">
+                            <label for="agree_terms" class="text-sm text-gray-700">
+                                I have read and agree to the Terms of Service
+                            </label>
+                        </div>
                     </div>
                     
-                    <!-- Full Name -->
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                        <input type="text" id="name" name="name" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
-                               placeholder="Enter your full name">
+                    <!-- Step 3: Privacy Policy -->
+                    <div id="step-3" class="step-content hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Privacy Policy</h3>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto">
+                            <div class="prose prose-sm max-w-none">
+                                <h4 class="font-semibold text-gray-900 mb-2">1. Information We Collect</h4>
+                                <p class="text-gray-700 mb-3">We collect account information, health data, and usage data to provide and improve our services.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">2. How We Use Your Information</h4>
+                                <p class="text-gray-700 mb-3">We use your information to provide services, personalize your experience, and improve our application.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">3. Data Security</h4>
+                                <p class="text-gray-700 mb-3">We implement appropriate security measures to protect your personal information, including encryption and secure access controls.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">4. Your Rights</h4>
+                                <p class="text-gray-700 mb-3">You have the right to access, correct, and delete your personal information, and to export your health data.</p>
+                                
+                                <p class="text-sm text-gray-600 mt-4">
+                                    <a href="{{ url_for('privacy') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                        Read full Privacy Policy →
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <input type="checkbox" id="agree_privacy" name="agree_privacy" required
+                                   class="mt-1 h-4 w-4 text-ki-green-600 focus:ring-ki-green-500 border-gray-300 rounded">
+                            <label for="agree_privacy" class="text-sm text-gray-700">
+                                I have read and agree to the Privacy Policy
+                            </label>
+                        </div>
                     </div>
                     
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                        <input type="password" id="password" name="password" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
-                               placeholder="Create a strong password">
-                        <p class="text-sm text-gray-500 mt-1">Password should be at least 8 characters long</p>
+                    <!-- Step 4: Medical Disclaimer -->
+                    <div id="step-4" class="step-content hidden">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Medical Disclaimer</h3>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center mb-2">
+                                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <span class="text-yellow-800 font-medium">Important Notice</span>
+                            </div>
+                            <p class="text-yellow-700 text-sm">Ki Wellness is not a substitute for professional medical advice, diagnosis, or treatment.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto">
+                            <div class="prose prose-sm max-w-none">
+                                <h4 class="font-semibold text-gray-900 mb-2">Not Medical Advice</h4>
+                                <p class="text-gray-700 mb-3">The information provided by Ki Wellness is for general informational and educational purposes only.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">Consult Healthcare Professionals</h4>
+                                <p class="text-gray-700 mb-3">Always seek the advice of your physician or other qualified health provider for medical conditions, dietary requirements, and health goals.</p>
+                                
+                                <h4 class="font-semibold text-gray-900 mb-2">Individual Responsibility</h4>
+                                <p class="text-gray-700 mb-3">You are responsible for your own health decisions and should not use Ki Wellness as a substitute for medical care.</p>
+                                
+                                <p class="text-sm text-gray-600 mt-4">
+                                    <a href="{{ url_for('disclaimer') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                        Read full Medical Disclaimer →
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <input type="checkbox" id="agree_disclaimer" name="agree_disclaimer" required
+                                   class="mt-1 h-4 w-4 text-ki-green-600 focus:ring-ki-green-500 border-gray-300 rounded">
+                            <label for="agree_disclaimer" class="text-sm text-gray-700">
+                                I acknowledge and understand the Medical Disclaimer
+                            </label>
+                        </div>
                     </div>
                     
-                    <!-- Submit Button -->
-                    <button type="submit" 
-                            class="w-full bg-ki-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-ki-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-ki-green-500 focus:ring-offset-2">
-                        Create Account
-                    </button>
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between pt-4">
+                        <button type="button" id="prev-btn" 
+                                class="px-6 py-2 text-gray-600 font-medium rounded-lg hover:bg-gray-100 transition-colors hidden">
+                            ← Previous
+                        </button>
+                        <button type="button" id="next-btn" 
+                                class="ml-auto px-6 py-2 bg-ki-green-600 text-white font-medium rounded-lg hover:bg-ki-green-700 transition-colors">
+                            Next →
+                        </button>
+                        <button type="submit" id="submit-btn" 
+                                class="ml-auto px-6 py-2 bg-ki-green-600 text-white font-medium rounded-lg hover:bg-ki-green-700 transition-colors hidden">
+                            Create Account
+                        </button>
+                    </div>
                 </div>
             </form>
             
@@ -74,28 +226,183 @@
                     <a href="{{ url_for('login') }}" class="text-ki-green-600 hover:text-ki-green-700 font-medium">Sign in here</a>
                 </p>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <script>
-    // Form validation
-    document.getElementById('register-form').addEventListener('submit', function(e) {
-        const password = document.getElementById('password').value;
-        const email = document.getElementById('email').value;
-        
-        // Basic validation
-        if (password.length < 8) {
-            e.preventDefault();
-            showToast('Password must be at least 8 characters long', 'error');
-            return false;
-        }
-        
-        if (!email.includes('@')) {
-            e.preventDefault();
-            showToast('Please enter a valid email address', 'error');
-            return false;
-        }
+    let currentStep = 1;
+    const totalSteps = 4;
+    const stepTitles = ['Account Details', 'Terms of Service', 'Privacy Policy', 'Medical Disclaimer'];
+    
+    // Initialize the form
+    document.addEventListener('DOMContentLoaded', function() {
+        updateStepDisplay();
+        setupEventListeners();
     });
+    
+    function updateStepDisplay() {
+        // Update progress bar
+        const progress = (currentStep / totalSteps) * 100;
+        document.getElementById('progress-bar').style.width = progress + '%';
+        
+        // Update step counter and title
+        document.getElementById('current-step').textContent = currentStep;
+        document.getElementById('step-title').textContent = stepTitles[currentStep - 1];
+        
+        // Show/hide step content
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepElement = document.getElementById(`step-${i}`);
+            if (i === currentStep) {
+                stepElement.classList.remove('hidden');
+            } else {
+                stepElement.classList.add('hidden');
+            }
+        }
+        
+        // Show/hide navigation buttons
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        if (currentStep === 1) {
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.classList.remove('hidden');
+        }
+        
+        if (currentStep === totalSteps) {
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+        }
+    }
+    
+    function setupEventListeners() {
+        // Next button
+        document.getElementById('next-btn').addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                currentStep++;
+                updateStepDisplay();
+            }
+        });
+        
+        // Previous button
+        document.getElementById('prev-btn').addEventListener('click', function() {
+            currentStep--;
+            updateStepDisplay();
+        });
+        
+        // Form submission
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            if (!validateCurrentStep()) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Final validation before submission
+            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value;
+            const agreeTerms = document.getElementById('agree_terms').checked;
+            const agreePrivacy = document.getElementById('agree_privacy').checked;
+            const agreeDisclaimer = document.getElementById('agree_disclaimer').checked;
+            
+            if (password.length < 8) {
+                e.preventDefault();
+                showToast('Password must be at least 8 characters long', 'error');
+                return false;
+            }
+            
+            if (!email.includes('@')) {
+                e.preventDefault();
+                showToast('Please enter a valid email address', 'error');
+                return false;
+            }
+            
+            if (!agreeTerms || !agreePrivacy || !agreeDisclaimer) {
+                e.preventDefault();
+                showToast('You must agree to all terms and conditions', 'error');
+                return false;
+            }
+        });
+    }
+    
+    function validateCurrentStep() {
+        switch(currentStep) {
+            case 1:
+                const username = document.getElementById('username').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const name = document.getElementById('name').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username || !email || !name || !password) {
+                    showToast('Please fill in all required fields', 'error');
+                    return false;
+                }
+                
+                if (password.length < 8) {
+                    showToast('Password must be at least 8 characters long', 'error');
+                    return false;
+                }
+                
+                if (!email.includes('@')) {
+                    showToast('Please enter a valid email address', 'error');
+                    return false;
+                }
+                break;
+                
+            case 2:
+                if (!document.getElementById('agree_terms').checked) {
+                    showToast('You must agree to the Terms of Service', 'error');
+                    return false;
+                }
+                break;
+                
+            case 3:
+                if (!document.getElementById('agree_privacy').checked) {
+                    showToast('You must agree to the Privacy Policy', 'error');
+                    return false;
+                }
+                break;
+                
+            case 4:
+                if (!document.getElementById('agree_disclaimer').checked) {
+                    showToast('You must acknowledge the Medical Disclaimer', 'error');
+                    return false;
+                }
+                break;
+        }
+        
+        return true;
+    }
+    
+    // Helper function for showing toast messages
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 translate-x-full ${
+            type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+        }`;
+        toast.textContent = message;
+        
+        // Add to page
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
 </script>
 {% endblock %}

@@ -25,6 +25,49 @@
                 </div>
             {% endif %}
             
+            <!-- Profile Image Section -->
+            <div class="mb-8 text-center">
+                <div class="relative inline-block">
+                    <!-- Profile Image Display -->
+                    <div id="profile-image-container" class="relative">
+                        <div id="profile-image" class="w-24 h-24 rounded-full overflow-hidden mx-auto mb-4 border-4 border-gray-200">
+                            {% if current_user.profile_image %}
+                                <img src="{{ url_for('static', filename=current_user.profile_image) }}" 
+                                     alt="Profile Image" 
+                                     class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-gradient-to-br from-ki-green-500 to-ki-green-600 flex items-center justify-center">
+                                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Upload Button Overlay -->
+                        <button type="button" id="upload-btn" 
+                                class="absolute bottom-0 right-0 bg-ki-green-600 text-white p-2 rounded-full shadow-lg hover:bg-ki-green-700 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden File Input -->
+                    <input type="file" id="profile-image-input" accept="image/*" class="hidden">
+                    
+                    <!-- Image Actions -->
+                    <div class="flex justify-center space-x-2 mt-2">
+                        <button type="button" id="remove-image-btn" 
+                                class="text-sm text-red-600 hover:text-red-700 font-medium {% if not current_user.profile_image %}hidden{% endif %}">
+                            Remove Image
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-sm text-gray-500 mt-2">Click the + button to upload a profile image</p>
+            </div>
+            
             <form id="profile-form">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Username (Read-only) -->
@@ -100,6 +143,52 @@
                     </div>
                 </div>
                 
+                <!-- Agreements Section -->
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Legal Agreements</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Terms of Service</span>
+                            </div>
+                            <a href="{{ url_for('terms') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                View Terms
+                            </a>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Privacy Policy</span>
+                            </div>
+                            <a href="{{ url_for('privacy') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                View Policy
+                            </a>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Medical Disclaimer</span>
+                            </div>
+                            <a href="{{ url_for('disclaimer') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                                View Disclaimer
+                            </a>
+                        </div>
+                        {% if current_user.agreements_date %}
+                        <div class="mt-3 pt-3 border-t border-blue-200">
+                            <span class="text-gray-600">Agreed on:</span>
+                            <span class="text-gray-900 ml-2">{{ current_user.agreements_date.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
                 <!-- Save Button -->
                 <div class="mt-8 flex justify-end">
                     <button type="submit" 
@@ -124,6 +213,102 @@
 </div>
 
 <script>
+    // Profile image upload functionality
+    document.getElementById('upload-btn').addEventListener('click', function() {
+        document.getElementById('profile-image-input').click();
+    });
+    
+    document.getElementById('profile-image-input').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showToast('Please select a valid image file (PNG, JPG, JPEG, GIF, or WebP)', 'error');
+            return;
+        }
+        
+        // Validate file size (16MB max)
+        if (file.size > 16 * 1024 * 1024) {
+            showToast('File size must be less than 16MB', 'error');
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const formData = new FormData();
+            formData.append('profile_image', file);
+            
+            const response = await fetch('/api/profile/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update the profile image display
+                const profileImageContainer = document.getElementById('profile-image');
+                profileImageContainer.innerHTML = `<img src="${data.image_url}" alt="Profile Image" class="w-full h-full object-cover">`;
+                
+                // Show remove button
+                document.getElementById('remove-image-btn').classList.remove('hidden');
+                
+                showToast('Profile image uploaded successfully!', 'success');
+            } else {
+                showToast(data.message || 'Failed to upload image', 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            showToast('Failed to upload image', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
+    
+    // Remove profile image
+    document.getElementById('remove-image-btn').addEventListener('click', async function() {
+        if (!confirm('Are you sure you want to remove your profile image?')) {
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/profile/remove-image', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update the profile image display to default
+                const profileImageContainer = document.getElementById('profile-image');
+                profileImageContainer.innerHTML = `
+                    <div class="w-full h-full bg-gradient-to-br from-ki-green-500 to-ki-green-600 flex items-center justify-center">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                `;
+                
+                // Hide remove button
+                document.getElementById('remove-image-btn').classList.add('hidden');
+                
+                showToast('Profile image removed successfully!', 'success');
+            } else {
+                showToast(data.message || 'Failed to remove image', 'error');
+            }
+        } catch (error) {
+            console.error('Error removing image:', error);
+            showToast('Failed to remove image', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
+    
     // Handle form submission
     document.getElementById('profile-form').addEventListener('submit', async function(e) {
         e.preventDefault();

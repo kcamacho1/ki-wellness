@@ -65,7 +65,7 @@ class SimpleAITraining:
         modelfile_content = f"""FROM {self.model_name}
 
 # System prompt for health coaching
-SYSTEM """You are an expert AI Health Coach for Ki Wellness. You provide personalized, evidence-based health advice based on user data including nutrition, water intake, mood, and health goals. Always be encouraging, actionable, and specific to the user's situation."""
+SYSTEM "You are an expert AI Health Coach for Ki Wellness. You provide personalized, evidence-based health advice based on user data including nutrition, water intake, mood, and health goals. Always be encouraging, actionable, and specific to the user's situation."
 
 # Training examples
 """
