@@ -1910,34 +1910,64 @@ def human_help():
 def create_payment_intent():
     """Create a Stripe payment intent"""
     try:
+        # Validate request data
+        if not request.is_json:
+            return jsonify({'error': 'Invalid request format'}), 400
+        
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
         payment_type = data.get('payment_type', '30min_session')
         amount = data.get('amount', 2000)  # Default to $20.00
         
+        # Validate amount
+        if not isinstance(amount, int) or amount < 100:  # Minimum $1.00
+            return jsonify({'error': 'Invalid amount'}), 400
+        
+        # Validate Stripe configuration
+        if not stripe.api_key:
+            print("Error: Stripe API key not configured")
+            return jsonify({'error': 'Payment system not configured'}), 500
+        
         # Create payment session
-        session_id = str(uuid.uuid4())
-        payment_session = PaymentSession(
-            session_id=session_id,
-            user_id=current_user.id if current_user.is_authenticated else None,
-            email=data.get('email', ''),
-            name=data.get('name', ''),
-            payment_type=payment_type,
-            amount=amount,
-            status='pending'
-        )
-        db.session.add(payment_session)
-        db.session.commit()
+        try:
+            session_id = str(uuid.uuid4())
+            payment_session = PaymentSession(
+                session_id=session_id,
+                user_id=current_user.id if current_user.is_authenticated else None,
+                email=data.get('email', ''),
+                name=data.get('name', ''),
+                payment_type=payment_type,
+                amount=amount,
+                status='pending'
+            )
+            db.session.add(payment_session)
+            db.session.commit()
+        except Exception as db_error:
+            print(f"Database error creating payment session: {db_error}")
+            return jsonify({'error': 'Database error'}), 500
         
         # Create Stripe payment intent
-        intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency='usd',
-            metadata={
-                'session_id': session_id,
-                'payment_type': payment_type,
-                'user_id': str(current_user.id) if current_user.is_authenticated else 'anonymous'
-            }
-        )
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=amount,
+                currency='usd',
+                metadata={
+                    'session_id': session_id,
+                    'payment_type': payment_type,
+                    'user_id': str(current_user.id) if current_user.is_authenticated else 'anonymous'
+                }
+            )
+        except stripe.error.StripeError as stripe_error:
+            print(f"Stripe error creating payment intent: {stripe_error}")
+            # Clean up the payment session
+            try:
+                db.session.delete(payment_session)
+                db.session.commit()
+            except:
+                pass
+            return jsonify({'error': 'Payment processing error'}), 500
         
         return jsonify({
             'clientSecret': intent.client_secret,
@@ -1945,8 +1975,8 @@ def create_payment_intent():
         })
         
     except Exception as e:
-        print(f"Error creating payment intent: {e}")
-        return jsonify({'error': 'Failed to create payment intent'}), 500
+        print(f"Unexpected error creating payment intent: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/payment-success')
 def payment_success():
@@ -2040,6 +2070,28 @@ app.register_blueprint(recipe_bp)
 def recipes():
     """Recipe management page"""
     return render_template('recipes/recipes.html', current_user_id=current_user.id)
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for debugging"""
+    try:
+        # Check database connection
+        db.session.execute(text('SELECT 1'))
+        
+        # Check Stripe configuration
+        stripe_configured = bool(stripe.api_key)
+        
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected',
+            'stripe_configured': stripe_configured,
+            'stripe_key_prefix': stripe.api_key[:7] + '...' if stripe.api_key else None
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     with app.app_context():
