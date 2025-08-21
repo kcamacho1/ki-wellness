@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
 import ollama
-import stripe
+# Stripe import removed - using Calendly and donation links instead
 from food_data import BASIC_FOODS, COMMON_FOODS_DB
 from health_resources import get_relevant_resources, format_resources_for_prompt
 
@@ -61,11 +61,7 @@ OPENFOODFACTS_API = "https://world.openfoodfacts.org/cgi/search.pl"
 USDA_API_KEY = os.getenv('USDA_API_KEY')
 USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1"
 
-# Stripe Configuration
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
-STRIPE_PRICE_ID_30MIN = os.getenv('STRIPE_PRICE_ID_30MIN')  # $20 for 30 minutes
-STRIPE_PRICE_ID_DONATION = os.getenv('STRIPE_PRICE_ID_DONATION')  # Donation link
+# Stripe Configuration removed - using Calendly and donation links instead
 
 # Food data imported from food_data.py
 
@@ -1903,163 +1899,12 @@ def disclaimer():
 
 @app.route('/human-help')
 def human_help():
-    """Human help page with payment integration"""
-    return render_template('human_help.html', stripe_publishable_key=STRIPE_PUBLISHABLE_KEY)
+    """Human help page with Calendly booking"""
+    return render_template('human_help.html')
 
-@app.route('/create-payment-intent', methods=['POST'])
-def create_payment_intent():
-    """Create a Stripe payment intent"""
-    try:
-        # Validate request data
-        if not request.is_json:
-            return jsonify({'error': 'Invalid request format'}), 400
-        
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        payment_type = data.get('payment_type', '30min_session')
-        amount = data.get('amount', 2000)  # Default to $20.00
-        
-        # Validate amount
-        if not isinstance(amount, int) or amount < 100:  # Minimum $1.00
-            return jsonify({'error': 'Invalid amount'}), 400
-        
-        # Validate Stripe configuration
-        if not stripe.api_key:
-            print("Error: Stripe API key not configured")
-            return jsonify({'error': 'Payment system not configured'}), 500
-        
-        # Create payment session
-        try:
-            session_id = str(uuid.uuid4())
-            payment_session = PaymentSession(
-                session_id=session_id,
-                user_id=current_user.id if current_user.is_authenticated else None,
-                email=data.get('email', ''),
-                name=data.get('name', ''),
-                payment_type=payment_type,
-                amount=amount,
-                status='pending'
-            )
-            db.session.add(payment_session)
-            db.session.commit()
-        except Exception as db_error:
-            print(f"Database error creating payment session: {db_error}")
-            return jsonify({'error': 'Database error'}), 500
-        
-        # Create Stripe payment intent
-        try:
-            intent = stripe.PaymentIntent.create(
-                amount=amount,
-                currency='usd',
-                metadata={
-                    'session_id': session_id,
-                    'payment_type': payment_type,
-                    'user_id': str(current_user.id) if current_user.is_authenticated else 'anonymous'
-                }
-            )
-        except stripe.error.StripeError as stripe_error:
-            print(f"Stripe error creating payment intent: {stripe_error}")
-            # Clean up the payment session
-            try:
-                db.session.delete(payment_session)
-                db.session.commit()
-            except:
-                pass
-            return jsonify({'error': 'Payment processing error'}), 500
-        
-        return jsonify({
-            'clientSecret': intent.client_secret,
-            'session_id': session_id
-        })
-        
-    except Exception as e:
-        print(f"Unexpected error creating payment intent: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+# Payment routes removed - using Calendly and donation links instead
 
-@app.route('/payment-success')
-def payment_success():
-    """Handle successful payment and show success page"""
-    try:
-        payment_intent_id = request.args.get('payment_intent')
-        
-        if not payment_intent_id:
-            return redirect(url_for('human_help'))
-        
-        # Retrieve payment intent from Stripe
-        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
-        
-        if intent.status != 'succeeded':
-            return redirect(url_for('human_help'))
-        
-        # Find payment session
-        payment_session = PaymentSession.query.filter_by(
-            stripe_payment_intent_id=payment_intent_id
-        ).first()
-        
-        if not payment_session:
-            # Create payment session if not found
-            payment_session = PaymentSession(
-                session_id=str(uuid.uuid4()),
-                user_id=current_user.id if current_user.is_authenticated else None,
-                email=intent.receipt_email or '',
-                name=intent.metadata.get('name', ''),
-                payment_type=intent.metadata.get('payment_type', '30min_session'),
-                stripe_payment_intent_id=payment_intent_id,
-                amount=intent.amount,
-                status='completed'
-            )
-            db.session.add(payment_session)
-        else:
-            # Update existing session
-            payment_session.status = 'completed'
-            payment_session.stripe_payment_intent_id = payment_intent_id
-        
-        db.session.commit()
-        
-        # Get app settings
-        calendly_link = get_app_setting('calendly_link', 'https://calendly.com/ki-wellness/human-health-coach')
-        
-        return render_template('payment_success.html', 
-                             payment_intent_id=payment_intent_id,
-                             payment_amount=intent.amount,
-                             payment_type=payment_session.payment_type,
-                             payment_date=datetime.utcnow(),
-                             calendly_link=calendly_link)
-        
-    except Exception as e:
-        print(f"Error processing payment success: {e}")
-        return redirect(url_for('human_help'))
-
-@app.route('/stripe-webhook', methods=['POST'])
-def stripe_webhook():
-    """Handle Stripe webhooks for payment status updates"""
-    payload = request.get_data(as_text=True)
-    sig_header = request.headers.get('Stripe-Signature')
-    
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, os.getenv('STRIPE_WEBHOOK_SECRET', '')
-        )
-    except ValueError as e:
-        return 'Invalid payload', 400
-    except stripe.error.SignatureVerificationError as e:
-        return 'Invalid signature', 400
-    
-    if event['type'] == 'payment_intent.succeeded':
-        payment_intent = event['data']['object']
-        
-        # Update payment session status
-        payment_session = PaymentSession.query.filter_by(
-            stripe_payment_intent_id=payment_intent['id']
-        ).first()
-        
-        if payment_session:
-            payment_session.status = 'completed'
-            db.session.commit()
-    
-    return '', 200
+# Payment success and webhook routes removed - using Calendly booking instead
 
 # Register recipe blueprint
 app.register_blueprint(recipe_bp)
@@ -2078,14 +1923,10 @@ def health_check():
         # Check database connection
         db.session.execute(text('SELECT 1'))
         
-        # Check Stripe configuration
-        stripe_configured = bool(stripe.api_key)
-        
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
-            'stripe_configured': stripe_configured,
-            'stripe_key_prefix': stripe.api_key[:7] + '...' if stripe.api_key else None
+            'booking_system': 'calendly'
         })
     except Exception as e:
         return jsonify({

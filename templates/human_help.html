@@ -3,8 +3,6 @@
 {% block title %}Human Health Coach - Ki Wellness{% endblock %}
 
 {% block head %}
-<!-- Stripe.js -->
-<script src="https://js.stripe.com/v3/"></script>
 <!-- Calendly widget -->
 <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
 {% endblock %}
@@ -112,144 +110,46 @@
             </div>
         </div>
 
-        <!-- Payment Section -->
+        <!-- Booking Section -->
         <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-8">
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Book Your Session</h2>
-                <p class="text-gray-600">Choose your preferred booking method</p>
+                <p class="text-gray-600">Schedule your 30-minute health coaching session</p>
             </div>
 
-            <!-- Booking Options Tabs -->
-            <div class="mb-8">
-                <div class="flex space-x-1 bg-gray-100 p-1 rounded-xl">
-                    <button id="payment-tab" class="flex-1 py-2 px-4 rounded-lg bg-white shadow-sm text-sm font-medium text-gray-900 transition-colors">
-                        💳 Pay Online ($20)
-                    </button>
-                    <button id="calendly-tab" class="flex-1 py-2 px-4 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                        📅 Book Directly
-                    </button>
-                </div>
-            </div>
-
-            <!-- Payment Form -->
-            <div id="payment-section">
-                <form id="payment-form" class="max-w-md mx-auto">
-                <!-- Contact Information -->
-                <div class="space-y-4 mb-6">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                        <input type="text" id="name" name="name" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ki-green-500 focus:border-transparent"
-                               placeholder="Enter your full name"
-                               value="{{ current_user.name if current_user.is_authenticated else '' }}">
+            <!-- Pricing and Booking -->
+            <div class="max-w-2xl mx-auto">
+                <!-- Pricing Card -->
+                <div class="bg-gradient-to-br from-ki-green-50 to-ki-green-100 rounded-2xl p-6 mb-8 text-center">
+                    <div class="text-3xl font-bold text-ki-green-700 mb-2">$20</div>
+                    <div class="text-lg text-gray-700 mb-4">30-Minute Health Coaching Session</div>
+                    <div class="text-sm text-gray-600 mb-6">
+                        Personalized guidance, goal setting, and actionable recommendations
                     </div>
                     
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                        <input type="email" id="email" name="email" required
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ki-green-500 focus:border-transparent"
-                               placeholder="Enter your email address"
-                               value="{{ current_user.email if current_user.is_authenticated else '' }}">
-                    </div>
-                </div>
-
-                <!-- Payment Type Selection -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Payment Type</label>
-                    <div class="space-y-3">
-                        <label class="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input type="radio" name="payment_type" value="30min_session" checked
-                                   class="w-4 h-4 text-ki-green-600 border-gray-300 focus:ring-ki-green-500">
-                            <div class="ml-3">
-                                <div class="font-medium text-gray-900">30-Minute Health Session</div>
-                                <div class="text-sm text-gray-600">$20.00 - Personalized health consultation</div>
-                            </div>
-                        </label>
-                        
-                        <label class="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                            <input type="radio" name="payment_type" value="donation"
-                                   class="w-4 h-4 text-ki-green-600 border-gray-300 focus:ring-ki-green-500">
-                            <div class="ml-3">
-                                <div class="font-medium text-gray-900">Donation</div>
-                                <div class="text-sm text-gray-600">Support Ki Wellness development</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Stripe Payment Element -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
-                    <div id="payment-element" class="p-4 border border-gray-300 rounded-xl bg-white">
-                        <!-- Stripe Elements will be inserted here -->
-                    </div>
-                    
-                    <!-- Fallback payment method (shown when Stripe fails) -->
-                    <div id="fallback-payment" class="hidden mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                        <div class="text-center">
-                            <svg class="w-8 h-8 text-yellow-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    <!-- Donation Link -->
+                    <div class="mb-6">
+                        <p class="text-sm text-gray-600 mb-3">Support Ki Wellness Development</p>
+                        <a href="https://buy.stripe.com/test_28o5kC0QZ8QZ8Qw5kk" 
+                           target="_blank"
+                           class="inline-flex items-center px-6 py-3 bg-ki-green-600 text-white rounded-xl hover:bg-ki-green-700 transition-colors font-semibold">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
-                            <h3 class="font-semibold text-yellow-800 mb-2">Payment System Temporarily Unavailable</h3>
-                            <p class="text-yellow-700 mb-4">We're experiencing technical difficulties with our payment system. You can still book your session and we'll arrange payment after booking.</p>
-                            
-                            <!-- Calendly Booking Option -->
-                            <div class="mb-4 p-4 bg-white rounded-lg border border-yellow-300">
-                                <h4 class="font-semibold text-gray-900 mb-2">Book Your Session Now</h4>
-                                <p class="text-sm text-gray-600 mb-3">Schedule your 30-minute health coaching session and we'll arrange payment after booking.</p>
-                                <a href="https://calendly.com/ki-wellness/human-health-coach" 
-                                   target="_blank"
-                                   class="inline-flex items-center px-6 py-3 bg-ki-green-600 text-white rounded-lg hover:bg-ki-green-700 transition-colors font-semibold">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                    Book Appointment
-                                </a>
-                            </div>
-                            
-                            <!-- Alternative Contact Methods -->
-                            <div class="text-sm text-yellow-600">
-                                <p class="mb-2">Or contact us directly:</p>
-                                <div class="space-y-1">
-                                    <a href="mailto:hello@kiwellness.org" class="inline-flex items-center text-yellow-700 hover:text-yellow-800">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                        </svg>
-                                        hello@kiwellness.org
-                                    </a>
-                                    <div class="text-yellow-700">
-                                        📞 <span class="font-semibold">+1 (555) 123-4567</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            Donate $20
+                        </a>
                     </div>
                 </div>
 
-                <!-- Payment Button -->
-                <button type="submit" id="submit-button"
-                        class="w-full bg-ki-green-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-ki-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="button-text">Pay $20.00</span>
-                    <div id="spinner" class="hidden">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
-                    </div>
-                </button>
-
-                <!-- Error Messages -->
-                <div id="payment-message" class="hidden mt-4 p-4 rounded-xl"></div>
-            </form>
-            </div>
-
-            <!-- Calendly Booking Section -->
-            <div id="calendly-section" class="hidden">
-                <div class="text-center mb-8">
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Direct Booking</h3>
-                    <p class="text-gray-600 mb-6">Schedule your 30-minute health coaching session directly. Payment will be arranged after booking.</p>
+                <!-- Calendly Booking -->
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Schedule Your Session</h3>
+                    <p class="text-gray-600 mb-6">Choose a time that works for you and book your consultation directly.</p>
                     
                     <!-- Benefits of direct booking -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="text-center p-4 bg-ki-green-50 rounded-xl">
-                            <div class="w-8 h-8 bg-ki-green-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <div class="text-center p-4 bg-blue-50 rounded-xl">
+                            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
                                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
@@ -258,8 +158,8 @@
                             <div class="text-xs text-gray-600">No payment delays</div>
                         </div>
                         
-                        <div class="text-center p-4 bg-blue-50 rounded-xl">
-                            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <div class="text-center p-4 bg-green-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-2">
                                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                                 </svg>
@@ -280,16 +180,15 @@
                     </div>
                 </div>
                 
-                <div class="max-w-2xl mx-auto">
-                    <div class="calendly-inline-widget" 
-                         data-url="https://calendly.com/ki-wellness/human-health-coach"
-                         style="min-width:320px;height:700px;">
-                    </div>
+                <!-- Calendly Widget -->
+                <div class="calendly-inline-widget" 
+                     data-url="https://calendly.com/ki-wellness/human-health-coach"
+                     style="min-width:320px;height:700px;">
                 </div>
                 
                 <!-- Additional info -->
                 <div class="mt-8 text-center text-sm text-gray-600">
-                    <p>After booking, you'll receive a confirmation email with payment instructions.</p>
+                    <p>After booking, you'll receive a confirmation email with session details.</p>
                     <p class="mt-2">Questions? <a href="mailto:hello@kiwellness.org" class="text-ki-green-600 hover:text-ki-green-700">Contact us</a></p>
                 </div>
             </div>
@@ -301,7 +200,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                         </svg>
-                        <span>Secure Payment</span>
+                        <span>Secure Booking</span>
                     </div>
                     <div class="flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,165 +219,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Stripe configuration
-    const stripe = Stripe('{{ stripe_publishable_key }}');
-    let elements;
-    let emailAddress = '';
-    let clientSecret;
-
-    // Initialize payment form
-    async function initialize() {
-        try {
-            const response = await fetch("/create-payment-intent", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    payment_type: '30min_session',
-                    amount: 2000 // $20.00 in cents
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            if (!data.clientSecret) {
-                throw new Error('No client secret received from server');
-            }
-
-            clientSecret = data.clientSecret;
-            elements = stripe.elements({ clientSecret });
-
-            const paymentElement = elements.create("payment");
-            paymentElement.mount("#payment-element");
-        } catch (error) {
-            console.error('Error initializing payment:', error);
-            showMessage('Unable to initialize payment system. Please try refreshing the page or contact support.');
-            document.getElementById('submit-button').disabled = true;
-            document.getElementById('fallback-payment').classList.remove('hidden');
-        }
-    }
-
-    // Handle form submission
-    document.querySelector("#payment-form").addEventListener("submit", handleSubmit);
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        setLoading(true);
-
-        const { error } = await stripe.confirmPayment({
-            elements,
-            confirmParams: {
-                return_url: window.location.origin + "/payment-success",
-            },
-        });
-
-        if (error.type === "card_error" || error.type === "validation_error") {
-            showMessage(error.message);
-        } else {
-            showMessage("An unexpected error occurred.");
-        }
-
-        setLoading(false);
-    }
-
-    // Update payment type and amount
-    document.querySelectorAll('input[name="payment_type"]').forEach(radio => {
-        radio.addEventListener('change', async function() {
-            const paymentType = this.value;
-            const amount = paymentType === '30min_session' ? 2000 : 1000; // $20 or $10
-            const buttonText = paymentType === '30min_session' ? 'Pay $20.00' : 'Donate $10.00';
-            
-            document.getElementById('button-text').textContent = buttonText;
-            
-            try {
-                // Reinitialize payment intent with new amount
-                const response = await fetch("/create-payment-intent", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        payment_type: paymentType,
-                        amount: amount
-                    }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                if (!data.clientSecret) {
-                    throw new Error('No client secret received from server');
-                }
-
-                // Recreate elements with new client secret
-                elements = stripe.elements({ clientSecret: data.clientSecret });
-                const paymentElement = elements.create("payment");
-                
-                // Clear and remount payment element
-                document.getElementById("payment-element").innerHTML = "";
-                paymentElement.mount("#payment-element");
-            } catch (error) {
-                console.error('Error updating payment type:', error);
-                showMessage('Unable to update payment options. Please try refreshing the page.');
-            }
-        });
-    });
-
-    function showMessage(messageText) {
-        const messageContainer = document.querySelector("#payment-message");
-        messageContainer.classList.remove("hidden");
-        messageContainer.textContent = messageText;
-
-        setTimeout(function () {
-            messageContainer.classList.add("hidden");
-            messageContainer.textContent = "";
-        }, 4000);
-    }
-
-    function setLoading(isLoading) {
-        if (isLoading) {
-            document.querySelector("#submit-button").disabled = true;
-            document.querySelector("#spinner").classList.remove("hidden");
-            document.querySelector("#button-text").classList.add("hidden");
-        } else {
-            document.querySelector("#submit-button").disabled = false;
-            document.querySelector("#spinner").classList.add("hidden");
-            document.querySelector("#button-text").classList.remove("hidden");
-        }
-    }
-
-    // Initialize on page load
-    initialize();
-
-    // Tab switching functionality
-    document.getElementById('payment-tab').addEventListener('click', function() {
-        document.getElementById('payment-section').classList.remove('hidden');
-        document.getElementById('calendly-section').classList.add('hidden');
-        document.getElementById('payment-tab').classList.add('bg-white', 'shadow-sm');
-        document.getElementById('calendly-tab').classList.remove('bg-white', 'shadow-sm');
-    });
-
-    document.getElementById('calendly-tab').addEventListener('click', function() {
-        document.getElementById('payment-section').classList.add('hidden');
-        document.getElementById('calendly-section').classList.remove('hidden');
-        document.getElementById('payment-tab').classList.remove('bg-white', 'shadow-sm');
-        document.getElementById('calendly-tab').classList.add('bg-white', 'shadow-sm');
-    });
-</script>
 {% endblock %}
