@@ -16,6 +16,12 @@ import stripe
 from food_data import BASIC_FOODS, COMMON_FOODS_DB
 from health_resources import get_relevant_resources, format_resources_for_prompt
 
+# Import database and models
+from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction
+
+# Import recipe API
+from apis.recipe_api import recipe_bp
+
 # Load environment variables
 load_dotenv()
 
@@ -44,7 +50,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Ensure upload directory exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-db = SQLAlchemy(app)
+# Initialize database with app
+db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -62,74 +69,7 @@ STRIPE_PRICE_ID_DONATION = os.getenv('STRIPE_PRICE_ID_DONATION')  # Donation lin
 
 # Food data imported from food_data.py
 
-# Database Models
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    age = db.Column(db.Integer)
-    weight = db.Column(db.Float)  # in kg
-    height = db.Column(db.Float)  # in cm
-    health_goals = db.Column(db.Text)
-    ailments_concerns = db.Column(db.Text)  # Ailments or areas of concern
-    profile_image = db.Column(db.String(255))  # Path to profile image
-    is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Agreement tracking
-    agreed_to_terms = db.Column(db.Boolean, default=False)
-    agreed_to_privacy = db.Column(db.Boolean, default=False)
-    agreed_to_disclaimer = db.Column(db.Boolean, default=False)
-    agreements_date = db.Column(db.DateTime)  # When agreements were accepted
-    
-    # Relationships
-    food_logs = db.relationship('FoodLog', backref='user', lazy=True)
-    water_logs = db.relationship('WaterLog', backref='user', lazy=True)
-    mood_logs = db.relationship('MoodLog', backref='user', lazy=True)
-    notes = db.relationship('Note', backref='user', lazy=True)
-
-class FoodLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(200), nullable=False)
-    brand = db.Column(db.String(200))
-    calories = db.Column(db.Float)
-    protein = db.Column(db.Float)
-    carbs = db.Column(db.Float)
-    fat = db.Column(db.Float)
-    fiber = db.Column(db.Float)
-    sugar = db.Column(db.Float)
-    sodium = db.Column(db.Float)
-    serving_size = db.Column(db.Float)  # in grams
-    original_amount = db.Column(db.Float)
-    original_unit = db.Column(db.String(20))
-    quantity = db.Column(db.Float, default=1)
-    time_of_day = db.Column(db.String(20), nullable=False, default='snack')  # breakfast, lunch, dinner, snack
-    date = db.Column(db.Date, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class WaterLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)  # in cups (1 cup = 8 oz)
-    date = db.Column(db.Date, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class MoodLog(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    mood = db.Column(db.Integer, nullable=False)  # 1-5 scale
-    date = db.Column(db.Date, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class Note(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+# Database models are now imported from database.py
 
 class AIAnalysis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1430,16 +1370,26 @@ def search_food():
     
     # Check fallback database first for exact matches (instant)
     fallback_results = []
+    exact_matches = []
+    partial_matches = []
     query_lower = query.lower()
+    
     for food_key, food_data in COMMON_FOODS_DB.items():
-        if query_lower in food_key or food_key in query_lower:
-            fallback_results.append(food_data)
+        if query_lower == food_key.lower():
+            # Exact match - highest priority
+            exact_matches.append(food_data)
+        elif query_lower in food_key.lower() or food_key.lower() in query_lower:
+            # Partial match - lower priority
+            partial_matches.append(food_data)
+    
+    # Combine results with exact matches first
+    fallback_results = exact_matches + partial_matches
     
     # If we have good fallback results, return them immediately
     if len(fallback_results) >= 3:
         result = fallback_results[:8]
         food_search_cache[cache_key] = (result, current_time)
-        return jsonify({'success': True, 'results': result, 'fast': True})
+        return jsonify({'success': True, 'results': result, 'fast': True, 'exact_matches': len(exact_matches)})
     
     # Determine if this is a basic food
     is_basic_food = any(basic_food in query.lower() for basic_food in BASIC_FOODS)
@@ -1474,9 +1424,17 @@ def search_food():
     # Combine results (fallback first, then USDA, then Open Food Facts)
     combined_results = fallback_results + usda_results + openfoodfacts_results
     
-    # Remove duplicates based on name
+    # Remove duplicates based on name, but prioritize generic foods
     unique_results = []
     seen_names = set()
+    
+    # First, add all fallback results (generic foods)
+    for result in fallback_results:
+        if result['name'] not in seen_names:
+            unique_results.append(result)
+            seen_names.add(result['name'])
+    
+    # Then add API results, avoiding duplicates
     for result in combined_results:
         if result['name'] not in seen_names:
             unique_results.append(result)
@@ -2072,6 +2030,16 @@ def stripe_webhook():
             db.session.commit()
     
     return '', 200
+
+# Register recipe blueprint
+app.register_blueprint(recipe_bp)
+
+# Recipe page route
+@app.route('/recipes')
+@login_required
+def recipes():
+    """Recipe management page"""
+    return render_template('recipes/recipes.html', current_user_id=current_user.id)
 
 if __name__ == '__main__':
     with app.app_context():

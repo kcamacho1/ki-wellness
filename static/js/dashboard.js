@@ -371,8 +371,8 @@ class DashboardManager {
     updateMoodDisplay(moodLogs) {
         if (moodLogs.length > 0) {
             const latestMood = moodLogs[moodLogs.length - 1].mood;
-            const moodEmojis = ['😢', '😕', '😐', '😊', '😄'];
-            const moodTexts = ['Terrible', 'Bad', 'Okay', 'Good', 'Excellent'];
+            const moodEmojis = ['😢', '😐', '🙂', '😀', '😊'];
+            const moodTexts = ['Terrible', 'Okay', 'Good', 'Great', 'Excellent'];
             
             const moodEmojiElement = document.getElementById('current-mood');
             const moodTextElement = document.getElementById('mood-text');
@@ -1297,6 +1297,38 @@ function addWater(cups) {
         console.error('Error logging water:', error);
         showToast('Failed to log water intake', 'error');
     });
+}
+
+function setMood(emoji, moodText) {
+    // Update the visual display
+    document.getElementById('current-mood').textContent = emoji;
+    document.getElementById('mood-text').textContent = moodText;
+    
+    // Map mood text to numeric value (1-5 scale)
+    const moodMap = {
+        'Terrible': 1,
+        'Okay': 2,
+        'Good': 3,
+        'Great': 4,
+        'Excellent': 5
+    };
+    
+    const moodValue = moodMap[moodText];
+    if (moodValue) {
+        // Log the mood to the server
+        logMood(moodValue);
+        
+        // Add visual feedback to the selected button
+        const moodButtons = document.querySelectorAll('.mood-btn');
+        moodButtons.forEach(btn => {
+            btn.classList.remove('bg-ki-green-100', 'border-ki-green-300');
+            btn.classList.add('hover:bg-gray-100');
+        });
+        
+        // Highlight the selected button
+        event.target.closest('.mood-btn').classList.add('bg-ki-green-100', 'border-ki-green-300');
+        event.target.closest('.mood-btn').classList.remove('hover:bg-gray-100');
+    }
 }
 
 function logMood(mood) {
