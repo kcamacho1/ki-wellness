@@ -777,74 +777,34 @@ class DashboardManager {
 
     async startBarcodeScanner() {
         try {
-            // First, check if camera permissions are available
+            // Check if camera permissions are available
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('Camera access not supported in this browser');
             }
 
-            // Request camera permissions first
-            console.log('Requesting camera permissions...');
-            try {
-                const permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // Stop this test stream immediately
-                permissionStream.getTracks().forEach(track => track.stop());
-                console.log('Camera permissions granted');
-            } catch (permissionError) {
-                console.log('Camera permission request failed:', permissionError);
-                throw new Error('Camera access denied. Please allow camera permissions in your browser settings and try again.');
-            }
-
-            // Try to get available video devices
-            let devices = [];
-            let videoDevices = [];
+            // Check if we're on a mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            try {
-                devices = await navigator.mediaDevices.enumerateDevices();
-                videoDevices = devices.filter(device => device.kind === 'videoinput');
-                console.log('Available video devices:', videoDevices);
-            } catch (enumError) {
-                console.log('Could not enumerate devices, trying direct camera access:', enumError);
-                // If enumeration fails, we'll try direct camera access
+            // Mobile-optimized camera constraints
+            const constraints = {
+                video: {
+                    facingMode: 'environment', // Use rear camera on mobile
+                    width: { ideal: isMobile ? 1280 : 1920, min: 640 },
+                    height: { ideal: isMobile ? 720 : 1080, min: 480 },
+                    aspectRatio: { ideal: 16/9 }
+                }
+            };
+
+            // On mobile, ensure we don't have multiple camera requests
+            if (this.stream) {
+                this.stopBarcodeScanner();
+                // Small delay to ensure previous stream is fully closed
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            // Try different camera configurations
-            let stream = null;
-            const cameraConfigs = [
-                { video: { facingMode: 'environment' } },  // Rear camera
-                { video: { facingMode: 'user' } },        // Front camera
-                { video: true },                          // Any camera
-            ];
+            console.log('Requesting camera access...');
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             
-            // Add device-specific configs if we have device info
-            if (videoDevices.length > 0) {
-                cameraConfigs.push({ video: { deviceId: videoDevices[0].deviceId } });
-            }
-
-            for (const config of cameraConfigs) {
-                try {
-                    console.log('Trying camera config:', config);
-                    stream = await navigator.mediaDevices.getUserMedia(config);
-                    console.log('Camera access granted with config:', config);
-                    break;
-                } catch (configError) {
-                    console.log('Camera config failed:', config, configError);
-                    continue;
-                }
-            }
-
-            if (!stream) {
-                // If we couldn't get any camera, try one more time with basic config
-                try {
-                    console.log('Trying basic camera access as last resort...');
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    console.log('Basic camera access succeeded');
-                } catch (finalError) {
-                    console.error('All camera access attempts failed:', finalError);
-                    throw new Error('Could not access any camera. Please check camera permissions and ensure no other apps are using the camera.');
-                }
-            }
-
-            this.stream = stream;
             const video = document.getElementById('barcode-video');
             video.srcObject = this.stream;
             
@@ -856,6 +816,7 @@ class DashboardManager {
                 };
             });
             
+            // Show scanner UI
             document.getElementById('barcode-scanner-container').classList.remove('hidden');
             document.getElementById('start-barcode-scanner').classList.add('hidden');
             
@@ -876,14 +837,6 @@ class DashboardManager {
                 errorMessage = 'Camera is in use by another application. Please close other camera apps.';
             } else if (error.message) {
                 errorMessage = error.message;
-            }
-            
-            // Add helpful instructions for camera permissions
-            if (error.name === 'NotAllowedError' || error.message.includes('permissions')) {
-                errorMessage += '\n\nTo enable camera access:\n' +
-                    '• Click the camera icon in your browser\'s address bar\n' +
-                    '• Select "Allow" for camera access\n' +
-                    '• Refresh the page and try again';
             }
             
             showToast(errorMessage, 'error');
@@ -928,35 +881,36 @@ class DashboardManager {
             return;
         }
         
-        // Configure QuaggaJS
+        // Configure QuaggaJS with mobile-optimized settings
         Quagga.init({
             inputStream: {
                 name: "Live",
                 type: "LiveStream",
                 target: video,
                 constraints: {
-                    width: { min: 640 },
-                    height: { min: 480 },
-                    facingMode: "environment" // Use rear camera
+                    width: { min: 640, ideal: 1280 },
+                    height: { min: 480, ideal: 720 },
+                    facingMode: "environment", // Use rear camera
+                    aspectRatio: { min: 1, max: 2 }
                 },
             },
             locator: {
                 patchSize: "medium",
                 halfSample: true
             },
-            numOfWorkers: 2,
+            numOfWorkers: navigator.hardwareConcurrency || 2, // Use available CPU cores
             frequency: 10,
             decoder: {
                 readers: [
-                    "code_128_reader",
-                    "ean_reader",
-                    "ean_8_reader",
-                    "code_39_reader",
-                    "code_39_vin_reader",
-                    "codabar_reader",
-                    "upc_reader",
-                    "upc_e_reader",
-                    "i2of5_reader"
+                    "ean_reader",        // Most common for food products
+                    "ean_8_reader",      // Shorter EAN codes
+                    "upc_reader",        // Universal Product Code
+                    "upc_e_reader",      // UPC-E format
+                    "code_128_reader",   // Code 128
+                    "code_39_reader",    // Code 39
+                    "code_39_vin_reader", // Code 39 VIN
+                    "codabar_reader",    // Codabar
+                    "i2of5_reader"       // Interleaved 2 of 5
                 ]
             },
             locate: true
@@ -974,19 +928,27 @@ class DashboardManager {
             this.updateScanningIndicator();
         });
         
-        // Listen for barcode detection
+        // Listen for barcode detection with improved error handling
         Quagga.onDetected((result) => {
             const code = result.codeResult.code;
-            console.log('Barcode detected:', code);
+            const format = result.codeResult.format;
+            console.log('Barcode detected:', code, 'Format:', format);
             
-            // Stop scanning and search for the product
-            this.stopBarcodeScanner();
-            this.searchBarcodeByCode(code);
+            // Validate barcode format and length
+            if (this.isValidBarcode(code, format)) {
+                // Stop scanning and search for the product
+                this.stopBarcodeScanner();
+                this.searchBarcodeByCode(code);
+            } else {
+                console.log('Invalid barcode format, continuing scan...');
+            }
         });
         
-        // Listen for processing
+        // Listen for processing with improved visual feedback
         Quagga.onProcessed((result) => {
             const drawingCanvas = Quagga.canvas.dom.overlay;
+            if (!drawingCanvas) return;
+            
             const drawingCtx = drawingCanvas.getContext('2d');
             
             if (result) {
@@ -1006,6 +968,33 @@ class DashboardManager {
                 }
             }
         });
+    }
+    
+    isValidBarcode(code, format) {
+        if (!code || code.length < 8) return false;
+        
+        // Common barcode formats and their expected lengths
+        const formatLengths = {
+            'ean_13': 13,
+            'ean_8': 8,
+            'upc_a': 12,
+            'upc_e': 8,
+            'code_128': { min: 8, max: 50 },
+            'code_39': { min: 8, max: 50 }
+        };
+        
+        // Check if format matches expected length
+        if (formatLengths[format]) {
+            const expected = formatLengths[format];
+            if (typeof expected === 'number') {
+                return code.length === expected;
+            } else {
+                return code.length >= expected.min && code.length <= expected.max;
+            }
+        }
+        
+        // Default validation for unknown formats
+        return code.length >= 8 && code.length <= 50;
     }
     
     updateScanningIndicator() {

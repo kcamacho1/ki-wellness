@@ -1450,34 +1450,101 @@ def search_food():
 @app.route('/api/product/<barcode>')
 @login_required
 def get_product(barcode):
+    """Get product information from Open Food Facts API"""
     try:
-        url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
-        response = requests.get(url, timeout=10)
+        # Clean and validate barcode
+        barcode = str(barcode).strip()
+        if not barcode or len(barcode) < 8:
+            return jsonify({'success': False, 'message': 'Invalid barcode format'})
+        
+        # Use the newer API endpoint for better reliability
+        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+        headers = {
+            'User-Agent': 'KiWellness/1.0 (https://kiwellness.org)',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         data = response.json()
         
-        if data.get('status') == 1:
+        if data.get('status') == 1 and data.get('product'):
             product = data['product']
             nutriments = product.get('nutriments', {})
             
+            # Extract product information with fallbacks
             result = {
-                'name': product.get('product_name', 'Unknown Product'),
-                'brand': product.get('brands', 'Unknown Brand'),
-                'calories': nutriments.get('energy-kcal_100g', 0),
-                'protein': nutriments.get('proteins_100g', 0),
-                'carbs': nutriments.get('carbohydrates_100g', 0),
-                'fat': nutriments.get('fat_100g', 0),
-                'fiber': nutriments.get('fiber_100g', 0),
-                'sugar': nutriments.get('sugars_100g', 0),
-                'sodium': nutriments.get('sodium_100g', 0),
-                'source': 'openfoodfacts'
+                'name': product.get('product_name') or product.get('generic_name') or 'Unknown Product',
+                'brand': product.get('brands') or product.get('brand_owner') or 'Unknown Brand',
+                'calories': float(nutriments.get('energy-kcal_100g', 0) or 0),
+                'protein': float(nutriments.get('proteins_100g', 0) or 0),
+                'carbs': float(nutriments.get('carbohydrates_100g', 0) or 0),
+                'fat': float(nutriments.get('fat_100g', 0) or 0),
+                'fiber': float(nutriments.get('fiber_100g', 0) or 0),
+                'sugar': float(nutriments.get('sugars_100g', 0) or 0),
+                'sodium': float(nutriments.get('sodium_100g', 0) or 0),
+                'source': 'openfoodfacts',
+                'barcode': barcode,
+                'image_url': product.get('image_front_url') or product.get('image_url'),
+                'ingredients': product.get('ingredients_text'),
+                'allergens': product.get('allergens_tags', []),
+                'nutrition_grade': product.get('nutrition_grade_fr') or product.get('nutrition_grade'),
+                'nova_group': product.get('nova_group'),
+                'ecoscore_grade': product.get('ecoscore_grade')
             }
+            
+            # Validate that we have at least basic nutritional info
+            if result['calories'] == 0 and result['protein'] == 0 and result['carbs'] == 0 and result['fat'] == 0:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Product found but no nutritional information available',
+                    'product_name': result['name'],
+                    'barcode': barcode
+                })
             
             return jsonify({'success': True, 'product': result})
         else:
-            return jsonify({'success': False, 'message': 'Product not found'})
+            # Try alternative API endpoint for better coverage
+            alt_url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+            alt_response = requests.get(alt_url, headers=headers, timeout=15)
+            
+            if alt_response.status_code == 200:
+                alt_data = alt_response.json()
+                if alt_data.get('status') == 1 and alt_data.get('product'):
+                    product = alt_data['product']
+                    nutriments = product.get('nutriments', {})
+                    
+                    result = {
+                        'name': product.get('product_name') or product.get('generic_name') or 'Unknown Product',
+                        'brand': product.get('brands') or 'Unknown Brand',
+                        'calories': float(nutriments.get('energy-kcal_100g', 0) or 0),
+                        'protein': float(nutriments.get('proteins_100g', 0) or 0),
+                        'carbs': float(nutriments.get('carbohydrates_100g', 0) or 0),
+                        'fat': float(nutriments.get('fat_100g', 0) or 0),
+                        'fiber': float(nutriments.get('fiber_100g', 0) or 0),
+                        'sugar': float(nutriments.get('sugars_100g', 0) or 0),
+                        'sodium': float(nutriments.get('sodium_100g', 0) or 0),
+                        'source': 'openfoodfacts_alt',
+                        'barcode': barcode
+                    }
+                    
+                    if result['calories'] > 0 or result['protein'] > 0 or result['carbs'] > 0 or result['fat'] > 0:
+                        return jsonify({'success': True, 'product': result})
+            
+            return jsonify({
+                'success': False, 
+                'message': 'Product not found in database',
+                'barcode': barcode,
+                'suggestion': 'Try searching manually or check the barcode number'
+            })
+            
+    except requests.exceptions.Timeout:
+        return jsonify({'success': False, 'message': 'Request timeout - please try again'})
+    except requests.exceptions.RequestException as e:
+        return jsonify({'success': False, 'message': f'Network error: {str(e)}'})
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        print(f"Error fetching product {barcode}: {e}")
+        return jsonify({'success': False, 'message': 'Failed to fetch product information'})
 
 @app.route('/api/food-log', methods=['POST'])
 @login_required
