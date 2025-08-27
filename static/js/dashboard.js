@@ -69,6 +69,12 @@ class DashboardManager {
         document.getElementById('cancel-move').addEventListener('click', () => this.closeMoveModal());
         document.getElementById('confirm-move').addEventListener('click', () => this.confirmMoveFood());
         document.getElementById('move-use-current-date').addEventListener('click', () => this.setCurrentDate('move-date'));
+
+        // Copy modal controls
+        document.getElementById('close-copy-modal').addEventListener('click', () => this.closeCopyModal());
+        document.getElementById('cancel-copy').addEventListener('click', () => this.closeCopyModal());
+        document.getElementById('confirm-copy').addEventListener('click', () => this.confirmCopyFood());
+        document.getElementById('copy-use-current-date').addEventListener('click', () => this.setCurrentDate('copy-date'));
     }
 
     initTabs() {
@@ -429,6 +435,11 @@ class DashboardManager {
                         </p>
                     </div>
                     <div class="flex items-center space-x-1">
+                        <button onclick="dashboardManager.copyFoodItem(${log.id})" class="text-gray-400 hover:text-green-500 p-1 sm:p-2 hover:bg-green-50 rounded-lg transition-colors" title="Copy to another date">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
                         <button onclick="dashboardManager.editFoodItem(${log.id}, '${log.name}', '${log.date}', '${log.time_of_day || 'snack'}')" class="text-gray-400 hover:text-blue-500 p-1 sm:p-2 hover:bg-blue-50 rounded-lg transition-colors" title="Edit food item">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -1146,6 +1157,74 @@ class DashboardManager {
         } catch (error) {
             console.error('Error updating food item:', error);
             showToast('Failed to update food item', 'error');
+        }
+    }
+
+    copyFoodItem(foodId) {
+        this.copyingFoodId = foodId;
+        
+        // Get the food item details from the DOM
+        const foodItem = document.querySelector(`[onclick*="copyFoodItem(${foodId})"]`).closest('.food-log-item');
+        const foodName = foodItem.querySelector('h4').textContent;
+        
+        this.copyingFoodName = foodName;
+        
+        // Set the copy modal content
+        document.getElementById('copy-food-name').textContent = foodName;
+        
+        // Set the copy date to the current dashboard date by default
+        const copyDateInput = document.getElementById('copy-date');
+        copyDateInput.value = this.currentDate.toISOString().split('T')[0];
+        
+        // Set the time of day to snack by default
+        const copyTimeOfDayInput = document.getElementById('copy-time-of-day');
+        copyTimeOfDayInput.value = 'snack';
+        
+        // Show the copy modal
+        document.getElementById('copy-food-modal').classList.remove('hidden');
+    }
+
+    closeCopyModal() {
+        document.getElementById('copy-food-modal').classList.add('hidden');
+        this.copyingFoodId = null;
+        this.copyingFoodName = null;
+    }
+
+    async confirmCopyFood() {
+        if (!this.copyingFoodId) return;
+
+        const targetDate = document.getElementById('copy-date').value;
+        const targetTimeOfDay = document.getElementById('copy-time-of-day').value;
+        
+        if (!targetDate) {
+            showToast('Please select a target date', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/food-log/${this.copyingFoodId}/copy`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    target_date: targetDate,
+                    time_of_day: targetTimeOfDay
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                const targetDateObj = new Date(targetDate);
+                const dateStr = targetDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                showToast(`Food copied to ${dateStr} as ${targetTimeOfDay}`, 'success');
+                this.closeCopyModal();
+                this.loadDashboardData();
+            } else {
+                showToast(data.message || 'Failed to copy food item', 'error');
+            }
+        } catch (error) {
+            console.error('Error copying food item:', error);
+            showToast('Failed to copy food item', 'error');
         }
     }
 

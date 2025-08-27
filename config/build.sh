@@ -11,9 +11,15 @@ python --version
 echo "⬆️ Upgrading pip..."
 pip install --upgrade pip
 
-# Install dependencies
+# Install dependencies with retry logic
 echo "📦 Installing dependencies..."
-pip install -r requirements.txt
+pip install -r requirements.txt --no-cache-dir
+
+# Check if installation was successful
+if [ $? -ne 0 ]; then
+    echo "❌ Dependency installation failed. Trying with --force-reinstall..."
+    pip install -r requirements.txt --force-reinstall --no-cache-dir
+fi
 
 # Run database migrations
 echo "🗄️ Running database migrations..."

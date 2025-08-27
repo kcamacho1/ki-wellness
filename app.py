@@ -2424,6 +2424,57 @@ def edit_food_log(food_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': 'Failed to update food item'})
 
+@app.route('/api/food-log/<int:food_id>/copy', methods=['POST'])
+@login_required
+def copy_food_log(food_id):
+    """Copy a food log item to a new date"""
+    food_log = FoodLog.query.filter_by(id=food_id, user_id=current_user.id).first()
+    
+    if not food_log:
+        return jsonify({'success': False, 'message': 'Food log not found'})
+    
+    data = request.get_json()
+    target_date = data.get('target_date')
+    time_of_day = data.get('time_of_day', 'snack')
+    
+    if not target_date:
+        return jsonify({'success': False, 'message': 'Target date is required'})
+    
+    try:
+        # Convert string date to date object
+        target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
+        
+        # Create a new food log entry with the same data but new date and time
+        new_food_log = FoodLog(
+            user_id=current_user.id,
+            name=food_log.name,
+            brand=food_log.brand,
+            calories=food_log.calories,
+            protein=food_log.protein,
+            carbs=food_log.carbs,
+            fat=food_log.fat,
+            fiber=food_log.fiber,
+            sugar=food_log.sugar,
+            sodium=food_log.sodium,
+            serving_size=food_log.serving_size,
+            original_amount=food_log.original_amount,
+            original_unit=food_log.original_unit,
+            quantity=food_log.quantity,
+            date=target_date_obj,
+            time_of_day=time_of_day
+        )
+        
+        db.session.add(new_food_log)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Food item copied successfully'})
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid date format'})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error copying food item: {e}")
+        return jsonify({'success': False, 'message': 'Failed to copy food item'})
+
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
