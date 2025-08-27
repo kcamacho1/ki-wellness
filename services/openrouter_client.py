@@ -145,6 +145,7 @@ class OpenRouterClient:
                     models_to_try.append(fallback)
         
         # Try each model until one works
+        last_error = None
         for model_to_try in models_to_try:
             try:
                 print(f"🔄 Trying model: {model_to_try}")
@@ -163,11 +164,12 @@ class OpenRouterClient:
                     raise Exception("No response content in API response")
                     
             except Exception as e:
-                print(f"❌ Failed with model {model_to_try}: {str(e)}")
+                last_error = str(e)
+                print(f"❌ Failed with model {model_to_try}: {last_error}")
                 continue
         
         # If all models failed
-        raise Exception(f"All models failed. Last error: {str(e)}")
+        raise Exception(f"All models failed. Last error: {last_error}")
     
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
@@ -221,11 +223,18 @@ class OpenRouterClient:
         try:
             model_info = self.get_model_info(model)
             if not model_info:
-                return {"input": float('inf'), "output": float('inf')}
+                # Return safe default values instead of infinity
+                return {"input": 0.20, "output": 0.80, "model": model}
             
             pricing = model_info.get('pricing', {})
-            input_price = pricing.get('input', float('inf'))
-            output_price = pricing.get('output', float('inf'))
+            input_price = pricing.get('input', 0.20)
+            output_price = pricing.get('output', 0.80)
+            
+            # Ensure we don't return infinity values
+            if input_price == float('inf') or input_price is None:
+                input_price = 0.20
+            if output_price == float('inf') or output_price is None:
+                output_price = 0.80
             
             return {
                 "input": input_price,
@@ -234,7 +243,8 @@ class OpenRouterClient:
             }
         except Exception as e:
             print(f"❌ Error getting pricing for {model}: {e}")
-            return {"input": float('inf'), "output": float('inf'), "model": model}
+            # Return safe default values instead of infinity
+            return {"input": 0.20, "output": 0.80, "model": model}
 
     def select_cost_effective_model(self, max_input_cost: float = 0.20, max_output_cost: float = 0.80) -> str:
         """Select the most cost-effective model within budget constraints"""

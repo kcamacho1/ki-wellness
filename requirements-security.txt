@@ -1,0 +1,22 @@
+# Security Dependencies for KI Wellness App
+# Install with: pip install -r requirements-security.txt
+
+# HTTP requests for reCAPTCHA verification
+requests>=2.28.0
+
+# System monitoring (optional but recommended)
+psutil>=5.9.0
+
+# Additional security packages (optional)
+cryptography>=3.4.8
+bcrypt>=3.2.0
+
+# Rate limiting and caching (optional, for production)
+redis>=4.0.0
+Flask-Limiter>=3.3.0
+
+# Web application firewall (optional, for production)
+modsecurity>=3.0.0
+
+# Note: Most security features work with standard Python libraries
+# These are optional enhancements for production environments

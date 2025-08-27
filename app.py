@@ -34,6 +34,11 @@ from services.stripe_client import get_stripe_client
 # Import analytics service
 from services.analytics_service import analytics_service
 
+# Import security modules
+from security_middleware import SecurityMiddleware, rate_limit, sanitize_input
+from database_security import validate_user_input, sanitize_user_input, create_safe_query
+from services.recaptcha_service import recaptcha_service, require_recaptcha, get_recaptcha_site_key
+
 def premium_required(f):
     """Decorator to require premium subscription or special role access"""
     @wraps(f)
@@ -142,6 +147,10 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Initialize security middleware
+security_middleware = SecurityMiddleware(app)
+security_middleware.init_app(app)
 
 # API Configuration
 OPENFOODFACTS_API = "https://world.openfoodfacts.org/cgi/search.pl"
@@ -559,10 +568,24 @@ def index():
     return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
+@rate_limit(max_requests=10, window=60)  # Limit login attempts
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        # Validate and sanitize inputs
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        # Input validation
+        if not validate_user_input(username, max_length=50):
+            flash('Invalid username format', 'error')
+            return render_template('login.html')
+            
+        if not validate_user_input(password, max_length=100):
+            flash('Invalid password format', 'error')
+            return render_template('login.html')
+        
+        # Sanitize inputs
+        username = sanitize_user_input(username, max_length=50)
         
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
@@ -575,6 +598,8 @@ def login():
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
+@rate_limit(max_requests=5, window=300)  # Limit registration attempts
+@require_recaptcha  # Require reCAPTCHA for registration
 def register():
     # Check if new account creation is enabled
     new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true').lower() == 'true'
@@ -585,7 +610,7 @@ def register():
     registration_disabled = not new_accounts_enabled
     
     if request.method == 'POST':
-        email = request.form.get('email', '').lower()
+        email = request.form.get('email', '').lower().strip()
         
         # Check if registration is disabled and email is not in allowed list
         if not new_accounts_enabled and email not in allowed_emails:
@@ -593,10 +618,33 @@ def register():
             return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
     
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        name = request.form.get('name')
-        password = request.form.get('password')
+        # Validate and sanitize all inputs
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        name = request.form.get('name', '').strip()
+        password = request.form.get('password', '')
+        
+        # Input validation
+        if not validate_user_input(username, max_length=50):
+            flash('Invalid username format', 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+            
+        if not validate_user_input(email, max_length=120):
+            flash('Invalid email format', 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+            
+        if not validate_user_input(name, max_length=100):
+            flash('Invalid name format', 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+            
+        if not validate_user_input(password, max_length=100):
+            flash('Invalid password format', 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+        
+        # Sanitize inputs
+        username = sanitize_user_input(username, max_length=50)
+        email = sanitize_user_input(email, max_length=120)
+        name = sanitize_user_input(name, max_length=100)
         
         # Validate password strength
         is_valid_password, password_error = validate_password_strength(password)
@@ -648,7 +696,10 @@ def register():
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
     
-    return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+    return render_template('register.html', 
+                         registration_disabled=registration_disabled, 
+                         allowed_emails=allowed_emails,
+                         recaptcha_site_key=get_recaptcha_site_key())
 
 @app.route('/logout')
 @login_required
@@ -1026,7 +1077,57 @@ def admin_payments():
 @admin_required
 def admin_system():
     """Admin system information page"""
-    return render_template('admin_system.html')
+    try:
+        # Get system information
+        import psutil
+        import platform
+        
+        # CPU and memory usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        # System info
+        system_info = {
+            'platform': platform.system(),
+            'platform_version': platform.version(),
+            'python_version': platform.python_version(),
+            'cpu_count': psutil.cpu_count(),
+            'cpu_percent': cpu_percent,
+            'memory_total': memory.total,
+            'memory_available': memory.available,
+            'memory_percent': memory.percent,
+            'disk_total': disk.total,
+            'disk_used': disk.used,
+            'disk_percent': disk.percent
+        }
+        
+        # Get security statistics
+        security_stats = {
+            'blocked_ips': len(security_middleware.bot_signatures['blocked_ips']),
+            'suspicious_ips': len(security_middleware.bot_signatures['suspicious_ips']),
+            'recaptcha_configured': recaptcha_service.is_configured(),
+            'rate_limit_violations': sum(1 for ip_data in security_middleware.rate_limit_db.values() 
+                                       if len(ip_data['requests']) > 50)
+        }
+        
+        return render_template('admin_system.html', system_info=system_info, security_stats=security_stats)
+        
+    except ImportError:
+        # psutil not available
+        system_info = {
+            'error': 'System monitoring not available (psutil not installed)'
+        }
+        security_stats = {
+            'blocked_ips': len(security_middleware.bot_signatures['blocked_ips']),
+            'suspicious_ips': len(security_middleware.bot_signatures['suspicious_ips']),
+            'recaptcha_configured': recaptcha_service.is_configured(),
+            'rate_limit_violations': 0
+        }
+        return render_template('admin_system.html', system_info=system_info, security_stats=security_stats)
+    except Exception as e:
+        print(f"❌ Error getting system info: {e}")
+        return render_template('admin_system.html', system_info={'error': str(e)}, security_stats={})
 
 @app.route('/api/admin/users')
 @admin_required
@@ -1123,6 +1224,64 @@ def update_user_role():
         
     except Exception as e:
         print(f"❌ Error updating user role: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/security-stats')
+@admin_required
+def get_security_stats():
+    """Get security statistics for admin dashboard"""
+    try:
+        # Get security statistics
+        security_stats = {
+            'blocked_ips': list(security_middleware.bot_signatures['blocked_ips']),
+            'suspicious_ips': list(security_middleware.bot_signatures['suspicious_ips']),
+            'recaptcha_configured': recaptcha_service.is_configured(),
+            'recaptcha_site_key': get_recaptcha_site_key() if recaptcha_service.is_configured() else None,
+            'rate_limit_data': {
+                ip: {
+                    'requests_count': len(data['requests']),
+                    'last_request': data['last_request']
+                }
+                for ip, data in security_middleware.rate_limit_db.items()
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'security_stats': security_stats
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting security stats: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/unblock-ip', methods=['POST'])
+@admin_required
+def unblock_ip():
+    """Unblock a previously blocked IP address"""
+    try:
+        data = request.get_json()
+        ip_address = data.get('ip_address')
+        
+        if not ip_address:
+            return jsonify({'success': False, 'error': 'IP address is required'}), 400
+        
+        # Remove from blocked IPs
+        with security_middleware.lock:
+            if ip_address in security_middleware.bot_signatures['blocked_ips']:
+                security_middleware.bot_signatures['blocked_ips'].remove(ip_address)
+                
+        # Also remove from rate limit tracking
+        if ip_address in security_middleware.rate_limit_db:
+            del security_middleware.rate_limit_db[ip_address]
+        
+        return jsonify({
+            'success': True,
+            'message': f'IP address {ip_address} has been unblocked'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error unblocking IP: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # OpenRouter model configuration
@@ -1559,6 +1718,7 @@ def get_user_summary():
 
 @app.route('/api/ai-chat', methods=['POST'])
 @premium_required
+@rate_limit(max_requests=30, window=60)  # Limit AI chat requests
 def ai_chat():
     try:
         # Check AI usage limits before processing request
@@ -1571,10 +1731,27 @@ def ai_chat():
             }), 429  # Too Many Requests
         
         data = request.get_json()
-        message = data.get('message')
+        if not data:
+            return jsonify({'success': False, 'error': 'Invalid request data'}), 400
+            
+        message = data.get('message', '').strip()
         context = data.get('context', {})
         context_type = data.get('context_type', 'minimal')
         chat_history = data.get('chat_history', [])
+        
+        # Input validation and sanitization
+        if not validate_user_input(message, max_length=1000):
+            return jsonify({'success': False, 'error': 'Invalid message format'}), 400
+            
+        if not validate_user_input(context_type, max_length=50):
+            return jsonify({'success': False, 'error': 'Invalid context type'}), 400
+            
+        if not validate_user_input(chat_history, max_length=1000):
+            return jsonify({'success': False, 'error': 'Invalid chat history'}), 400
+        
+        # Sanitize inputs
+        message = sanitize_user_input(message, max_length=1000)
+        context_type = sanitize_user_input(context_type, max_length=50)
         
         print(f"AI Chat Request - Message: {message}")
         print(f"AI Chat Request - Context Type: {context_type}")
@@ -1614,6 +1791,12 @@ def ai_chat():
                 model_pricing = client.get_model_pricing(OPENROUTER_MODEL)
                 input_cost = (estimated_input_tokens / 1000000) * model_pricing.get('input', 0.20)
                 output_cost = (estimated_output_tokens / 1000000) * model_pricing.get('output', 0.80)
+                
+                # Safety check: ensure costs are finite values
+                if not (isinstance(input_cost, (int, float)) and input_cost != float('inf') and input_cost != float('-inf')):
+                    input_cost = 0.0
+                if not (isinstance(output_cost, (int, float)) and output_cost != float('inf') and output_cost != float('-inf')):
+                    output_cost = 0.0
                 
                 analytics_service.log_ai_usage(
                     user_id=current_user.id,
@@ -1675,49 +1858,37 @@ def _create_optimized_prompt(message, context, context_type, chat_history):
         profile_name = 'User'
     
     # Start with a concise base prompt
-    base_prompt = f"You are a supportive AI Health Coach for {profile_name}. Keep responses short, helpful, and actionable.\n\nQuestion: {message}\n\n"
+    base_prompt = f"AI Health Coach for {profile_name}. Keep responses short and actionable.\n\nQ: {message}\n\n"
     
-    # Add only relevant context based on the specific question
+    # Add only essential context based on the specific question
     relevant_context = _extract_relevant_context(message, context, context_type)
-    if relevant_context:
-        base_prompt += f"Relevant Data: {relevant_context}\n"
+    if relevant_context and len(relevant_context) < 100:  # Only add if context is concise
+        base_prompt += f"Context: {relevant_context}\n"
         print(f"Extracted relevant context: {relevant_context}")
-    else:
-        print("No relevant context extracted")
     
-    # Add relevant resources
+    # Add only 1-2 most relevant resources to save space
     resources = get_relevant_resources(context_type, _determine_topic(message))
     if resources:
-        base_prompt += format_resources_for_prompt(resources)
-        print(f"Added {len(resources)} relevant resources")
+        # Limit to 2 most relevant resources
+        limited_resources = resources[:2]
+        base_prompt += format_resources_for_prompt(limited_resources)
+        print(f"Added {len(limited_resources)} relevant resources")
     
-    base_prompt += """Provide a short, helpful response (max 2-3 sentences) and include relevant links. Format your response as:
+    base_prompt += """Provide a short, helpful response (max 2-3 sentences) with relevant links. Format:
     
     [Your helpful response here]
     
-    📚 Helpful Resources:
+    📚 Resources:
     - [Link 1: Brief description]
     - [Link 2: Brief description]
     
-    Always include at least one link to our Medium blog (kiwellness.medium.com) when relevant, and cite authoritative health sources like Mayo Clinic, WebMD, or Harvard Health for medical advice."""
+    Include Medium blog (kiwellness.medium.com) when relevant."""
     
-    # Limit prompt size to prevent timeouts
-    if len(base_prompt) > 1000:
-        print(f"Warning: Prompt too large ({len(base_prompt)} chars), truncating...")
-        # Keep only essential parts
-        base_prompt = f"""You are a supportive AI Health Coach for {profile_name}. Keep responses short, helpful, and actionable.
-
-Question: {message}
-
-Provide a short, helpful response (max 2-3 sentences) and include relevant links. Format your response as:
-
-[Your helpful response here]
-
-📚 Helpful Resources:
-- [Link 1: Brief description]
-- [Link 2: Brief description]
-
-Always include at least one link to our Medium blog (kiwellness.medium.com) when relevant, and cite authoritative health sources like Mayo Clinic, WebMD, or Harvard Health for medical advice."""
+    # Proactive prompt size management
+    if len(base_prompt) > 800:  # Lower threshold for better optimization
+        print(f"Prompt too large ({len(base_prompt)} chars), optimizing...")
+        # Create ultra-concise version
+        base_prompt = f"AI Health Coach for {profile_name}. Q: {message}\n\nProvide short, helpful response with relevant links. Include Medium blog when relevant."
     
     print(f"Final prompt length: {len(base_prompt)} characters")
     return base_prompt
@@ -1830,8 +2001,10 @@ def _extract_relevant_context(message, context, context_type):
                     relevant_parts.append(f"common foods: {', '.join(common_foods)}")
                     
             else:
-                # Default food context
+                # Default food context - keep it concise
                 relevant_parts.append(f"Logged {food_data.get('total_entries', 0)} meals")
+                if food_data.get('avg_calories', 0) > 0:
+                    relevant_parts.append(f"avg {food_data.get('avg_calories', 0):.0f} cal/meal")
         
         # Mood-related questions
         elif context_type == 'mood' and context.get('mood_summary'):
@@ -1864,17 +2037,17 @@ def _extract_relevant_context(message, context, context_type):
                 avg_daily = water_data.get('avg_daily_water', 0)
                 relevant_parts.append(f"Daily avg: {avg_daily:.0f}ml")
                 if avg_daily < 2000:
-                    relevant_parts.append("(below recommended 2000ml)")
+                    relevant_parts.append("(below 2000ml)")
                 elif avg_daily > 3000:
-                    relevant_parts.append("(above recommended)")
+                    relevant_parts.append("(above 3000ml)")
                     
             elif any(word in message_lower for word in ['increase', 'more', 'boost']):
                 # For increasing water intake
                 current_avg = water_data.get('avg_daily_water', 0)
-                relevant_parts.append(f"Current daily avg: {current_avg:.0f}ml")
+                relevant_parts.append(f"Daily avg: {current_avg:.0f}ml")
                 
             else:
-                # Default water context
+                # Default water context - keep concise
                 relevant_parts.append(f"Daily avg: {water_data.get('avg_daily_water', 0):.0f}ml")
         
         # Analysis/pattern questions

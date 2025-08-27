@@ -37,15 +37,20 @@ class AnalyticsService:
             session_id = str(uuid.uuid4())
             
             # Create usage log entry
+            # Safety check: ensure costs are finite values before converting to Decimal
+            safe_input_cost = 0.0 if (isinstance(input_cost, (int, float)) and (input_cost == float('inf') or input_cost == float('-inf'))) else input_cost
+            safe_output_cost = 0.0 if (isinstance(output_cost, (int, float)) and (output_cost == float('inf') or output_cost == float('-inf'))) else output_cost
+            safe_total_cost = 0.0 if (isinstance(total_cost, (int, float)) and (total_cost == float('inf') or total_cost == float('-inf'))) else total_cost
+            
             usage_log = AIUsageLog(
                 user_id=user_id,
                 session_id=session_id,
                 model_used=model_used,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
-                input_cost=Decimal(str(input_cost)),
-                output_cost=Decimal(str(output_cost)),
-                total_cost=Decimal(str(total_cost)),
+                input_cost=Decimal(str(safe_input_cost)),
+                output_cost=Decimal(str(safe_output_cost)),
+                total_cost=Decimal(str(safe_total_cost)),
                 endpoint=endpoint,
                 response_time_ms=response_time_ms,
                 success=success,
