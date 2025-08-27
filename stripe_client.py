@@ -42,6 +42,10 @@ class StripeClient:
             return
             
         try:
+            # Ensure Stripe API key is set before proceeding
+            if not stripe.api_key:
+                stripe.api_key = self.api_key
+            
             # Verify Stripe is properly configured before proceeding
             if not hasattr(stripe, 'api_key') or not stripe.api_key:
                 print("⚠️ Stripe API key not configured")
@@ -250,33 +254,33 @@ class StripeClient:
             
             print(f"📨 Processing Stripe webhook: {event_type} (ID: {event_id})")
             
-        if event_type == 'customer.subscription.created':
-            return self.handle_subscription_created(event_data)
-        elif event_type == 'customer.subscription.updated':
-            return self.handle_subscription_updated(event_data)
-        elif event_type == 'customer.subscription.deleted':
-            return self.handle_subscription_deleted(event_data)
-        elif event_type == 'invoice.payment_succeeded':
-            return self.handle_payment_succeeded(event_data)
-        elif event_type == 'invoice.payment_failed':
-            return self.handle_payment_failed(event_data)
-        elif event_type == 'payment_intent.succeeded':
-            return self.handle_payment_intent_succeeded(event_data)
-        elif event_type == 'payment_intent.payment_failed':
-            return self.handle_payment_intent_failed(event_data)
-        elif event_type == 'customer.created':
-            return self.handle_customer_created(event_data)
-        elif event_type == 'customer.updated':
-            return self.handle_customer_updated(event_data)
-        elif event_type == 'charge.succeeded':
-            return self.handle_charge_succeeded(event_data)
-        elif event_type == 'charge.failed':
-            return self.handle_charge_failed(event_data)
-        elif event_type == 'charge.refunded':
-            return self.handle_charge_refunded(event_data)
-        else:
-            print(f"ℹ️ Unhandled webhook event type: {event_type}")
-            return {"status": "ignored", "reason": "unhandled_event_type"}
+            if event_type == 'customer.subscription.created':
+                return self.handle_subscription_created(event_data)
+            elif event_type == 'customer.subscription.updated':
+                return self.handle_subscription_updated(event_data)
+            elif event_type == 'customer.subscription.deleted':
+                return self.handle_subscription_deleted(event_data)
+            elif event_type == 'invoice.payment_succeeded':
+                return self.handle_payment_succeeded(event_data)
+            elif event_type == 'invoice.payment_failed':
+                return self.handle_payment_failed(event_data)
+            elif event_type == 'payment_intent.succeeded':
+                return self.handle_payment_intent_succeeded(event_data)
+            elif event_type == 'payment_intent.payment_failed':
+                return self.handle_payment_intent_failed(event_data)
+            elif event_type == 'customer.created':
+                return self.handle_customer_created(event_data)
+            elif event_type == 'customer.updated':
+                return self.handle_customer_updated(event_data)
+            elif event_type == 'charge.succeeded':
+                return self.handle_charge_succeeded(event_data)
+            elif event_type == 'charge.failed':
+                return self.handle_charge_failed(event_data)
+            elif event_type == 'charge.refunded':
+                return self.handle_charge_refunded(event_data)
+            else:
+                print(f"ℹ️ Unhandled webhook event type: {event_type}")
+                return {"status": "ignored", "reason": "unhandled_event_type"}
                 
         except Exception as e:
             print(f"❌ Error handling webhook event: {e}")
@@ -412,12 +416,32 @@ class StripeClient:
     
     def is_configured(self) -> bool:
         """Check if Stripe is properly configured"""
-        return (
+        # Basic configuration check - API key must be present
+        basic_config = (
             self.api_key is not None and 
             self.api_key.strip() != '' and
             hasattr(stripe, 'api_key') and 
-            stripe.api_key and
-            self._products_initialized
+            stripe.api_key
+        )
+        
+        # If basic config is not met, return False
+        if not basic_config:
+            return False
+        
+        # If products are initialized, we're fully configured
+        if self._products_initialized:
+            return True
+        
+        # If basic config is met but products aren't initialized yet,
+        # we can still work (products will be initialized when needed)
+        return True
+    
+    def is_payment_ready(self) -> bool:
+        """Check if Stripe is ready to process payments"""
+        return (
+            self.is_configured() and 
+            self._products_initialized and
+            self.premium_plan_price_id is not None
         )
 
 # Global Stripe client instance

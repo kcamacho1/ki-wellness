@@ -2148,11 +2148,11 @@ def create_checkout_session():
     try:
         stripe_client = get_stripe_client()
         
-        if not stripe_client or not stripe_client.is_configured():
+        if not stripe_client or not stripe_client.is_payment_ready():
             return jsonify({
                 'success': False, 
-                'error': 'Payment system not configured. Please check your Stripe API keys in the .env file.',
-                'details': 'STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are required for payment features.'
+                'error': 'Payment system not ready. Please check your Stripe configuration.',
+                'details': 'The payment system is initializing. Please try again in a moment.'
             }), 503
         
         # Get or create Stripe customer
@@ -2193,11 +2193,11 @@ def create_customer_portal_session():
             return jsonify({'success': False, 'error': 'No subscription found'})
         
         stripe_client = get_stripe_client()
-        if not stripe_client or not stripe_client.is_configured():
+        if not stripe_client or not stripe_client.is_payment_ready():
             return jsonify({
                 'success': False, 
-                'error': 'Payment system not configured. Please check your Stripe API keys in the .env file.',
-                'details': 'STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are required for payment features.'
+                'error': 'Payment system not ready. Please check your Stripe configuration.',
+                'details': 'The payment system is initializing. Please try again in a moment.'
             }), 503
         
         return_url = url_for('profile', _external=True)
@@ -2657,5 +2657,21 @@ if __name__ == '__main__':
         db.create_all()
         create_admin_user()
         initialize_app_settings()
+        
+        # Initialize Stripe products and prices
+        try:
+            from stripe_client import get_stripe_client
+            stripe_client = get_stripe_client()
+            if stripe_client:
+                print("🔧 Initializing Stripe products and prices...")
+                stripe_client.setup_products_and_prices()
+                if stripe_client.is_payment_ready():
+                    print("✅ Stripe payment system ready!")
+                else:
+                    print("⚠️ Stripe products setup incomplete")
+            else:
+                print("⚠️ Stripe client not available")
+        except Exception as e:
+            print(f"⚠️ Error initializing Stripe: {e}")
     
     app.run(debug=True)
