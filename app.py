@@ -14,11 +14,8 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
 
-# Import psycopg to ensure it's available
-try:
-    import psycopg
-except ImportError:
-    pass
+# Import psycopg only for production (PostgreSQL)
+# This is optional and won't break development with SQLite
 # OpenRouter import for AI chat
 from services.openrouter_client import get_openrouter_client, generate_ai_response
 # Stripe import removed - using Calendly and donation links instead
@@ -81,26 +78,27 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Database configuration
+# Database configuration - Hybrid approach
 db_url = os.getenv('DATABASE_URL')
-if db_url:
-    # Normalize old Heroku-style URLs
+is_production = bool(db_url and 'postgresql' in db_url)
+
+if is_production:
+    # Production - PostgreSQL
     if db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-else:
-    # Development - SQLite fallback
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Force SQLAlchemy to use psycopg dialect for PostgreSQL
-if db_url and 'postgresql' in db_url:
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'connect_args': {
             'connect_timeout': 10
         }
     }
+    print("🚀 Running in PRODUCTION mode with PostgreSQL")
+else:
+    # Development - SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
+    print("🛠️  Running in DEVELOPMENT mode with SQLite")
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # File upload configuration
 UPLOAD_FOLDER = 'static/uploads/profile_images'

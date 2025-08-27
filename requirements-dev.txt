@@ -1,3 +1,4 @@
+# Development requirements (SQLite only)
 # Core Flask dependencies
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
@@ -9,12 +10,6 @@ requests==2.31.0
 Werkzeug==2.3.7
 email-validator==2.0.0
 
-# Production dependencies (PostgreSQL)
-psycopg[binary]==3.2.9
-
-# Production server
-gunicorn==21.2.0
-
 # Document processing
 PyPDF2==3.0.1
 python-docx==0.8.11
@@ -22,3 +17,6 @@ lxml==5.1.0
 
 # Payment processing
 stripe==7.8.0
+
+# Development server (optional)
+# flask==2.3.3  # Uncomment if you want to use Flask's built-in server
