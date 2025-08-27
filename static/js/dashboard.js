@@ -24,6 +24,7 @@ class DashboardManager {
         document.getElementById('date-prev').addEventListener('click', () => this.changeDate(-1));
         document.getElementById('date-next').addEventListener('click', () => this.changeDate(1));
         document.getElementById('today-btn').addEventListener('click', () => this.goToToday());
+        document.getElementById('date-selector').addEventListener('change', (e) => this.selectDate(e.target.value));
 
         // Food search
         document.getElementById('search-btn').addEventListener('click', () => this.searchFood());
@@ -124,9 +125,25 @@ class DashboardManager {
     }
 
     updateDateDisplay() {
+        // Update the main date display in the header
         const dateElement = document.getElementById('current-date');
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        dateElement.textContent = this.currentDate.toLocaleDateString('en-US', options);
+        if (dateElement) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = this.currentDate.toLocaleDateString('en-US', options);
+        }
+        
+        // Update the date navigation display
+        const dateDisplayElement = document.getElementById('current-date-display');
+        if (dateDisplayElement) {
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            dateDisplayElement.textContent = this.currentDate.toLocaleDateString('en-US', options);
+        }
+        
+        // Update the date selector input
+        const dateSelector = document.getElementById('date-selector');
+        if (dateSelector) {
+            dateSelector.value = this.currentDate.toISOString().split('T')[0];
+        }
     }
 
     changeDate(days) {
@@ -145,6 +162,27 @@ class DashboardManager {
         this.loadDashboardData();
         this.updateFoodLoggingDate();
         this.updateMoodNotesTab();
+    }
+
+    selectDate(dateString) {
+        if (!dateString) return;
+        
+        const selectedDate = new Date(dateString);
+        if (isNaN(selectedDate.getTime())) {
+            showToast('Invalid date selected', 'error');
+            return;
+        }
+        
+        this.currentDate = selectedDate;
+        this.updateDateDisplay();
+        this.clearNotesInput(); // Clear notes input when changing dates
+        this.loadDashboardData();
+        this.updateFoodLoggingDate();
+        this.updateMoodNotesTab();
+        
+        // Show a toast with the selected date
+        const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        showToast(`Navigated to ${dateStr}`, 'success');
     }
 
     clearNotesInput() {

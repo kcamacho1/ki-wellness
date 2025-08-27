@@ -140,40 +140,54 @@
         </div>
 
         <!-- Date Navigation -->
-        <div class="bg-gradient-to-r from-ki-green-50 to-blue-50 rounded-2xl shadow-sm border border-ki-green-100 p-4 sm:p-6 mb-6 sm:mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div class="bg-gradient-to-r from-ki-green-50 to-blue-50 rounded-xl shadow-sm border border-ki-green-100 p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <!-- Current Date Display -->
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-5 h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-ki-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Date Navigation</h2>
-                        <p class="text-sm text-gray-600 mt-1">Browse your wellness data across different dates</p>
+                        <div class="text-lg font-semibold text-gray-900" id="current-date-display">Loading...</div>
+                        <div class="text-xs text-gray-600">Viewing wellness data</div>
                     </div>
                 </div>
                 
+                <!-- Navigation Controls -->
                 <div class="flex items-center space-x-2">
-                    <button id="date-prev" class="w-10 h-10 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Previous day">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Previous Day -->
+                    <button id="date-prev" class="w-8 h-8 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Previous day">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
                     
-                    <div class="px-4 py-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-xl shadow-sm">
-                        <span class="text-sm font-medium text-gray-700">Navigate</span>
+                    <!-- Date Selector -->
+                    <div class="relative">
+                        <input type="date" id="date-selector" 
+                               class="px-3 py-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-all duration-200 cursor-pointer"
+                               title="Select a specific date">
+                        <div class="absolute inset-0 flex items-center justify-end pr-2 pointer-events-none">
+                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
                     </div>
                     
-                    <button id="date-next" class="w-10 h-10 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Next day">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Next Day -->
+                    <button id="date-next" class="w-8 h-8 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-ki-green-600 hover:border-ki-green-300 hover:bg-white rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md" title="Next day">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
                     </button>
                     
-                    <div class="w-px h-8 bg-gray-300 mx-2"></div>
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-gray-300 mx-1"></div>
                     
-                    <button id="today-btn" class="px-6 py-2.5 bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white text-sm font-semibold rounded-xl hover:from-ki-green-600 hover:to-ki-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                    <!-- Today Button -->
+                    <button id="today-btn" class="px-4 py-1.5 bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white text-xs font-semibold rounded-lg hover:from-ki-green-600 hover:to-ki-green-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
                         Today
                     </button>
                 </div>
