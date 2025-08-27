@@ -13,6 +13,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
+
+# Import psycopg dialect to ensure it's available
+try:
+    import psycopg
+    from sqlalchemy.dialects import registry
+    registry.register("postgresql.psycopg", "psycopg.dialect", "PGDialect_psycopg")
+except ImportError:
+    pass
 # OpenRouter import for AI chat
 from services.openrouter_client import get_openrouter_client, generate_ai_response
 # Stripe import removed - using Calendly and donation links instead
@@ -78,17 +86,27 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-pro
 # Database configuration
 db_url = os.getenv('DATABASE_URL')
 if db_url:
-    # Normalize old Heroku-style URLs
+    # Normalize old Heroku-style URLs and force psycopg dialect
     if db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
     elif db_url.startswith('postgresql://'):
-        db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        # Ensure we're using the psycopg dialect
+        if '+psycopg' not in db_url:
+            db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 else:
     # Development - SQLite fallback
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Force SQLAlchemy to use psycopg dialect for PostgreSQL
+if db_url and 'postgresql' in db_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {
+            'connect_timeout': 10
+        }
+    }
 
 # File upload configuration
 UPLOAD_FOLDER = 'static/uploads/profile_images'
