@@ -13,10 +13,10 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
 # OpenRouter import for AI chat
-from openrouter_client import get_openrouter_client, generate_ai_response
+from services.openrouter_client import get_openrouter_client, generate_ai_response
 # Stripe import removed - using Calendly and donation links instead
-from food_data import BASIC_FOODS, COMMON_FOODS_DB
-from health_resources import get_relevant_resources, format_resources_for_prompt
+from services.food_data import BASIC_FOODS, COMMON_FOODS_DB
+from services.health_resources import get_relevant_resources, format_resources_for_prompt
 
 # Import database and models
 from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction, Subscription
@@ -25,34 +25,44 @@ from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeI
 from apis.recipe_api import recipe_bp
 
 # Import Stripe client
-from stripe_client import get_stripe_client
+from services.stripe_client import get_stripe_client
 
 # Import analytics service
-from analytics_service import analytics_service
+from services.analytics_service import analytics_service
 
 def premium_required(f):
-    """Decorator to require premium subscription or admin access"""
+    """Decorator to require premium subscription or special role access"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for('login'))
         
-        # Admin users always have access
-        if current_user.is_admin:
+        # Admin and ff users always have access
+        if current_user.has_premium_access():
             return f(*args, **kwargs)
         
-        # Check if user has premium subscription
-        subscription = Subscription.query.filter_by(
-            user_id=current_user.id,
-            status='active'
-        ).first()
+        # Regular users need active premium subscription
+        return jsonify({
+            'success': False, 
+            'error': 'Premium subscription required',
+            'requires_upgrade': True,
+            'message': 'You need a premium subscription to access this feature. Upgrade now for just $5/month!'
+        }), 403
+    
+    return decorated_function
+
+def admin_required(f):
+    """Decorator to require admin role access"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
         
-        if not subscription or not subscription.is_premium:
+        if not current_user.can_access_admin_dashboard():
             return jsonify({
                 'success': False, 
-                'error': 'Premium subscription required',
-                'requires_upgrade': True,
-                'message': 'You need a premium subscription to access this feature. Upgrade now for just $5/month!'
+                'error': 'Admin access required',
+                'message': 'You do not have permission to access this feature.'
             }), 403
         
         return f(*args, **kwargs)
@@ -556,11 +566,8 @@ def ai_coach():
     return render_template('ai_coach.html')
 
 @app.route('/admin')
-@login_required
+@admin_required
 def admin_dashboard():
-    if not current_user.is_admin:
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('dashboard'))
     
     # Get app statistics
     total_users = User.query.count()
@@ -589,10 +596,8 @@ def admin_dashboard():
                          calendly_link=calendly_link)
 
 @app.route('/api/admin/settings', methods=['POST'])
-@login_required
+@admin_required
 def update_admin_settings():
-    if not current_user.is_admin:
-        return jsonify({'success': False, 'error': 'Access denied'}), 403
     
     try:
         data = request.get_json()
@@ -609,11 +614,9 @@ def update_admin_settings():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/analytics')
-@login_required
+@admin_required
 def get_admin_analytics():
     """Get comprehensive analytics for admin dashboard"""
-    if not current_user.is_admin:
-        return jsonify({'success': False, 'error': 'Access denied'}), 403
     
     try:
         # Get analytics for the last 12 months
@@ -629,11 +632,9 @@ def get_admin_analytics():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/ai-usage')
-@login_required
+@admin_required
 def get_admin_ai_usage():
     """Get AI usage analytics for admin dashboard"""
-    if not current_user.is_admin:
-        return jsonify({'success': False, 'error': 'Access denied'}), 403
     
     try:
         # Get AI usage for the last 30 days
@@ -652,11 +653,9 @@ def get_admin_ai_usage():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/revenue')
-@login_required
+@admin_required
 def get_admin_revenue():
     """Get revenue analytics for admin dashboard"""
-    if not current_user.is_admin:
-        return jsonify({'success': False, 'error': 'Access denied'}), 403
     
     try:
         # Get revenue for the last 12 months
@@ -672,6 +671,180 @@ def get_admin_revenue():
         
     except Exception as e:
         print(f"❌ Error getting revenue analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/assign-ff-roles', methods=['POST'])
+@admin_required
+def assign_ff_roles_to_allowed_emails():
+    """Assign 'ff' role to all users with allowed email addresses"""
+    try:
+        # Get allowed emails from app settings
+        allowed_emails_setting = get_app_setting('allowed_emails', '')
+        if not allowed_emails_setting:
+            return jsonify({'success': False, 'error': 'No allowed emails configured'}), 400
+        
+        # Parse comma-separated emails
+        allowed_emails = [email.strip().lower() for email in allowed_emails_setting.split(',') if email.strip()]
+        if not allowed_emails:
+            return jsonify({'success': False, 'error': 'No valid email addresses found in allowed emails'}), 400
+        
+        # Find and update users with allowed email addresses
+        updated_count = 0
+        already_ff_count = 0
+        
+        for email in allowed_emails:
+            user = User.query.filter(User.email.ilike(email)).first()
+            if user:
+                if user.role != 'ff':
+                    user.role = 'ff'
+                    updated_count += 1
+                else:
+                    already_ff_count += 1
+        
+        # Commit changes
+        db.session.commit()
+        
+        # Prepare response message
+        if updated_count > 0:
+            message = f"Successfully assigned 'ff' role to {updated_count} user(s). {already_ff_count} user(s) already had 'ff' role."
+        else:
+            message = f"All {already_ff_count} user(s) already have 'ff' role."
+        
+        return jsonify({
+            'success': True, 
+            'message': message,
+            'updated_count': updated_count,
+            'already_ff_count': already_ff_count
+        })
+        
+    except Exception as e:
+        print(f"❌ Error assigning FF roles: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    """Admin users management page"""
+    # Get user statistics
+    total_users = User.query.count()
+    admin_users_count = User.query.filter_by(is_admin=True).count()
+    ff_users_count = User.query.filter_by(role='ff').count()
+    regular_users_count = User.query.filter_by(role='user').count()
+    
+    # Get app settings
+    allowed_emails = get_app_setting('allowed_emails', '')
+    
+    return render_template('admin_users.html',
+                         total_users=total_users,
+                         admin_users_count=admin_users_count,
+                         ff_users_count=ff_users_count,
+                         regular_users_count=regular_users_count,
+                         allowed_emails=allowed_emails)
+
+@app.route('/admin/analytics')
+@admin_required
+def admin_analytics():
+    """Admin analytics page"""
+    return render_template('admin_analytics.html')
+
+@app.route('/admin/settings')
+@admin_required
+def admin_settings():
+    """Admin system settings page"""
+    # Get app settings
+    new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true').lower() == 'true'
+    maintenance_mode = get_app_setting('maintenance_mode', 'false').lower() == 'true'
+    max_users = get_app_setting('max_users', '1000')
+    
+    return render_template('admin_settings.html',
+                         new_accounts_enabled=new_accounts_enabled,
+                         maintenance_mode=maintenance_mode,
+                         max_users=max_users)
+
+@app.route('/admin/payments')
+@admin_required
+def admin_payments():
+    """Admin payments and services page"""
+    # Get app settings
+    human_help_payment_type = get_app_setting('human_help_payment_type', '30min_session')
+    calendly_link = get_app_setting('calendly_link', 'https://calendly.com/ki-wellness/human-health-coach')
+    
+    return render_template('admin_payments.html',
+                         human_help_payment_type=human_help_payment_type,
+                         calendly_link=calendly_link)
+
+@app.route('/admin/system')
+@admin_required
+def admin_system():
+    """Admin system information page"""
+    return render_template('admin_system.html')
+
+@app.route('/api/admin/users')
+@admin_required
+def get_admin_users():
+    """Get all users for admin dashboard"""
+    try:
+        users = User.query.all()
+        users_data = []
+        
+        for user in users:
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'name': user.name,
+                'role': user.role,
+                'is_admin': user.is_admin,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'profile_image_url': get_profile_image_url(user.profile_image) if user.profile_image else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'users': users_data
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting users: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/update-user-role', methods=['POST'])
+@admin_required
+def update_user_role():
+    """Update user role"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        role = data.get('role')
+        
+        if not user_id or not role:
+            return jsonify({'success': False, 'error': 'User ID and role are required'}), 400
+        
+        if role not in ['admin', 'user', 'ff']:
+            return jsonify({'success': False, 'error': 'Invalid role. Must be admin, user, or ff'}), 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        user.role = role
+        
+        # If setting admin role, also set is_admin to true
+        if role == 'admin':
+            user.is_admin = True
+        elif role != 'admin' and user.is_admin:
+            # Only remove admin status if explicitly changing to non-admin role
+            user.is_admin = False
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Updated user {user.username} to role: {role}'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error updating user role: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # OpenRouter model configuration
@@ -969,14 +1142,8 @@ def enhanced_ai_response(question: str, user_data: dict = None) -> str:
     try:
         # Check if user has premium access (this function is called from other contexts)
         if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
-            if not current_user.is_admin:
-                subscription = Subscription.query.filter_by(
-                    user_id=current_user.id,
-                    status='active'
-                ).first()
-                
-                if not subscription or not subscription.is_premium:
-                    return "This feature requires a premium subscription. Upgrade now to access AI-powered wellness insights!"
+            if not current_user.has_premium_access():
+                return "This feature requires a premium subscription. Upgrade now to access AI-powered wellness insights!"
         
         client = get_openrouter_client()
         return client.generate_response(
@@ -2219,26 +2386,27 @@ def create_customer_portal_session():
 @app.route('/api/subscription-status')
 @login_required
 def get_subscription_status():
-    """Get current user's subscription status"""
+    """Get current user's subscription status and premium access"""
     try:
-        # Get active subscription
-        subscription = Subscription.query.filter_by(
-            user_id=current_user.id,
-            status='active'
-        ).first()
+        # Check if user has premium access based on role
+        has_premium = current_user.has_premium_access()
         
-        if subscription:
-            return jsonify({
-                'success': True,
-                'subscription': subscription.to_dict(),
-                'is_premium': subscription.is_premium
-            })
-        else:
-            return jsonify({
-                'success': True,
-                'subscription': None,
-                'is_premium': False
-            })
+        # Get active subscription for regular users
+        subscription = None
+        if current_user.is_regular_user():
+            subscription = Subscription.query.filter_by(
+                user_id=current_user.id,
+                status='active'
+            ).first()
+        
+        return jsonify({
+            'success': True,
+            'subscription': subscription.to_dict() if subscription else None,
+            'is_premium': has_premium,
+            'user_role': current_user.role,
+            'is_admin': current_user.is_admin_role(),
+            'is_ff': current_user.is_ff_role()
+        })
             
     except Exception as e:
         print(f"❌ Error getting subscription status: {e}")

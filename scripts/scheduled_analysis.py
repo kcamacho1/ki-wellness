@@ -9,7 +9,7 @@ import sys
 import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from openrouter_client import get_openrouter_client
+from services.openrouter_client import get_openrouter_client
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 

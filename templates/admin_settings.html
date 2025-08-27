@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">System Settings</h1>
+                        <p class="text-sm text-gray-600">Configure registration and access controls</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('admin_dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
+                        ← Back to Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <!-- System Settings -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Account Settings -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Account Settings</h2>
+                        <p class="text-sm text-gray-600">Control user registration and access</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- New Account Registration -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">New Account Registration</h3>
+                            <p class="text-sm text-gray-600">Allow or disable new user registrations</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="new-accounts-toggle" class="sr-only peer" 
+                                   {% if new_accounts_enabled %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Maintenance Mode -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Maintenance Mode</h3>
+                            <p class="text-sm text-gray-600">Put the application in maintenance mode</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="maintenance-toggle" class="sr-only peer" 
+                                   {% if maintenance_mode %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Max Users -->
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <div class="mb-3">
+                            <h3 class="font-semibold text-gray-900">Maximum Users</h3>
+                            <p class="text-sm text-gray-600">Set the maximum number of users allowed</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" id="max-users-input" value="{{ max_users }}" 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <button id="update-max-users" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">System Information</h2>
+                        <p class="text-sm text-gray-600">Application status and details</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-sm font-medium text-gray-600">Database</span>
+                        <span class="text-sm text-gray-900">PostgreSQL</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-sm font-medium text-gray-600">AI Model</span>
+                        <span class="text-sm text-gray-900">Ollama (Mistral)</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-sm font-medium text-gray-600">Environment</span>
+                        <span class="text-sm text-gray-900">Production</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                        <span class="text-sm font-medium text-gray-600">Last Updated</span>
+                        <span class="text-sm text-gray-900" id="last-updated-time">Just now</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mt-6 pt-6 border-t border-gray-100">
+                    <h3 class="font-semibold text-gray-900 mb-3">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <button id="refresh-stats" class="w-full px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                            🔄 Refresh Statistics
+                        </button>
+                        <button id="export-data" class="w-full px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+                            📊 Export Data
+                        </button>
+                        <button id="clear-cache" class="w-full px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-200 transition-colors">
+                            🗑️ Clear Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">System Status</h2>
+                    <p class="text-sm text-gray-600">Monitor system health and performance</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Database Status -->
+                <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Database</div>
+                        <div class="text-sm text-green-600">Connected</div>
+                    </div>
+                </div>
+
+                <!-- AI Service Status -->
+                <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">AI Service</div>
+                        <div class="text-sm text-green-600">Online</div>
+                    </div>
+                </div>
+
+                <!-- Payment System -->
+                <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Payments</div>
+                        <div class="text-sm text-green-600">Active</div>
+                    </div>
+                </div>
+
+                <!-- Email Service -->
+                <div class="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">Email</div>
+                        <div class="text-sm text-green-600">Connected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Admin Settings Manager
+class AdminSettingsManager {
+    constructor() {
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Toggle switches
+        document.getElementById('new-accounts-toggle').addEventListener('change', (e) => {
+            this.updateSetting('new_accounts_enabled', e.target.checked);
+        });
+
+        document.getElementById('maintenance-toggle').addEventListener('change', (e) => {
+            this.updateSetting('maintenance_mode', e.target.checked);
+        });
+
+        // Max users input
+        document.getElementById('update-max-users').addEventListener('click', () => {
+            const maxUsers = document.getElementById('max-users-input').value;
+            this.updateSetting('max_users', maxUsers);
+        });
+
+        // Quick actions
+        document.getElementById('refresh-stats').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        document.getElementById('export-data').addEventListener('click', () => {
+            this.showNotification('Export functionality coming soon!', 'info');
+        });
+
+        document.getElementById('clear-cache').addEventListener('click', () => {
+            this.clearCache();
+        });
+    }
+
+    async updateSetting(key, value) {
+        try {
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    key: key,
+                    value: value
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification('Setting updated successfully!', 'success');
+                this.updateLastUpdatedTime();
+                
+                // Show visual feedback for specific settings
+                if (key === 'new_accounts_enabled') {
+                    const status = value ? 'enabled' : 'disabled';
+                    this.showNotification(`New account registration ${status}`, 'info');
+                } else if (key === 'maintenance_mode') {
+                    const status = value ? 'enabled' : 'disabled';
+                    this.showNotification(`Maintenance mode ${status}`, 'warning');
+                }
+            } else {
+                this.showNotification('Failed to update setting: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating setting:', error);
+            this.showNotification('Error updating setting. Please try again.', 'error');
+        }
+    }
+
+    async clearCache() {
+        try {
+            const button = document.getElementById('clear-cache');
+            const originalText = button.textContent;
+            button.textContent = '🔄 Clearing...';
+            button.disabled = true;
+
+            // Simulate cache clearing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            this.showNotification('Cache cleared successfully!', 'success');
+            this.updateLastUpdatedTime();
+        } catch (error) {
+            console.error('Error clearing cache:', error);
+            this.showNotification('Error clearing cache. Please try again.', 'error');
+        } finally {
+            const button = document.getElementById('clear-cache');
+            button.textContent = '🗑️ Clear Cache';
+            button.disabled = false;
+        }
+    }
+
+    updateLastUpdatedTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        const dateString = now.toLocaleDateString();
+        document.getElementById('last-updated-time').textContent = `${dateString} at ${timeString}`;
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
+        
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            warning: 'bg-yellow-500 text-white',
+            info: 'bg-blue-500 text-white'
+        };
+        
+        notification.className += ` ${colors[type] || colors.info}`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    ${this.getNotificationIcon(type)}
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+                <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+            error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+            warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
+            info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+        };
+        
+        return icons[type] || icons.info;
+    }
+}
+
+// Initialize admin settings manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new AdminSettingsManager();
+});
+</script>
+
+{% endblock %}

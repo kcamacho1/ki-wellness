@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Revenue - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">Analytics & Revenue</h1>
+                        <p class="text-sm text-gray-600">Track performance and financial metrics</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('admin_dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
+                        ← Back to Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <!-- Revenue Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- AI Usage Cost -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">AI Usage Cost</p>
+                        <p class="text-3xl font-bold text-red-600" id="ai-usage-cost">$0.00</p>
+                        <p class="text-xs text-gray-500">This Month</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Revenue -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Subscription Revenue</p>
+                        <p class="text-3xl font-bold text-green-600" id="subscription-revenue">$0.00</p>
+                        <p class="text-xs text-gray-500">This Month</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Coaching Revenue -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Coaching Revenue</p>
+                        <p class="text-3xl font-bold text-blue-600" id="coaching-revenue">$0.00</p>
+                        <p class="text-xs text-gray-500">This Month</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Net Profit -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Net Profit</p>
+                        <p class="text-3xl font-bold text-purple-600" id="net-profit">$0.00</p>
+                        <p class="text-xs text-gray-500">This Month</p>
+                    </div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- AI Usage Breakdown -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">🤖 AI Usage Breakdown</h3>
+                    <button id="refresh-ai-usage" class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div id="ai-usage-breakdown" class="space-y-3">
+                    <div class="text-center text-gray-500">Loading AI usage data...</div>
+                </div>
+            </div>
+
+            <!-- Revenue Breakdown -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">💰 Revenue Breakdown</h3>
+                    <button id="refresh-revenue" class="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-lg hover:bg-green-200 transition-colors">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div id="revenue-breakdown" class="space-y-3">
+                    <div class="text-center text-gray-500">Loading revenue data...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Analytics Chart -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">📈 Monthly Analytics</h3>
+                    <p class="text-sm text-gray-600">Revenue and cost trends over time</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <select id="chart-period" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="6">Last 6 Months</option>
+                        <option value="12" selected>Last 12 Months</option>
+                        <option value="24">Last 24 Months</option>
+                    </select>
+                    <button id="refresh-chart" class="px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            <div id="analytics-chart" class="h-64 flex items-center justify-center">
+                <div class="text-center text-gray-500">Loading chart data...</div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <!-- User Engagement -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">User Engagement</h4>
+                        <p class="text-sm text-gray-600">Active users and interactions</p>
+                    </div>
+                </div>
+                <div id="user-engagement-metrics" class="space-y-2">
+                    <div class="text-center text-gray-500">Loading metrics...</div>
+                </div>
+            </div>
+
+            <!-- AI Performance -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">AI Performance</h4>
+                        <p class="text-sm text-gray-600">Response times and accuracy</p>
+                    </div>
+                </div>
+                <div id="ai-performance-metrics" class="space-y-2">
+                    <div class="text-center text-gray-500">Loading metrics...</div>
+                </div>
+            </div>
+
+            <!-- Financial Health -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Financial Health</h4>
+                        <p class="text-sm text-gray-600">Revenue growth and margins</p>
+                    </div>
+                </div>
+                <div id="financial-health-metrics" class="space-y-2">
+                    <div class="text-center text-gray-500">Loading metrics...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Admin Analytics Manager
+class AdminAnalyticsManager {
+    constructor() {
+        this.setupEventListeners();
+        this.loadAnalytics();
+    }
+
+    setupEventListeners() {
+        // Refresh buttons
+        document.getElementById('refresh-ai-usage').addEventListener('click', () => {
+            this.loadAIUsage();
+        });
+
+        document.getElementById('refresh-revenue').addEventListener('click', () => {
+            this.loadRevenue();
+        });
+
+        document.getElementById('refresh-chart').addEventListener('click', () => {
+            this.loadAnalytics();
+        });
+
+        // Chart period selector
+        document.getElementById('chart-period').addEventListener('change', () => {
+            this.loadAnalytics();
+        });
+    }
+
+    async loadAnalytics() {
+        try {
+            // Load comprehensive analytics
+            const analyticsResponse = await fetch('/api/admin/analytics');
+            const analyticsData = await analyticsResponse.json();
+            
+            if (analyticsData.success) {
+                this.updateAnalyticsDisplay(analyticsData.analytics);
+            }
+            
+            // Load AI usage analytics
+            this.loadAIUsage();
+            
+            // Load revenue analytics
+            this.loadRevenue();
+            
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            this.showNotification('Error loading analytics data', 'error');
+        }
+    }
+
+    async loadAIUsage() {
+        try {
+            const response = await fetch('/api/admin/ai-usage');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.updateAIUsageDisplay(data.ai_usage);
+            } else {
+                this.showNotification('Failed to load AI usage data: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error loading AI usage:', error);
+            this.showNotification('Error loading AI usage data', 'error');
+        }
+    }
+
+    async loadRevenue() {
+        try {
+            const response = await fetch('/api/admin/revenue');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.updateRevenueDisplay(data.revenue);
+            } else {
+                this.showNotification('Failed to load revenue data: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error loading revenue:', error);
+            this.showNotification('Error loading revenue data', 'error');
+        }
+    }
+
+    updateAnalyticsDisplay(analytics) {
+        // Update summary cards
+        const aiUsageCost = document.getElementById('ai-usage-cost');
+        const subscriptionRevenue = document.getElementById('subscription-revenue');
+        const coachingRevenue = document.getElementById('coaching-revenue');
+        const netProfit = document.getElementById('net-profit');
+        
+        if (aiUsageCost) {
+            aiUsageCost.textContent = `$${analytics.ai_usage?.costs?.total_cost?.toFixed(2) || '0.00'}`;
+        }
+        
+        if (subscriptionRevenue) {
+            subscriptionRevenue.textContent = `$${analytics.revenue?.subscription_analytics?.total_revenue?.toFixed(2) || '0.00'}`;
+        }
+        
+        if (coachingRevenue) {
+            coachingRevenue.textContent = `$${analytics.revenue?.coaching_analytics?.total_revenue?.toFixed(2) || '0.00'}`;
+        }
+        
+        if (netProfit) {
+            const totalRevenue = (analytics.revenue?.subscription_analytics?.total_revenue || 0) + 
+                               (analytics.revenue?.coaching_analytics?.total_revenue || 0);
+            const totalCost = analytics.ai_usage?.costs?.total_cost || 0;
+            const profit = totalRevenue - totalCost;
+            netProfit.textContent = `$${profit.toFixed(2)}`;
+        }
+
+        // Update performance metrics
+        this.updatePerformanceMetrics(analytics);
+    }
+
+    updateAIUsageDisplay(aiUsage) {
+        const breakdownDiv = document.getElementById('ai-usage-breakdown');
+        if (!breakdownDiv) return;
+        
+        if (aiUsage.model_breakdown && aiUsage.model_breakdown.length > 0) {
+            const html = aiUsage.model_breakdown.map(model => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-900">${model.model}</div>
+                        <div class="text-sm text-gray-500">${model.request_count} requests</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold text-red-600">$${model.total_cost.toFixed(4)}</div>
+                        <div class="text-xs text-gray-500">${model.avg_response_time.toFixed(0)}ms avg</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            breakdownDiv.innerHTML = html;
+        } else {
+            breakdownDiv.innerHTML = '<div class="text-center text-gray-500">No AI usage data available</div>';
+        }
+    }
+
+    updateRevenueDisplay(revenue) {
+        const breakdownDiv = document.getElementById('revenue-breakdown');
+        if (!breakdownDiv) return;
+        
+        if (revenue.revenue_by_type && revenue.revenue_by_type.length > 0) {
+            const html = revenue.revenue_by_type.map(item => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-medium text-gray-900 capitalize">${item.type.replace('_', ' ')}</div>
+                        <div class="text-sm text-gray-500">${item.transaction_count} transactions</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold text-green-600">$${item.total_amount.toFixed(2)}</div>
+                        <div class="text-xs text-gray-500">Revenue</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            breakdownDiv.innerHTML = html;
+        } else {
+            breakdownDiv.innerHTML = '<div class="text-center text-gray-500">No revenue data available</div>';
+        }
+    }
+
+    updatePerformanceMetrics(analytics) {
+        // User Engagement Metrics
+        const userEngagementDiv = document.getElementById('user-engagement-metrics');
+        if (userEngagementDiv) {
+            const activeUsers = analytics.user_engagement?.active_users || 0;
+            const avgSessionTime = analytics.user_engagement?.avg_session_time || 0;
+            
+            userEngagementDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Active Users:</span>
+                    <span class="font-semibold text-blue-600">${activeUsers}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Avg Session:</span>
+                    <span class="font-semibold text-blue-600">${avgSessionTime.toFixed(1)}m</span>
+                </div>
+            `;
+        }
+
+        // AI Performance Metrics
+        const aiPerformanceDiv = document.getElementById('ai-performance-metrics');
+        if (aiPerformanceDiv) {
+            const avgResponseTime = analytics.ai_performance?.avg_response_time || 0;
+            const successRate = analytics.ai_performance?.success_rate || 0;
+            
+            aiPerformanceDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Avg Response:</span>
+                    <span class="font-semibold text-purple-600">${avgResponseTime.toFixed(0)}ms</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Success Rate:</span>
+                    <span class="font-semibold text-purple-600">${successRate.toFixed(1)}%</span>
+                </div>
+            `;
+        }
+
+        // Financial Health Metrics
+        const financialHealthDiv = document.getElementById('financial-health-metrics');
+        if (financialHealthDiv) {
+            const revenueGrowth = analytics.financial_health?.revenue_growth || 0;
+            const profitMargin = analytics.financial_health?.profit_margin || 0;
+            
+            financialHealthDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Growth:</span>
+                    <span class="font-semibold ${revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}">${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth.toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Margin:</span>
+                    <span class="font-semibold text-green-600">${profitMargin.toFixed(1)}%</span>
+                </div>
+            `;
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
+        
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            warning: 'bg-yellow-500 text-white',
+            info: 'bg-blue-500 text-white'
+        };
+        
+        notification.className += ` ${colors[type] || colors.info}`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    ${this.getNotificationIcon(type)}
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+                <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+            error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+            warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
+            info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+        };
+        
+        return icons[type] || icons.info;
+    }
+}
+
+// Initialize admin analytics manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new AdminAnalyticsManager();
+});
+</script>
+
+{% endblock %}

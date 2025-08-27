@@ -29,7 +29,7 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <!-- Statistics Cards -->
+        <!-- Quick Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Total Users -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
@@ -92,266 +92,171 @@
             </div>
         </div>
 
-        <!-- Analytics Section -->
-        <div class="mb-8">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">📊 Analytics & Revenue</h2>
-            
-            <!-- Analytics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- AI Usage Cost -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">AI Usage Cost</p>
-                            <p class="text-3xl font-bold text-red-600" id="ai-usage-cost">$0.00</p>
-                            <p class="text-xs text-gray-500">This Month</p>
+        <!-- Admin Navigation Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- User Management -->
+            <a href="{{ url_for('admin_users') }}" class="group">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
                         </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">User Management</h3>
+                            <p class="text-sm text-gray-600">Manage users, roles, and permissions</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Total Users:</span>
+                            <span class="font-semibold">{{ total_users }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Active Today:</span>
+                            <span class="font-semibold text-green-600">--</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Analytics & Revenue -->
+            <a href="{{ url_for('admin_analytics') }}" class="group">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                             </svg>
                         </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-green-600 transition-colors">Analytics & Revenue</h3>
+                            <p class="text-sm text-gray-600">Track performance and financial metrics</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>AI Usage Cost:</span>
+                            <span class="font-semibold text-red-600">$--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Monthly Revenue:</span>
+                            <span class="font-semibold text-green-600">$--</span>
+                        </div>
                     </div>
                 </div>
+            </a>
 
-                <!-- Subscription Revenue -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Subscription Revenue</p>
-                            <p class="text-3xl font-bold text-green-600" id="subscription-revenue">$0.00</p>
-                            <p class="text-xs text-gray-500">This Month</p>
-                        </div>
-                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+            <!-- System Settings -->
+            <a href="{{ url_for('admin_settings') }}" class="group">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Health Coaching Revenue -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
-                    <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Coaching Revenue</p>
-                            <p class="text-3xl font-bold text-blue-600" id="coaching-revenue">$0.00</p>
-                            <p class="text-xs text-gray-500">This Month</p>
-                        </div>
-                        <div class="w-12 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors">System Settings</h3>
+                            <p class="text-sm text-gray-600">Configure registration and access controls</p>
                         </div>
                     </div>
-                </div>
-
-                <!-- Net Profit -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-md transition-all duration-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Net Profit</p>
-                            <p class="text-3xl font-bold text-purple-600" id="net-profit">$0.00</p>
-                            <p class="text-xs text-gray-500">This Month</p>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Registration:</span>
+                            <span class="font-semibold {% if new_accounts_enabled %}text-green-600{% else %}text-red-600{% endif %}">
+                                {% if new_accounts_enabled %}Enabled{% else %}Disabled{% endif %}
+                            </span>
                         </div>
+                        <div class="flex justify-between">
+                            <span>Maintenance:</span>
+                            <span class="font-semibold {% if maintenance_mode %}text-red-600{% else %}text-green-600{% endif %}">
+                                {% if maintenance_mode %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Payment & Services -->
+            <a href="{{ url_for('admin_payments') }}" class="group">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                    <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                             </svg>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detailed Analytics -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- AI Usage Breakdown -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 AI Usage Breakdown</h3>
-                    <div id="ai-usage-breakdown" class="space-y-3">
-                        <div class="text-center text-gray-500">Loading AI usage data...</div>
-                    </div>
-                </div>
-
-                <!-- Revenue Breakdown -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">💰 Revenue Breakdown</h3>
-                    <div id="revenue-breakdown" class="space-y-3">
-                        <div class="text-center text-gray-500">Loading revenue data...</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Account Settings -->
-            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
-                <div class="flex items-center space-x-3 mb-6">
-                    <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-900">Account Settings</h2>
-                        <p class="text-sm text-gray-600">Control user registration and access</p>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    <!-- New Account Registration -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                         <div>
-                            <h3 class="font-semibold text-gray-900">New Account Registration</h3>
-                            <p class="text-sm text-gray-600">Allow or disable new user registrations</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="new-accounts-toggle" class="sr-only peer" 
-                                   {% if new_accounts_enabled %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                        </label>
-                    </div>
-
-                    <!-- Maintenance Mode -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                        <div>
-                            <h3 class="font-semibold text-gray-900">Maintenance Mode</h3>
-                            <p class="text-sm text-gray-600">Put the application in maintenance mode</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="maintenance-toggle" class="sr-only peer" 
-                                   {% if maintenance_mode %}checked{% endif %}>
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
-                        </label>
-                    </div>
-
-                    <!-- Max Users -->
-                    <div class="p-4 bg-gray-50 rounded-xl">
-                        <div class="mb-3">
-                            <h3 class="font-semibold text-gray-900">Maximum Users</h3>
-                            <p class="text-sm text-gray-600">Set the maximum number of users allowed</p>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <input type="number" id="max-users-input" value="{{ max_users }}" 
-                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                            <button id="update-max-users" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                Update
-                            </button>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Payment & Services</h3>
+                            <p class="text-sm text-gray-600">Manage payments and service configurations</p>
                         </div>
                     </div>
-
-                    <!-- Allowed Emails -->
-                    <div class="p-4 bg-gray-50 rounded-xl">
-                        <div class="mb-3">
-                            <h3 class="font-semibold text-gray-900">Allowed Email Addresses</h3>
-                            <p class="text-sm text-gray-600">Comma-separated list of emails allowed to register even when disabled</p>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Payment Type:</span>
+                            <span class="font-semibold capitalize">{{ human_help_payment_type.replace('_', ' ') }}</span>
                         </div>
-                        <div class="space-y-3">
-                            <textarea id="allowed-emails-input" rows="3" 
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
-                                      placeholder="Enter email addresses separated by commas (e.g., user@example.com, admin@company.com)">{{ allowed_emails }}</textarea>
-                            <div class="flex items-center space-x-3">
-                                <button id="update-allowed-emails" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                    Update
-                                </button>
-                                <button id="clear-allowed-emails" class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors">
-                                    Clear
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Human Help Payment Settings -->
-                    <div class="p-4 bg-gray-50 rounded-xl">
-                        <div class="mb-3">
-                            <h3 class="font-semibold text-gray-900">Human Help Payment Type</h3>
-                            <p class="text-sm text-gray-600">Choose between 30-minute session or donation payment</p>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex items-center space-x-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="payment-type" value="30min_session" 
-                                           {% if human_help_payment_type == '30min_session' %}checked{% endif %}
-                                           class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
-                                    <span class="ml-2 text-sm text-gray-700">30-Minute Session ($20)</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="payment-type" value="donation" 
-                                           {% if human_help_payment_type == 'donation' %}checked{% endif %}
-                                           class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
-                                    <span class="ml-2 text-sm text-gray-700">Donation</span>
-                                </label>
-                            </div>
-                            <button id="update-payment-type" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                Update Payment Type
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Calendly Link -->
-                    <div class="p-4 bg-gray-50 rounded-xl">
-                        <div class="mb-3">
-                            <h3 class="font-semibold text-gray-900">Calendly Link</h3>
-                            <p class="text-sm text-gray-600">Link for scheduling appointments after payment</p>
-                        </div>
-                        <div class="space-y-3">
-                            <input type="url" id="calendly-link-input" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                   placeholder="https://calendly.com/ki-wellness/human-health-coach"
-                                   value="{{ calendly_link }}">
-                            <button id="update-calendly-link" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                Update Calendly Link
-                            </button>
+                        <div class="flex justify-between">
+                            <span>Calendly:</span>
+                            <span class="font-semibold text-green-600">Configured</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
 
             <!-- System Information -->
+            <a href="{{ url_for('admin_system') }}" class="group">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-gray-600 transition-colors">System Information</h3>
+                            <p class="text-sm text-gray-600">View system status and technical details</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Database:</span>
+                            <span class="font-semibold">PostgreSQL</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Environment:</span>
+                            <span class="font-semibold">Production</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Quick Actions -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
-                <div class="flex items-center space-x-3 mb-6">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900">System Information</h2>
-                        <p class="text-sm text-gray-600">Application status and details</p>
+                        <h3 class="text-lg font-bold text-gray-900">Quick Actions</h3>
+                        <p class="text-sm text-gray-600">Common administrative tasks</p>
                     </div>
                 </div>
-
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                        <span class="text-sm font-medium text-gray-600">Database</span>
-                        <span class="text-sm text-gray-900">PostgreSQL</span>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                        <span class="text-sm font-medium text-gray-600">AI Model</span>
-                        <span class="text-sm text-gray-900">Ollama (Mistral)</span>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                        <span class="text-sm font-medium text-gray-600">Environment</span>
-                        <span class="text-sm text-gray-900">Production</span>
-                    </div>
-                    <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                        <span class="text-sm font-medium text-gray-600">Last Updated</span>
-                        <span class="text-sm text-gray-900" id="last-updated-time">Just now</span>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="mt-6 pt-6 border-t border-gray-100">
-                    <h3 class="font-semibold text-gray-900 mb-3">Quick Actions</h3>
-                    <div class="space-y-2">
-                        <button id="refresh-stats" class="w-full px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
-                            🔄 Refresh Statistics
-                        </button>
-                        <button id="export-data" class="w-full px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
-                            📊 Export Data
-                        </button>
-                    </div>
+                <div class="space-y-3">
+                    <button id="refresh-stats" class="w-full px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                        🔄 Refresh Statistics
+                    </button>
+                    <button id="export-data" class="w-full px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-colors">
+                        📊 Export Data
+                    </button>
+                    <button id="assign-ff-roles" class="w-full px-4 py-2 bg-purple-100 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-200 transition-colors">
+                        👥 Assign FF Roles
+                    </button>
                 </div>
             </div>
         </div>
@@ -359,123 +264,119 @@
 </div>
 
 <script>
-// Admin Dashboard Analytics
-class AdminAnalytics {
+// Admin Dashboard Overview
+class AdminDashboardOverview {
     constructor() {
-        this.loadAnalytics();
+        this.setupEventListeners();
     }
 
-    async loadAnalytics() {
+    setupEventListeners() {
+        // Quick actions
+        document.getElementById('refresh-stats').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        document.getElementById('export-data').addEventListener('click', () => {
+            this.showNotification('Export functionality coming soon!', 'info');
+        });
+
+        document.getElementById('assign-ff-roles').addEventListener('click', () => {
+            this.assignFFRoles();
+        });
+    }
+
+    async assignFFRoles() {
         try {
-            // Load comprehensive analytics
-            const analyticsResponse = await fetch('/api/admin/analytics');
-            const analyticsData = await analyticsResponse.json();
-            
-            if (analyticsData.success) {
-                this.updateAnalyticsDisplay(analyticsData.analytics);
+            const button = document.getElementById('assign-ff-roles');
+            const originalText = button.textContent;
+            button.textContent = '🔄 Assigning...';
+            button.disabled = true;
+
+            const response = await fetch('/api/admin/assign-ff-roles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification(data.message, 'success');
+            } else {
+                this.showNotification('Failed to assign FF roles: ' + data.error, 'error');
             }
-            
-            // Load AI usage analytics
-            const aiUsageResponse = await fetch('/api/admin/ai-usage');
-            const aiUsageData = await aiUsageResponse.json();
-            
-            if (aiUsageData.success) {
-                this.updateAIUsageDisplay(aiUsageData.ai_usage);
-            }
-            
-            // Load revenue analytics
-            const revenueResponse = await fetch('/api/admin/revenue');
-            const revenueData = await revenueResponse.json();
-            
-            if (revenueData.success) {
-                this.updateRevenueDisplay(revenueData.revenue);
-            }
-            
         } catch (error) {
-            console.error('Error loading analytics:', error);
+            console.error('Error assigning FF roles:', error);
+            this.showNotification('Error assigning FF roles. Please try again.', 'error');
+        } finally {
+            const button = document.getElementById('assign-ff-roles');
+            button.textContent = '👥 Assign FF Roles';
+            button.disabled = false;
         }
     }
 
-    updateAnalyticsDisplay(analytics) {
-        // Update summary cards
-        const aiUsageCost = document.getElementById('ai-usage-cost');
-        const subscriptionRevenue = document.getElementById('subscription-revenue');
-        const coachingRevenue = document.getElementById('coaching-revenue');
-        const netProfit = document.getElementById('net-profit');
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
         
-        if (aiUsageCost) {
-            aiUsageCost.textContent = `$${analytics.ai_usage?.costs?.total_cost?.toFixed(2) || '0.00'}`;
-        }
+        const colors = {
+            success: 'bg-green-500 text-white',
+            error: 'bg-red-500 text-white',
+            warning: 'bg-yellow-500 text-white',
+            info: 'bg-blue-500 text-white'
+        };
         
-        if (subscriptionRevenue) {
-            subscriptionRevenue.textContent = `$${analytics.revenue?.subscription_analytics?.total_revenue?.toFixed(2) || '0.00'}`;
-        }
-        
-        if (coachingRevenue) {
-            coachingRevenue.textContent = `$${analytics.revenue?.coaching_analytics?.total_revenue?.toFixed(2) || '0.00'}`;
-        }
-        
-        if (netProfit) {
-            const totalRevenue = (analytics.revenue?.subscription_analytics?.total_revenue || 0) + 
-                               (analytics.revenue?.coaching_analytics?.total_revenue || 0);
-            const totalCost = analytics.ai_usage?.costs?.total_cost || 0;
-            const profit = totalRevenue - totalCost;
-            netProfit.textContent = `$${profit.toFixed(2)}`;
-        }
-    }
-
-    updateAIUsageDisplay(aiUsage) {
-        const breakdownDiv = document.getElementById('ai-usage-breakdown');
-        if (!breakdownDiv) return;
-        
-        if (aiUsage.model_breakdown && aiUsage.model_breakdown.length > 0) {
-            const html = aiUsage.model_breakdown.map(model => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-medium text-gray-900">${model.model}</div>
-                        <div class="text-sm text-gray-500">${model.request_count} requests</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-semibold text-red-600">$${model.total_cost.toFixed(4)}</div>
-                        <div class="text-xs text-gray-500">${model.avg_response_time.toFixed(0)}ms avg</div>
-                    </div>
+        notification.className += ` ${colors[type] || colors.info}`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    ${this.getNotificationIcon(type)}
                 </div>
-            `).join('');
-            
-            breakdownDiv.innerHTML = html;
-        } else {
-            breakdownDiv.innerHTML = '<div class="text-center text-gray-500">No AI usage data available</div>';
-        }
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${message}</p>
+                </div>
+                <button class="flex-shrink-0 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, 5000);
     }
 
-    updateRevenueDisplay(revenue) {
-        const breakdownDiv = document.getElementById('revenue-breakdown');
-        if (!breakdownDiv) return;
+    getNotificationIcon(type) {
+        const icons = {
+            success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+            error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+            warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>',
+            info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+        };
         
-        if (revenue.revenue_by_type && revenue.revenue_by_type.length > 0) {
-            const html = revenue.revenue_by_type.map(item => `
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-medium text-gray-900 capitalize">${item.type.replace('_', ' ')}</div>
-                        <div class="text-sm text-gray-500">${item.transaction_count} transactions</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-semibold text-green-600">$${item.total_amount.toFixed(2)}</div>
-                        <div class="text-xs text-gray-500">Revenue</div>
-                    </div>
-                </div>
-            `).join('');
-            
-            breakdownDiv.innerHTML = html;
-        } else {
-            breakdownDiv.innerHTML = '<div class="text-center text-gray-500">No revenue data available</div>';
-        }
+        return icons[type] || icons.info;
     }
 }
 
-// Initialize analytics when page loads
+// Initialize dashboard overview when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new AdminAnalytics();
+    new AdminDashboardOverview();
 });
 </script>
 

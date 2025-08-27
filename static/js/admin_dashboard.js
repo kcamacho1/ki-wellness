@@ -35,6 +35,10 @@ class AdminDashboardManager {
             this.updateSetting('allowed_emails', '');
         });
 
+        document.getElementById('assign-ff-roles').addEventListener('click', () => {
+            this.assignFFRoles();
+        });
+
         // Payment type settings
         document.getElementById('update-payment-type').addEventListener('click', () => {
             const selectedPaymentType = document.querySelector('input[name="payment-type"]:checked').value;
@@ -127,6 +131,40 @@ class AdminDashboardManager {
         } catch (error) {
             console.error('Error exporting data:', error);
             this.showNotification('Error exporting data. Please try again.', 'error');
+        }
+    }
+
+    async assignFFRoles() {
+        try {
+            // Show loading state
+            const button = document.getElementById('assign-ff-roles');
+            const originalText = button.textContent;
+            button.textContent = '🔄 Assigning...';
+            button.disabled = true;
+
+            const response = await fetch('/api/admin/assign-ff-roles', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification(data.message, 'success');
+                this.updateLastUpdatedTime();
+            } else {
+                this.showNotification('Failed to assign FF roles: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error assigning FF roles:', error);
+            this.showNotification('Error assigning FF roles. Please try again.', 'error');
+        } finally {
+            // Reset button
+            const button = document.getElementById('assign-ff-roles');
+            button.textContent = 'Assign FF Roles';
+            button.disabled = false;
         }
     }
 

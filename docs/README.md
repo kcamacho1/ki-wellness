@@ -34,6 +34,23 @@ A comprehensive self-health application that helps users track nutrition, water 
 - **Real-time Updates**: Instant feedback and data synchronization
 - **Toast Notifications**: User-friendly success and error messages
 
+## Project Structure
+
+The Ki Wellness application is organized into logical directories for better maintainability:
+
+- **`/services/`** - Business logic services (payment, analytics, AI, food data)
+- **`/apis/`** - API endpoints and integrations
+- **`/templates/`** - HTML templates and components
+- **`/static/`** - CSS, JavaScript, and static assets
+- **`/tests/`** - Test files
+- **`/scripts/`** - Utility scripts and tools
+- **`/migrations/`** - Database migration scripts
+- **`/ai/`** - AI training and management
+- **`/config/`** - Configuration files
+- **`/docs/`** - Documentation
+
+For detailed information about the project structure, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md).
+
 ## Technology Stack
 
 ### Backend
@@ -224,8 +241,11 @@ ki_wellness/
     ├── js/
     │   └── dashboard.js  # Dashboard functionality
     └── assets/           # Images and icons
-        ├── leaf.png      # Logo
-        └── favicon.ico   # Favicon
+        ├── branding/
+│   ├── leaf.png      # Logo
+│   ├── favicon.ico   # Favicon
+│   ├── ki-profile.png # Profile image
+│   └── AI Health Coach.png # AI coach image
 ```
 
 ### Adding New Features

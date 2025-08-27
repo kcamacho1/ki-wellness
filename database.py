@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     ailments_concerns = db.Column(db.Text)  # Ailments or areas of concern
     profile_image = db.Column(db.String(255))  # Path to profile image
     is_admin = db.Column(db.Boolean, default=False)
+    role = db.Column(db.String(20), default='user')  # 'admin', 'user', 'ff'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Agreement tracking
@@ -39,6 +40,36 @@ class User(UserMixin, db.Model):
     recipes = db.relationship('Recipe', backref='user', lazy=True)
     recipe_ratings = db.relationship('RecipeRating', backref='user', lazy=True)
     subscriptions = db.relationship('Subscription', backref='user', lazy=True)
+    
+    def is_admin_role(self):
+        """Check if user has admin role"""
+        return self.role == 'admin' or self.is_admin
+    
+    def is_ff_role(self):
+        """Check if user has friends & family role"""
+        return self.role == 'ff'
+    
+    def is_regular_user(self):
+        """Check if user is a regular user (not admin or ff)"""
+        return self.role == 'user'
+    
+    def has_premium_access(self):
+        """Check if user has access to premium features"""
+        # Admin and ff users always have premium access
+        if self.is_admin_role() or self.is_ff_role():
+            return True
+        
+        # Regular users need active premium subscription
+        if self.is_regular_user():
+            from datetime import datetime
+            active_subscription = next((sub for sub in self.subscriptions if sub.status == 'active'), None)
+            return active_subscription is not None
+        
+        return False
+    
+    def can_access_admin_dashboard(self):
+        """Check if user can access admin dashboard"""
+        return self.is_admin_role()
 
 class FoodLog(db.Model):
     __tablename__ = 'food_log'

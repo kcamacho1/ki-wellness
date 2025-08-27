@@ -7,7 +7,7 @@ Processes PDFs and files to improve AI responses through fine-tuning and RAG
 import os
 import json
 import requests
-from openrouter_client import get_openrouter_client
+from services.openrouter_client import get_openrouter_client
 from datetime import datetime
 from pathlib import Path
 import PyPDF2

@@ -9,10 +9,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-ki-green-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                        </svg>
+                    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-gray-200">
+                        <img src="{{ url_for('static', filename='assets/branding/AI Health Coach.png') }}" alt="AI Health Coach" class="w-full h-full object-cover">
                     </div>
                     <div>
                         <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-ki-green-600 to-blue-600 bg-clip-text text-transparent">AI Health Coach</h1>
@@ -23,11 +21,12 @@
                     <div id="last-updated" class="text-sm text-gray-500 hidden">
                         Last updated: Just now
                     </div>
-                    <button id="refresh-analysis" class="px-4 py-2 bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white text-sm font-semibold rounded-xl hover:from-ki-green-600 hover:to-ki-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2">
+                    <button id="refresh-analysis" class="px-4 py-2 bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white text-sm font-semibold rounded-xl hover:from-ki-green-600 hover:to-ki-green-700 transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-2 relative">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                         <span>Refresh Analysis</span>
+                        <span id="refresh-premium-badge" class="hidden absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">PREMIUM</span>
                     </button>
                 </div>
             </div>
@@ -87,8 +86,11 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-3">
-                        <button id="chat-button-hero" class="px-5 py-2.5 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-200 border border-white/30">
+                        <button id="chat-button-hero" class="px-5 py-2.5 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-200 border border-white/30 relative">
                             💬 Start Chat
+                            <span id="hero-premium-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-xs font-bold flex items-center justify-center shadow-lg text-white">
+                                💎
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -151,10 +153,14 @@
                     <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs font-bold flex items-center justify-center shadow-lg">
                         AI
                     </div>
+                    <!-- Premium lock badge (shown for non-premium users) -->
+                    <div id="chat-premium-badge" class="hidden absolute -bottom-1 -left-1 w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-xs font-bold flex items-center justify-center shadow-lg text-white">
+                        💎
+                    </div>
                 </button>
                 <!-- Tooltip -->
                 <div class="absolute bottom-full right-0 mb-2 px-3 py-1 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    Chat with AI Coach
+                    <span id="chat-tooltip-text">Chat with AI Coach</span>
                     <div class="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                 </div>
             </div>
@@ -167,10 +173,8 @@
                 <!-- Enhanced Chat Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-ki-green-50 to-blue-50 rounded-t-3xl">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-ki-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
+                        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-gray-200">
+                            <img src="{{ url_for('static', filename='assets/branding/AI Health Coach.png') }}" alt="AI Health Coach" class="w-full h-full object-cover">
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900">AI Health Coach</h3>
@@ -197,10 +201,8 @@
                 <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50/50 to-white/50">
                     <!-- Welcome message -->
                     <div class="flex items-start space-x-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-ki-green-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
+                        <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden border border-gray-200">
+                            <img src="{{ url_for('static', filename='assets/branding/AI Health Coach.png') }}" alt="AI Health Coach" class="w-full h-full object-cover">
                         </div>
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 max-w-xs">
                             <div class="text-sm text-gray-800 prose prose-sm max-w-none">

@@ -294,7 +294,7 @@ class StripeClient:
         
         # Log revenue for analytics
         try:
-            from analytics_service import analytics_service
+            from services.analytics_service import analytics_service
             
             # Get subscription amount
             amount = subscription.get('items', {}).get('data', [{}])[0].get('price', {}).get('unit_amount', 0) / 100

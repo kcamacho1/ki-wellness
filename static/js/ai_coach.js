@@ -60,6 +60,12 @@ class AICoachManager {
     }
 
     openChat() {
+        // Check premium status before opening chat
+        if (!this.isPremium) {
+            this.showUpgradePrompt('AI Chat is a premium feature. Upgrade to chat with your personalized AI Health Coach!');
+            return;
+        }
+        
         document.getElementById('chat-modal').classList.remove('hidden');
         document.getElementById('chat-input').focus();
     }
@@ -556,10 +562,8 @@ class AICoachManager {
             `;
         } else {
             messageDiv.innerHTML = `
-                <div class="w-8 h-8 bg-ki-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
+                <div class="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden border border-gray-200">
+                    <img src="/static/assets/branding/AI Health Coach.png" alt="AI Health Coach" class="w-full h-full object-cover">
                 </div>
                 <div class="bg-white rounded-lg p-3 shadow-sm max-w-xs lg:max-w-md">
                     <div class="text-sm text-gray-800 prose prose-sm max-w-none">
@@ -680,17 +684,35 @@ class AICoachManager {
         const premiumPrompt = document.getElementById('premium-upgrade-prompt');
         const aiFeatures = document.getElementById('ai-features');
         const chatButton = document.getElementById('chat-button');
+        const refreshPremiumBadge = document.getElementById('refresh-premium-badge');
+        const chatPremiumBadge = document.getElementById('chat-premium-badge');
+        const chatTooltipText = document.getElementById('chat-tooltip-text');
+        const heroPremiumBadge = document.getElementById('hero-premium-badge');
         
         if (this.isPremium) {
-            // Premium user - show AI features
+            // Premium user - show AI features and enable chat
             if (premiumPrompt) premiumPrompt.classList.add('hidden');
             if (aiFeatures) aiFeatures.classList.remove('hidden');
-            if (chatButton) chatButton.classList.remove('hidden');
+            if (chatButton) {
+                chatButton.classList.remove('hidden');
+                chatButton.classList.remove('premium-locked');
+            }
+            if (refreshPremiumBadge) refreshPremiumBadge.classList.add('hidden');
+            if (chatPremiumBadge) chatPremiumBadge.classList.add('hidden');
+            if (heroPremiumBadge) heroPremiumBadge.classList.add('hidden');
+            if (chatTooltipText) chatTooltipText.textContent = 'Chat with AI Coach';
         } else {
-            // Free user - show upgrade prompt, hide AI features
+            // Free user - show upgrade prompt, but keep chat button visible with premium indicator
             if (premiumPrompt) premiumPrompt.classList.remove('hidden');
             if (aiFeatures) aiFeatures.classList.add('hidden');
-            if (chatButton) chatButton.classList.add('hidden');
+            if (chatButton) {
+                chatButton.classList.remove('hidden');
+                chatButton.classList.add('premium-locked');
+            }
+            if (refreshPremiumBadge) refreshPremiumBadge.classList.remove('hidden');
+            if (chatPremiumBadge) chatPremiumBadge.classList.remove('hidden');
+            if (heroPremiumBadge) heroPremiumBadge.classList.remove('hidden');
+            if (chatTooltipText) chatTooltipText.textContent = 'Upgrade to Chat with AI Coach';
         }
     }
 
@@ -725,6 +747,12 @@ class AICoachManager {
     }
 
     async refreshAnalysis() {
+        // Check premium status before allowing refresh
+        if (!this.isPremium) {
+            this.showUpgradePrompt('Refresh Analysis is a premium feature. Upgrade to get fresh insights and updated recommendations.');
+            return;
+        }
+        
         // Show loading state with progress message
         document.getElementById('loading-state').classList.remove('hidden');
         document.getElementById('main-content').classList.add('hidden');

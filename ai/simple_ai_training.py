@@ -6,7 +6,7 @@ Lightweight version for basic document processing and model enhancement
 
 import os
 import json
-from openrouter_client import get_openrouter_client
+from services.openrouter_client import get_openrouter_client
 from pathlib import Path
 from typing import List, Dict
 from dotenv import load_dotenv
