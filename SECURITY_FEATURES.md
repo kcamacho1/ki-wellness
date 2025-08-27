@@ -60,7 +60,7 @@ This document outlines the comprehensive security measures implemented to protec
 - **X-Frame-Options**: `DENY`
 - **X-XSS-Protection**: `1; mode=block`
 - **Referrer-Policy**: `strict-origin-when-cross-origin`
-- **Content-Security-Policy**: Restrictive script and style sources
+- **Content-Security-Policy**: Adaptive - relaxed in development, strict in production
 
 ### **7. Session Security**
 - **Automatic Logout**: 1 hour of inactivity
@@ -169,6 +169,20 @@ RECAPTCHA_SECRET_KEY=your_secret_key_here
 
 # Get from Google reCAPTCHA admin console
 # https://www.google.com/recaptcha/admin/create
+```
+
+### **Content Security Policy (CSP)**
+```python
+# CSP automatically adapts based on environment
+# Development: More permissive for easier debugging
+# Production: Strict policy for security
+
+# Allowed external resources:
+# - Google Fonts (fonts.googleapis.com, fonts.gstatic.com)
+# - Tailwind CSS CDN (cdn.tailwindcss.com)
+# - Chart.js (cdn.jsdelivr.net)
+# - Alpine.js (unpkg.com)
+# - Google reCAPTCHA (www.google.com, www.gstatic.com)
 ```
 
 ## **🚨 Security Events & Responses**

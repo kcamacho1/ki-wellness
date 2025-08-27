@@ -48,8 +48,10 @@
         }
     </script>
     
-    <!-- reCAPTCHA v2 -->
+    <!-- reCAPTCHA v2 - only load if configured -->
+    {% if config.get('RECAPTCHA_SITE_KEY') or request.endpoint == 'register' %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

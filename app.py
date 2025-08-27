@@ -5,6 +5,7 @@ import uuid
 import re
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
+import mimetypes
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -82,6 +83,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Fix MIME types for static files
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
 
 # Session configuration - Auto-logout after 1 hour of inactivity
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
@@ -561,6 +566,19 @@ def search_openfoodfacts_api(query):
         return []
 
 # Routes
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve static files with proper headers"""
+    response = send_from_directory(app.static_folder, filename)
+    
+    # Set proper MIME types for JavaScript and CSS files
+    if filename.endswith('.js'):
+        response.headers['Content-Type'] = 'application/javascript'
+    elif filename.endswith('.css'):
+        response.headers['Content-Type'] = 'text/css'
+    
+    return response
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:

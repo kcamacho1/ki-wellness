@@ -19,6 +19,14 @@ class SecurityMiddleware:
         }
         self.lock = threading.Lock()
         
+        # Check if we're in development mode for CSP relaxation
+        self.is_development = (
+            app.debug or 
+            app.config.get('ENV') == 'development' or
+            app.config.get('FLASK_ENV') == 'development' or
+            not app.config.get('DATABASE_URL', '').startswith('postgresql')
+        )
+        
     def init_app(self, app):
         app.before_request(self.before_request)
         app.after_request(self.after_request)
@@ -50,7 +58,35 @@ class SecurityMiddleware:
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        
+        # Updated CSP to allow necessary external resources
+        if self.is_development:
+            # More relaxed CSP for development
+            csp = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+                "style-src 'self' 'unsafe-inline' https:",
+                "font-src 'self' https:",
+                "img-src 'self' data: https:",
+                "connect-src 'self' https:",
+                "frame-src https:",
+                "object-src 'none'",
+                "base-uri 'self'"
+            ]
+        else:
+            # Strict CSP for production (but Alpine.js needs 'unsafe-eval')
+            csp = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com",
+                "font-src 'self' https://fonts.gstatic.com",
+                "img-src 'self' data: https:",
+                "connect-src 'self' https://www.google.com https://www.gstatic.com",
+                "frame-src https://www.google.com",
+                "object-src 'none'",
+                "base-uri 'self'"
+            ]
+        response.headers['Content-Security-Policy'] = "; ".join(csp)
         
         # Remove server information
         response.headers.pop('Server', None)
