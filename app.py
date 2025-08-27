@@ -4,7 +4,7 @@ import json
 import uuid
 import re
 from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -23,7 +23,7 @@ from services.food_data import BASIC_FOODS, COMMON_FOODS_DB
 from services.health_resources import get_relevant_resources, format_resources_for_prompt
 
 # Import database and models
-from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction, Subscription
+from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction, Subscription, AIUsageLog
 
 # Import recipe API
 from apis.recipe_api import recipe_bp
@@ -77,6 +77,12 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Session configuration - Auto-logout after 1 hour of inactivity
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Database configuration - Multi-driver approach
 db_url = os.getenv('DATABASE_URL')
@@ -182,6 +188,31 @@ class PaymentSession(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@app.before_request
+def check_session_expiry():
+    """Check if user session has expired and auto-logout if necessary"""
+    if current_user.is_authenticated:
+        # Check if session is permanent and has expired
+        if session.permanent:
+            # Get the session expiry time
+            session_expiry = session.get('_permanent', None)
+            if session_expiry:
+                try:
+                    # Parse the expiry time
+                    expiry_datetime = datetime.fromisoformat(session_expiry)
+                    if datetime.utcnow() > expiry_datetime:
+                        # Session expired, logout user
+                        logout_user()
+                        flash('Your session has expired. Please log in again.', 'info')
+                        return redirect(url_for('login'))
+                except (ValueError, TypeError):
+                    # If we can't parse the expiry time, continue
+                    pass
+        
+        # Update session expiry on each request
+        session.permanent = True
+        session.modified = True
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -302,6 +333,55 @@ def get_app_setting(key, default=None):
     """Get an app setting value"""
     setting = AppSettings.query.filter_by(key=key).first()
     return setting.value if setting else default
+
+def check_ai_usage_limits(user_id):
+    """Check if user has exceeded AI usage limits (PER-USER limits, globally configured)"""
+    if not get_app_setting('enforce_limits', 'false').lower() == 'true':
+        return True, None  # Limits not enforced
+    
+    today = datetime.utcnow().date()
+    this_month = datetime.utcnow().replace(day=1).date()
+    
+    # Check PER-USER daily token limit (configured globally, applied per user)
+    daily_token_limit = int(get_app_setting('daily_token_limit', '0'))
+    if daily_token_limit > 0:
+        today_tokens = db.session.query(
+            db.func.sum(AIUsageLog.input_tokens + AIUsageLog.output_tokens)
+        ).filter(
+            AIUsageLog.user_id == user_id,
+            db.func.date(AIUsageLog.created_at) == today
+        ).scalar() or 0
+        
+        if today_tokens >= daily_token_limit:
+            return False, f"Daily token limit ({daily_token_limit}) exceeded. You used: {today_tokens}"
+    
+    # Check PER-USER daily call limit (configured globally, applied per user)
+    daily_call_limit = int(get_app_setting('daily_call_limit', '0'))
+    if daily_call_limit > 0:
+        today_calls = db.session.query(
+            db.func.count(AIUsageLog.id)
+        ).filter(
+            AIUsageLog.user_id == user_id,
+            db.func.date(AIUsageLog.created_at) == today
+        ).scalar() or 0
+        
+        if today_calls >= daily_call_limit:
+            return False, f"Daily call limit ({daily_call_limit}) exceeded. You made: {today_calls} calls"
+    
+    # Check PER-USER monthly cost limit (configured globally, applied per user)
+    monthly_cost_limit = float(get_app_setting('monthly_cost_limit', '0'))
+    if monthly_cost_limit > 0:
+        month_cost = db.session.query(
+            db.func.sum(AIUsageLog.total_cost)
+        ).filter(
+            AIUsageLog.user_id == user_id,
+            db.func.date(AIUsageLog.created_at) >= this_month
+        ).scalar() or 0
+        
+        if month_cost >= monthly_cost_limit:
+            return False, f"Monthly cost limit (${monthly_cost_limit:.4f}) exceeded. Your cost: ${month_cost:.4f}"
+    
+    return True, None  # All limits passed
 
 def set_app_setting(key, value):
     """Set an app setting value"""
@@ -486,7 +566,8 @@ def login():
         
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
-            login_user(user)
+            login_user(user, remember=True)  # Enable remember me functionality
+            session.permanent = True  # Make session permanent for timeout tracking
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
@@ -575,6 +656,16 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/extend-session')
+@login_required
+def extend_session():
+    """Extend user session by updating session expiry"""
+    if current_user.is_authenticated:
+        session.permanent = True
+        session.modified = True
+        return jsonify({'success': True, 'message': 'Session extended'})
+    return jsonify({'success': False, 'message': 'User not authenticated'}), 401
+
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     """Handle forgot password request - DISABLED"""
@@ -616,6 +707,12 @@ def ai_coach():
         flash('You need a premium subscription to access the AI Health Coach. Upgrade now for just $5/month!', 'info')
         return redirect(url_for('profile'))
     
+    # Check AI usage limits
+    limits_ok, limit_message = check_ai_usage_limits(current_user.id)
+    if not limits_ok:
+        flash(f'AI usage limit exceeded: {limit_message}. Please try again tomorrow or contact support.', 'error')
+        return redirect(url_for('dashboard'))
+    
     return render_template('ai_coach.html')
 
 @app.route('/admin')
@@ -647,6 +744,24 @@ def admin_dashboard():
                          allowed_emails=allowed_emails,
                          human_help_payment_type=human_help_payment_type,
                          calendly_link=calendly_link)
+
+@app.route('/api/admin/settings', methods=['GET'])
+@admin_required
+def get_admin_settings():
+    """Get admin settings for frontend"""
+    try:
+        settings = {
+            'daily_token_limit': get_app_setting('daily_token_limit', '0'),
+            'daily_call_limit': get_app_setting('daily_call_limit', '0'),
+            'monthly_cost_limit': get_app_setting('monthly_cost_limit', '0'),
+            'enforce_limits': get_app_setting('enforce_limits', 'false'),
+            'new_accounts_enabled': get_app_setting('new_accounts_enabled', 'true'),
+            'maintenance_mode': get_app_setting('maintenance_mode', 'false'),
+            'max_users': get_app_setting('max_users', '1000')
+        }
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/settings', methods=['POST'])
 @admin_required
@@ -703,6 +818,60 @@ def get_admin_ai_usage():
         
     except Exception as e:
         print(f"❌ Error getting AI usage analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ai-usage/current-user')
+@login_required
+def get_current_user_ai_usage():
+    """Get current user's AI usage statistics"""
+    try:
+        today = datetime.utcnow().date()
+        this_month = datetime.utcnow().replace(day=1).date()
+        
+        # Get today's usage
+        today_usage = db.session.query(
+            db.func.sum(AIUsageLog.input_tokens + AIUsageLog.output_tokens).label('total_tokens'),
+            db.func.count(AIUsageLog.id).label('total_calls'),
+            db.func.sum(AIUsageLog.total_cost).label('total_cost')
+        ).filter(
+            AIUsageLog.user_id == current_user.id,
+            db.func.date(AIUsageLog.created_at) == today
+        ).first()
+        
+        # Get this month's usage
+        month_usage = db.session.query(
+            db.func.sum(AIUsageLog.total_cost).label('total_cost')
+        ).filter(
+            AIUsageLog.user_id == current_user.id,
+            db.func.date(AIUsageLog.created_at) >= this_month
+        ).first()
+        
+        # Get limits
+        daily_token_limit = int(get_app_setting('daily_token_limit', '0'))
+        daily_call_limit = int(get_app_setting('daily_call_limit', '0'))
+        monthly_cost_limit = float(get_app_setting('monthly_cost_limit', '0'))
+        
+        return jsonify({
+            'success': True,
+            'usage': {
+                'today': {
+                    'tokens': int(today_usage.total_tokens) if today_usage.total_tokens else 0,
+                    'calls': int(today_usage.total_calls) if today_usage.total_calls else 0,
+                    'cost': float(today_usage.total_cost) if today_usage.total_cost else 0.0
+                },
+                'month': {
+                    'cost': float(month_usage.total_cost) if month_usage.total_cost else 0.0
+                }
+            },
+            'limits': {
+                'daily_tokens': daily_token_limit,
+                'daily_calls': daily_call_limit,
+                'monthly_cost': monthly_cost_limit
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting user AI usage: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/revenue')
@@ -809,10 +978,37 @@ def admin_settings():
     maintenance_mode = get_app_setting('maintenance_mode', 'false').lower() == 'true'
     max_users = get_app_setting('max_users', '1000')
     
+    # Get AI limit settings
+    daily_token_limit = get_app_setting('daily_token_limit', '0')
+    daily_call_limit = get_app_setting('daily_call_limit', '0')
+    monthly_cost_limit = get_app_setting('monthly_cost_limit', '0')
+    enforce_limits = get_app_setting('enforce_limits', 'false').lower() == 'true'
+    
+    # Get today's AI usage statistics
+    today = datetime.utcnow().date()
+    today_usage = db.session.query(
+        db.func.sum(AIUsageLog.input_tokens + AIUsageLog.output_tokens).label('total_tokens'),
+        db.func.count(AIUsageLog.id).label('total_calls'),
+        db.func.sum(AIUsageLog.total_cost).label('total_cost')
+    ).filter(
+        db.func.date(AIUsageLog.created_at) == today
+    ).first()
+    
+    today_total_tokens = int(today_usage.total_tokens) if today_usage.total_tokens else 0
+    today_total_calls = int(today_usage.total_calls) if today_usage.total_calls else 0
+    today_total_cost = float(today_usage.total_cost) if today_usage.total_cost else 0.0
+    
     return render_template('admin_settings.html',
                          new_accounts_enabled=new_accounts_enabled,
                          maintenance_mode=maintenance_mode,
-                         max_users=max_users)
+                         max_users=max_users,
+                         daily_token_limit=daily_token_limit,
+                         daily_call_limit=daily_call_limit,
+                         monthly_cost_limit=monthly_cost_limit,
+                         enforce_limits=enforce_limits,
+                         today_total_tokens=today_total_tokens,
+                         today_total_calls=today_total_calls,
+                         today_total_cost=today_total_cost)
 
 @app.route('/admin/payments')
 @admin_required
@@ -1365,6 +1561,15 @@ def get_user_summary():
 @premium_required
 def ai_chat():
     try:
+        # Check AI usage limits before processing request
+        limits_ok, limit_message = check_ai_usage_limits(current_user.id)
+        if not limits_ok:
+            return jsonify({
+                'success': False, 
+                'error': f'AI usage limit exceeded: {limit_message}',
+                'limit_exceeded': True
+            }), 429  # Too Many Requests
+        
         data = request.get_json()
         message = data.get('message')
         context = data.get('context', {})

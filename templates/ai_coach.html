@@ -34,6 +34,36 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <!-- AI Usage Display -->
+        <div id="ai-usage-display" class="mb-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900">Your AI Usage Today</h3>
+                    <p class="text-xs text-gray-500">Shows your personal usage and limits</p>
+                </div>
+                <button id="refresh-usage" class="text-sm text-blue-600 hover:text-blue-700 transition-colors">
+                    🔄 Refresh
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="font-semibold text-blue-600" id="usage-tokens">--</div>
+                    <div class="text-gray-600">Tokens Used</div>
+                    <div class="text-xs text-gray-500" id="token-limit">--</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="font-semibold text-green-600" id="usage-calls">--</div>
+                    <div class="text-gray-600">Calls Made</div>
+                    <div class="text-xs text-gray-500" id="call-limit">--</div>
+                </div>
+                <div class="text-center p-3 bg-gray-50 rounded-xl">
+                    <div class="font-semibold text-purple-600" id="usage-cost">$--</div>
+                    <div class="text-gray-600">Cost Today</div>
+                    <div class="text-xs text-gray-500" id="cost-limit">--</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading State -->
         <div id="loading-state" class="text-center py-12">
             <div class="relative">

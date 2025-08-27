@@ -90,6 +90,101 @@
                 </div>
             </div>
 
+            <!-- AI Limits Configuration -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">AI Health Coach Limits</h2>
+                        <p class="text-sm text-gray-600">Configure per-user limits that apply to every individual user</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Daily Token Limit -->
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <div class="mb-3">
+                            <h3 class="font-semibold text-gray-900">Daily Token Limit (Per User)</h3>
+                            <p class="text-sm text-gray-600">Maximum tokens per individual user per day (0 = unlimited)</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" id="daily-token-limit" value="{{ daily_token_limit }}" min="0"
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button id="update-token-limit" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Daily Call Limit -->
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <div class="mb-3">
+                            <h3 class="font-semibold text-gray-900">Daily Call Limit (Per User)</h3>
+                            <p class="text-sm text-gray-600">Maximum AI calls per individual user per day (0 = unlimited)</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" id="daily-call-limit" value="{{ daily_call_limit }}" min="0"
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button id="update-call-limit" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Cost Limit -->
+                    <div class="p-4 bg-gray-50 rounded-xl">
+                        <div class="mb-3">
+                            <h3 class="font-semibold text-gray-900">Monthly Cost Limit (Per User)</h3>
+                            <p class="text-sm text-gray-600">Maximum AI cost per individual user per month in USD (0 = unlimited)</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" id="monthly-cost-limit" value="{{ monthly_cost_limit }}" min="0" step="0.01"
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button id="update-cost-limit" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Limit Enforcement -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Enforce Per-User Limits</h3>
+                            <p class="text-sm text-gray-600">Automatically block individual users when they exceed their limits</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="enforce-limits-toggle" class="sr-only peer" 
+                                   {% if enforce_limits %}checked{% endif %}>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Current Usage Display -->
+                    <div class="p-4 bg-blue-50 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 mb-3">Total Usage Today (All Users Combined)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="text-center">
+                                <div class="font-semibold text-blue-600">{{ today_total_tokens|default(0) }}</div>
+                                <div class="text-gray-600">Total Tokens</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-blue-600">{{ today_total_calls|default(0) }}</div>
+                                <div class="text-gray-600">Total Calls</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-blue-600">${{ "%.4f"|format(today_total_cost|default(0)) }}</div>
+                                <div class="text-gray-600">Total Cost</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
             <!-- System Information -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6">
                 <div class="flex items-center space-x-3 mb-6">
@@ -246,6 +341,26 @@ class AdminSettingsManager {
 
         document.getElementById('clear-cache').addEventListener('click', () => {
             this.clearCache();
+        });
+
+        // AI Limits controls
+        document.getElementById('update-token-limit').addEventListener('click', () => {
+            const value = document.getElementById('daily-token-limit').value;
+            this.updateSetting('daily_token_limit', value);
+        });
+
+        document.getElementById('update-call-limit').addEventListener('click', () => {
+            const value = document.getElementById('daily-call-limit').value;
+            this.updateSetting('daily_call_limit', value);
+        });
+
+        document.getElementById('update-cost-limit').addEventListener('click', () => {
+            const value = document.getElementById('monthly-cost-limit').value;
+            this.updateSetting('monthly_cost_limit', value);
+        });
+
+        document.getElementById('enforce-limits-toggle').addEventListener('change', (e) => {
+            this.updateSetting('enforce_limits', e.target.checked);
         });
     }
 

@@ -132,6 +132,78 @@
         function shouldShowRecaptcha() {
             return window.location.hostname === 'kiwellness.org';
         }
+        
+        // Session timeout management
+        {% if current_user.is_authenticated %}
+        (function() {
+            const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour in milliseconds
+            const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before timeout
+            
+            let sessionTimer;
+            let warningTimer;
+            
+            function resetTimers() {
+                clearTimeout(sessionTimer);
+                clearTimeout(warningTimer);
+                
+                // Set warning timer (55 minutes)
+                warningTimer = setTimeout(() => {
+                    showSessionWarning();
+                }, SESSION_TIMEOUT - WARNING_TIME);
+                
+                // Set session timeout (1 hour)
+                sessionTimer = setTimeout(() => {
+                    window.location.href = '{{ url_for("logout") }}';
+                }, SESSION_TIMEOUT);
+            }
+            
+            function showSessionWarning() {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'sessionWarning';
+                warningDiv.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-6 py-4 rounded-lg shadow-lg z-50';
+                warningDiv.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <span>Your session will expire in 5 minutes. Click anywhere to extend your session.</span>
+                    </div>
+                `;
+                
+                document.body.appendChild(warningDiv);
+                
+                // Add click handler to extend session
+                warningDiv.addEventListener('click', () => {
+                    // Make an AJAX request to extend session
+                    fetch('{{ url_for("extend_session") }}', { method: 'GET' })
+                        .then(() => {
+                            warningDiv.remove();
+                            resetTimers();
+                        })
+                        .catch(() => {
+                            warningDiv.remove();
+                            resetTimers();
+                        });
+                });
+                
+                // Auto-remove warning after 5 minutes
+                setTimeout(() => {
+                    if (warningDiv.parentNode) {
+                        warningDiv.remove();
+                    }
+                }, WARNING_TIME);
+            }
+            
+            // Reset timers on user activity
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            events.forEach(event => {
+                document.addEventListener(event, resetTimers, true);
+            });
+            
+            // Initialize timers
+            resetTimers();
+        })();
+        {% endif %}
     </script>
     
     {% block scripts %}{% endblock %}

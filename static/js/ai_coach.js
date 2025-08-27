@@ -18,6 +18,9 @@ class AICoachManager {
         // Check premium status
         await this.checkPremiumStatus();
         
+        // Load AI usage data
+        await this.loadAIUsage();
+        
         this.setupEventListeners();
         this.showMainContent();
     }
@@ -57,6 +60,9 @@ class AICoachManager {
                 this.sendMessage();
             });
         });
+
+        // AI usage refresh
+        document.getElementById('refresh-usage').addEventListener('click', () => this.loadAIUsage());
     }
 
     openChat() {
@@ -123,6 +129,164 @@ class AICoachManager {
             }
         } catch (error) {
             console.error('Error loading user summary:', error);
+        }
+    }
+
+    async loadAIUsage() {
+        try {
+            console.log('Loading individual AI usage data...');
+            const response = await fetch('/api/ai-usage/current-user');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayAIUsage(data.usage, data.limits);
+            } else {
+                console.error('Failed to load AI usage:', data.error);
+                this.displayAIUsageError();
+            }
+        } catch (error) {
+            console.error('Error loading AI usage:', error);
+            this.displayAIUsageError();
+        }
+    }
+
+    displayGlobalAIUsage(aiUsage) {
+        // Get limits from app settings
+        this.loadGlobalLimits().then(limits => {
+            // Display tokens
+            const totalTokens = aiUsage.total_tokens || 0;
+            document.getElementById('usage-tokens').textContent = totalTokens.toLocaleString();
+            document.getElementById('token-limit').textContent = limits.daily_tokens > 0 ? `Limit: ${limits.daily_tokens.toLocaleString()}` : 'Unlimited';
+            
+            // Display calls
+            const totalCalls = aiUsage.total_calls || 0;
+            document.getElementById('usage-calls').textContent = totalCalls.toLocaleString();
+            document.getElementById('call-limit').textContent = limits.daily_calls > 0 ? `Limit: ${limits.daily_calls.toLocaleString()}` : 'Unlimited';
+            
+            // Display cost
+            const totalCost = aiUsage.total_cost || 0;
+            document.getElementById('usage-cost').textContent = `$${totalCost.toFixed(4)}`;
+            document.getElementById('cost-limit').textContent = limits.monthly_cost > 0 ? `Monthly: $${limits.monthly_cost.toFixed(2)}` : 'Unlimited';
+            
+            // Add visual indicators for approaching limits
+            this.updateGlobalUsageIndicators(totalTokens, totalCost, limits);
+        });
+    }
+
+    async loadGlobalLimits() {
+        try {
+            const response = await fetch('/api/admin/settings');
+            const data = await response.json();
+            if (data.success) {
+                return {
+                    daily_tokens: parseInt(data.settings.daily_token_limit || 0),
+                    daily_calls: parseInt(data.settings.daily_call_limit || 0),
+                    monthly_cost: parseFloat(data.settings.monthly_cost_limit || 0)
+                };
+            }
+        } catch (error) {
+            console.error('Error loading global limits:', error);
+        }
+        return { daily_tokens: 0, daily_calls: 0, monthly_cost: 0 };
+    }
+
+    updateGlobalUsageIndicators(totalTokens, totalCost, limits) {
+        // Update visual indicators based on global usage vs limits
+        const tokenElement = document.getElementById('usage-tokens');
+        const callElement = document.getElementById('usage-calls');
+        const costElement = document.getElementById('usage-cost');
+        
+        // Reset colors
+        tokenElement.className = 'font-semibold text-blue-600';
+        callElement.className = 'font-semibold text-green-600';
+        costElement.className = 'font-semibold text-purple-600';
+        
+        // Check token usage
+        if (limits.daily_tokens > 0) {
+            const tokenPercent = (totalTokens / limits.daily_tokens) * 100;
+            if (tokenPercent >= 90) {
+                tokenElement.className = 'font-semibold text-red-600';
+            } else if (tokenPercent >= 75) {
+                tokenElement.className = 'font-semibold text-yellow-600';
+            }
+        }
+        
+        // Check cost usage (monthly)
+        if (limits.monthly_cost > 0) {
+            const costPercent = (totalCost / limits.monthly_cost) * 100;
+            if (costPercent >= 90) {
+                costElement.className = 'font-semibold text-red-600';
+            } else if (costPercent >= 75) {
+                costElement.className = 'font-semibold text-yellow-600';
+            }
+        }
+    }
+
+    displayAIUsage(usage, limits) {
+        // Display tokens
+        document.getElementById('usage-tokens').textContent = usage.today.tokens.toLocaleString();
+        document.getElementById('token-limit').textContent = limits.daily_tokens > 0 ? `Limit: ${limits.daily_tokens.toLocaleString()}` : 'Unlimited';
+        
+        // Display calls
+        document.getElementById('usage-calls').textContent = usage.today.calls.toLocaleString();
+        document.getElementById('call-limit').textContent = limits.daily_calls > 0 ? `Limit: ${limits.daily_calls.toLocaleString()}` : 'Unlimited';
+        
+        // Display cost
+        document.getElementById('usage-cost').textContent = `$${usage.today.cost.toFixed(4)}`;
+        document.getElementById('cost-limit').textContent = limits.monthly_cost > 0 ? `Monthly: $${limits.monthly_cost.toFixed(2)}` : 'Unlimited';
+        
+        // Add visual indicators for approaching limits
+        this.updateUsageIndicators(usage, limits);
+    }
+
+    displayAIUsageError() {
+        document.getElementById('usage-tokens').textContent = 'Error';
+        document.getElementById('usage-calls').textContent = 'Error';
+        document.getElementById('usage-cost').textContent = 'Error';
+        document.getElementById('token-limit').textContent = '--';
+        document.getElementById('call-limit').textContent = '--';
+        document.getElementById('cost-limit').textContent = '--';
+    }
+
+    updateUsageIndicators(usage, limits) {
+        // Update visual indicators based on usage vs limits
+        const tokenElement = document.getElementById('usage-tokens');
+        const callElement = document.getElementById('usage-calls');
+        const costElement = document.getElementById('usage-cost');
+        
+        // Reset colors
+        tokenElement.className = 'font-semibold text-blue-600';
+        callElement.className = 'font-semibold text-green-600';
+        costElement.className = 'font-semibold text-purple-600';
+        
+        // Check token usage
+        if (limits.daily_tokens > 0) {
+            const tokenPercent = (usage.today.tokens / limits.daily_tokens) * 100;
+            if (tokenPercent >= 90) {
+                tokenElement.className = 'font-semibold text-red-600';
+            } else if (tokenPercent >= 75) {
+                tokenElement.className = 'font-semibold text-yellow-600';
+            }
+        }
+        
+        // Check call usage
+        if (limits.daily_calls > 0) {
+            const callPercent = (usage.today.calls / limits.daily_calls) * 100;
+            if (callPercent >= 90) {
+                callElement.className = 'font-semibold text-red-600';
+            } else if (callPercent >= 75) {
+                callElement.className = 'font-semibold text-yellow-600';
+            }
+        }
+        
+        // Check cost usage (monthly)
+        if (limits.monthly_cost > 0) {
+            const costPercent = (usage.month.cost / limits.monthly_cost) * 100;
+            if (costPercent >= 90) {
+                costElement.className = 'font-semibold text-red-600';
+            } else if (costPercent >= 75) {
+                costElement.className = 'font-semibold text-yellow-600';
+            }
         }
     }
 
