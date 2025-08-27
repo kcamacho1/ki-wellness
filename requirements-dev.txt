@@ -20,3 +20,6 @@ stripe==7.8.0
 
 # Development server (optional)
 # flask==2.3.3  # Uncomment if you want to use Flask's built-in server
+
+# Note: PostgreSQL dependencies are NOT included for development
+# Use requirements.txt for production deployment

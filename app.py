@@ -78,25 +78,47 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Database configuration - Hybrid approach
+# Database configuration - Multi-driver approach
 db_url = os.getenv('DATABASE_URL')
 is_production = bool(db_url and 'postgresql' in db_url)
 
 if is_production:
-    # Production - PostgreSQL
+    # Production - PostgreSQL with driver detection
     if db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'connect_args': {
-            'connect_timeout': 10
+    
+    # Try to use the best available driver
+    try:
+        import psycopg2
+        print("✅ Using psycopg2 (maximum compatibility)")
+        # Use standard postgresql:// URL - SQLAlchemy will auto-detect
+    except ImportError:
+        try:
+            import psycopg
+            print("✅ Using psycopg3 (Python 3.13+ compatible)")
+            # Force psycopg dialect
+            if '+psycopg' not in db_url:
+                db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        except ImportError:
+            print("⚠️ No PostgreSQL driver found - falling back to SQLite")
+            db_url = None
+            is_production = False
+    
+    if is_production:
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {
+                'connect_timeout': 10
+            }
         }
-    }
-    print("🚀 Running in PRODUCTION mode with PostgreSQL")
+        print("🚀 Running in PRODUCTION mode with PostgreSQL")
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
+        print("🛠️ Falling back to DEVELOPMENT mode with SQLite")
 else:
     # Development - SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness.db'
-    print("🛠️  Running in DEVELOPMENT mode with SQLite")
+    print("🛠️ Running in DEVELOPMENT mode with SQLite")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
