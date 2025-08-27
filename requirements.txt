@@ -25,3 +25,6 @@ lxml==5.1.0
 
 # Payment processing
 stripe==7.8.0
+
+# Email functionality
+Flask-Mail==0.9.1

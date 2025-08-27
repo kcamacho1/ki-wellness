@@ -577,66 +577,15 @@ def logout():
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-    """Handle forgot password request"""
-    if request.method == 'POST':
-        email = request.form.get('email', '').lower()
-        
-        if not email:
-            flash('Please enter your email address', 'error')
-            return render_template('forgot_password.html')
-        
-        user = User.query.filter_by(email=email).first()
-        if user:
-            # Generate reset token
-            reset_token = str(uuid.uuid4())
-            user.reset_token = reset_token
-            user.reset_token_expires = datetime.utcnow() + timedelta(hours=24)
-            db.session.commit()
-            
-            # In a real application, you would send an email here
-            # For now, we'll just show the token (in production, remove this)
-            flash(f'Password reset link sent to {email}. Reset token: {reset_token}', 'success')
-        else:
-            # Don't reveal if email exists or not for security
-            flash('If an account with that email exists, a password reset link has been sent.', 'success')
-        
-        return redirect(url_for('login'))
-    
-    return render_template('forgot_password.html')
+    """Handle forgot password request - DISABLED"""
+    flash('Password reset is currently disabled. Please contact support if you need assistance.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    """Handle password reset with token"""
-    user = User.query.filter_by(reset_token=token).first()
-    
-    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
-        flash('Invalid or expired reset token', 'error')
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return render_template('reset_password.html', token=token)
-        
-        # Validate password strength
-        is_valid_password, password_error = validate_password_strength(password)
-        if not is_valid_password:
-            flash(password_error, 'error')
-            return render_template('reset_password.html', token=token)
-        
-        # Update password and clear reset token
-        user.password_hash = generate_password_hash(password)
-        user.reset_token = None
-        user.reset_token_expires = None
-        db.session.commit()
-        
-        flash('Password has been reset successfully. Please log in with your new password.', 'success')
-        return redirect(url_for('login'))
-    
-    return render_template('reset_password.html', token=token)
+    """Handle password reset with token - DISABLED"""
+    flash('Password reset is currently disabled. Please contact support if you need assistance.', 'info')
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
