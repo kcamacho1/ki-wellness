@@ -250,19 +250,33 @@ class StripeClient:
             
             print(f"📨 Processing Stripe webhook: {event_type} (ID: {event_id})")
             
-            if event_type == 'customer.subscription.created':
-                return self.handle_subscription_created(event_data)
-            elif event_type == 'customer.subscription.updated':
-                return self.handle_subscription_updated(event_data)
-            elif event_type == 'customer.subscription.deleted':
-                return self.handle_subscription_deleted(event_data)
-            elif event_type == 'invoice.payment_succeeded':
-                return self.handle_payment_succeeded(event_data)
-            elif event_type == 'invoice.payment_failed':
-                return self.handle_payment_failed(event_data)
-            else:
-                print(f"ℹ️ Unhandled webhook event type: {event_type}")
-                return {"status": "ignored", "reason": "unhandled_event_type"}
+        if event_type == 'customer.subscription.created':
+            return self.handle_subscription_created(event_data)
+        elif event_type == 'customer.subscription.updated':
+            return self.handle_subscription_updated(event_data)
+        elif event_type == 'customer.subscription.deleted':
+            return self.handle_subscription_deleted(event_data)
+        elif event_type == 'invoice.payment_succeeded':
+            return self.handle_payment_succeeded(event_data)
+        elif event_type == 'invoice.payment_failed':
+            return self.handle_payment_failed(event_data)
+        elif event_type == 'payment_intent.succeeded':
+            return self.handle_payment_intent_succeeded(event_data)
+        elif event_type == 'payment_intent.payment_failed':
+            return self.handle_payment_intent_failed(event_data)
+        elif event_type == 'customer.created':
+            return self.handle_customer_created(event_data)
+        elif event_type == 'customer.updated':
+            return self.handle_customer_updated(event_data)
+        elif event_type == 'charge.succeeded':
+            return self.handle_charge_succeeded(event_data)
+        elif event_type == 'charge.failed':
+            return self.handle_charge_failed(event_data)
+        elif event_type == 'charge.refunded':
+            return self.handle_charge_refunded(event_data)
+        else:
+            print(f"ℹ️ Unhandled webhook event type: {event_type}")
+            return {"status": "ignored", "reason": "unhandled_event_type"}
                 
         except Exception as e:
             print(f"❌ Error handling webhook event: {e}")
@@ -332,6 +346,69 @@ class StripeClient:
         
         print(f"❌ Payment failed for subscription: {subscription_id}")
         return {"status": "success", "action": "payment_failed"}
+    
+    def handle_payment_intent_succeeded(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle successful payment intent webhook"""
+        payment_intent = event_data.get('data', {}).get('object', {})
+        customer_id = payment_intent.get('customer')
+        amount = payment_intent.get('amount', 0) / 100
+        
+        print(f"💰 Payment intent succeeded: ${amount:.2f} for customer: {customer_id}")
+        return {"status": "success", "action": "payment_intent_succeeded"}
+    
+    def handle_payment_intent_failed(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle failed payment intent webhook"""
+        payment_intent = event_data.get('data', {}).get('object', {})
+        customer_id = payment_intent.get('customer')
+        error_message = payment_intent.get('last_payment_error', {}).get('message', 'Unknown error')
+        
+        print(f"❌ Payment intent failed for customer: {customer_id} - {error_message}")
+        return {"status": "success", "action": "payment_intent_failed"}
+    
+    def handle_customer_created(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle customer creation webhook"""
+        customer = event_data.get('data', {}).get('object', {})
+        customer_id = customer.get('id')
+        email = customer.get('email')
+        
+        print(f"✅ New customer created: {email} (ID: {customer_id})")
+        return {"status": "success", "action": "customer_created"}
+    
+    def handle_customer_updated(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle customer update webhook"""
+        customer = event_data.get('data', {}).get('object', {})
+        customer_id = customer.get('id')
+        email = customer.get('email')
+        
+        print(f"🔄 Customer updated: {email} (ID: {customer_id})")
+        return {"status": "success", "action": "customer_updated"}
+    
+    def handle_charge_succeeded(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle successful charge webhook"""
+        charge = event_data.get('data', {}).get('object', {})
+        customer_id = charge.get('customer')
+        amount = charge.get('amount', 0) / 100
+        
+        print(f"💰 Charge succeeded: ${amount:.2f} for customer: {customer_id}")
+        return {"status": "success", "action": "charge_succeeded"}
+    
+    def handle_charge_failed(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle failed charge webhook"""
+        charge = event_data.get('data', {}).get('object', {})
+        customer_id = charge.get('customer')
+        failure_message = charge.get('failure_message', 'Unknown error')
+        
+        print(f"❌ Charge failed for customer: {customer_id} - {failure_message}")
+        return {"status": "success", "action": "charge_failed"}
+    
+    def handle_charge_refunded(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle charge refund webhook"""
+        charge = event_data.get('data', {}).get('object', {})
+        customer_id = charge.get('customer')
+        refund_amount = charge.get('amount_refunded', 0) / 100
+        
+        print(f"💰 Charge refunded: ${refund_amount:.2f} for customer: {customer_id}")
+        return {"status": "success", "action": "charge_refunded"}
     
     def is_configured(self) -> bool:
         """Check if Stripe is properly configured"""

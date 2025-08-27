@@ -2306,12 +2306,37 @@ def stripe_webhook():
         result = stripe_client.handle_webhook_event(event)
         
         # Update local database based on webhook events
-        if event['type'] == 'customer.subscription.created':
-            handle_subscription_created(event['data']['object'])
-        elif event['type'] == 'customer.subscription.updated':
-            handle_subscription_updated(event['data']['object'])
-        elif event['type'] == 'customer.subscription.deleted':
-            handle_subscription_deleted(event['data']['object'])
+        event_type = event['type']
+        event_data = event['data']['object']
+        
+        print(f"📨 Processing webhook: {event_type}")
+        
+        if event_type == 'customer.subscription.created':
+            handle_subscription_created(event_data)
+        elif event_type == 'customer.subscription.updated':
+            handle_subscription_updated(event_data)
+        elif event_type == 'customer.subscription.deleted':
+            handle_subscription_deleted(event_data)
+        elif event_type == 'invoice.payment_succeeded':
+            handle_invoice_payment_succeeded(event_data)
+        elif event_type == 'invoice.payment_failed':
+            handle_invoice_payment_failed(event_data)
+        elif event_type == 'payment_intent.succeeded':
+            handle_payment_intent_succeeded(event_data)
+        elif event_type == 'payment_intent.payment_failed':
+            handle_payment_intent_failed(event_data)
+        elif event_type == 'customer.created':
+            handle_customer_created(event_data)
+        elif event_type == 'customer.updated':
+            handle_customer_updated(event_data)
+        elif event_type == 'charge.succeeded':
+            handle_charge_succeeded(event_data)
+        elif event_type == 'charge.failed':
+            handle_charge_failed(event_data)
+        elif event_type == 'charge.refunded':
+            handle_charge_refunded(event_data)
+        else:
+            print(f"ℹ️ Unhandled webhook event: {event_type}")
         
         return jsonify({'success': True, 'result': result})
         
@@ -2401,6 +2426,197 @@ def handle_subscription_deleted(stripe_subscription):
     except Exception as e:
         print(f"❌ Error handling subscription deletion: {e}")
         db.session.rollback()
+
+def handle_invoice_payment_succeeded(invoice):
+    """Handle successful invoice payment webhook"""
+    try:
+        customer_id = invoice['customer']
+        subscription_id = invoice.get('subscription')
+        amount = invoice['amount_paid'] / 100  # Convert from cents
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        # Log revenue
+        analytics_service.log_revenue(
+            user_id=user.id,
+            revenue_type='subscription',
+            amount=amount,
+            stripe_subscription_id=subscription_id,
+            description=f"Monthly subscription payment - {invoice['currency'].upper()}"
+        )
+        
+        print(f"✅ Invoice payment succeeded for user {user.id}: ${amount}")
+        
+    except Exception as e:
+        print(f"❌ Error handling invoice payment success: {e}")
+
+def handle_invoice_payment_failed(invoice):
+    """Handle failed invoice payment webhook"""
+    try:
+        customer_id = invoice['customer']
+        subscription_id = invoice.get('subscription')
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        # Update subscription status if needed
+        if subscription_id:
+            subscription = Subscription.query.filter_by(
+                stripe_subscription_id=subscription_id
+            ).first()
+            if subscription:
+                subscription.status = 'past_due'
+                db.session.commit()
+                print(f"⚠️ Subscription marked as past_due for user {user.id}")
+        
+        print(f"❌ Invoice payment failed for user {user.id}")
+        
+    except Exception as e:
+        print(f"❌ Error handling invoice payment failure: {e}")
+
+def handle_payment_intent_succeeded(payment_intent):
+    """Handle successful payment intent webhook"""
+    try:
+        customer_id = payment_intent['customer']
+        amount = payment_intent['amount'] / 100  # Convert from cents
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        # Log revenue for one-time payments
+        if not payment_intent.get('metadata', {}).get('subscription_type'):
+            analytics_service.log_revenue(
+                user_id=user.id,
+                revenue_type='one_time_payment',
+                amount=amount,
+                stripe_payment_intent_id=payment_intent['id'],
+                description=f"One-time payment - {payment_intent['currency'].upper()}"
+            )
+            print(f"✅ One-time payment succeeded for user {user.id}: ${amount}")
+        
+    except Exception as e:
+        print(f"❌ Error handling payment intent success: {e}")
+
+def handle_payment_intent_failed(payment_intent):
+    """Handle failed payment intent webhook"""
+    try:
+        customer_id = payment_intent['customer']
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        print(f"❌ Payment intent failed for user {user.id}: {payment_intent.get('last_payment_error', {}).get('message', 'Unknown error')}")
+        
+    except Exception as e:
+        print(f"❌ Error handling payment intent failure: {e}")
+
+def handle_customer_created(customer):
+    """Handle customer creation webhook"""
+    try:
+        customer_id = customer['id']
+        email = customer['email']
+        
+        print(f"✅ New Stripe customer created: {email} (ID: {customer_id})")
+        
+        # You could add additional logic here like:
+        # - Sending welcome emails
+        # - Creating user profiles
+        # - Setting up default preferences
+        
+    except Exception as e:
+        print(f"❌ Error handling customer creation: {e}")
+
+def handle_customer_updated(customer):
+    """Handle customer update webhook"""
+    try:
+        customer_id = customer['id']
+        email = customer['email']
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if user:
+            # Update user information if needed
+            if customer.get('name') and customer['name'] != user.name:
+                user.name = customer['name']
+                db.session.commit()
+                print(f"✅ Updated user name for {email}")
+        
+        print(f"ℹ️ Stripe customer updated: {email} (ID: {customer_id})")
+        
+    except Exception as e:
+        print(f"❌ Error handling customer update: {e}")
+
+def handle_charge_succeeded(charge):
+    """Handle successful charge webhook"""
+    try:
+        customer_id = charge['customer']
+        amount = charge['amount'] / 100  # Convert from cents
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        print(f"✅ Charge succeeded for user {user.id}: ${amount}")
+        
+    except Exception as e:
+        print(f"❌ Error handling charge success: {e}")
+
+def handle_charge_failed(charge):
+    """Handle failed charge webhook"""
+    try:
+        customer_id = charge['customer']
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        print(f"❌ Charge failed for user {user.id}: {charge.get('failure_message', 'Unknown error')}")
+        
+    except Exception as e:
+        print(f"❌ Error handling charge failure: {e}")
+
+def handle_charge_refunded(charge):
+    """Handle charge refund webhook"""
+    try:
+        customer_id = charge['customer']
+        refund_amount = charge['amount_refunded'] / 100  # Convert from cents
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        # Log refund
+        analytics_service.log_revenue(
+            user_id=user.id,
+            revenue_type='refund',
+            amount=-refund_amount,  # Negative amount for refunds
+            stripe_payment_intent_id=charge.get('payment_intent'),
+            description=f"Refund processed - {charge['currency'].upper()}"
+        )
+        
+        print(f"💰 Charge refunded for user {user.id}: ${refund_amount}")
+        
+    except Exception as e:
+        print(f"❌ Error handling charge refund: {e}")
 
 @app.route('/payment-success')
 @login_required
