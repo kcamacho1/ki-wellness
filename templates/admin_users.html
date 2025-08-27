@@ -184,9 +184,27 @@
                         <p class="text-sm text-gray-600">View and manage all users</p>
                     </div>
                 </div>
-                <button id="refresh-users" class="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
-                    🔄 Refresh
-                </button>
+                <div class="flex items-center space-x-3">
+                    <!-- Search Box -->
+                    <div class="relative">
+                        <input type="text" id="search-email" 
+                               class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Search by email...">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <button id="refresh-users" class="px-4 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 transition-colors">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pagination Info -->
+            <div id="pagination-info" class="mb-4 text-sm text-gray-600">
+                <!-- Will be populated by JavaScript -->
             </div>
 
             <div class="overflow-x-auto">
@@ -207,6 +225,11 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Controls -->
+            <div id="pagination-controls" class="mt-6 flex items-center justify-between">
+                <!-- Will be populated by JavaScript -->
+            </div>
         </div>
     </div>
 </div>
@@ -215,6 +238,8 @@
 // Admin Users Management
 class AdminUsersManager {
     constructor() {
+        this.currentPage = 1;
+        this.searchEmail = '';
         this.setupEventListeners();
         this.loadUsers();
     }
@@ -242,17 +267,39 @@ class AdminUsersManager {
 
         // Refresh users
         document.getElementById('refresh-users').addEventListener('click', () => {
+            this.currentPage = 1;
+            this.searchEmail = '';
+            document.getElementById('search-email').value = '';
             this.loadUsers();
+        });
+
+        // Search functionality
+        const searchInput = document.getElementById('search-email');
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.searchEmail = e.target.value;
+                this.currentPage = 1;
+                this.loadUsers();
+            }, 300); // Debounce search
         });
     }
 
     async loadUsers() {
         try {
-            const response = await fetch('/api/admin/users');
+            const params = new URLSearchParams({
+                page: this.currentPage,
+                per_page: 5,
+                search_email: this.searchEmail
+            });
+
+            const response = await fetch(`/api/admin/users?${params}`);
             const data = await response.json();
 
             if (data.success) {
                 this.displayUsers(data.users);
+                this.displayPagination(data.pagination);
             } else {
                 this.showNotification('Failed to load users: ' + data.error, 'error');
             }
@@ -303,6 +350,80 @@ class AdminUsersManager {
         `).join('');
 
         tbody.innerHTML = html;
+    }
+
+    displayPagination(pagination) {
+        // Update pagination info
+        const infoDiv = document.getElementById('pagination-info');
+        const startUser = (pagination.current_page - 1) * pagination.per_page + 1;
+        const endUser = Math.min(pagination.current_page * pagination.per_page, pagination.total_users);
+        
+        infoDiv.innerHTML = `
+            Showing ${startUser} to ${endUser} of ${pagination.total_users} users
+            ${this.searchEmail ? `(filtered by "${this.searchEmail}")` : ''}
+        `;
+
+        // Update pagination controls
+        const controlsDiv = document.getElementById('pagination-controls');
+        
+        if (pagination.total_pages <= 1) {
+            controlsDiv.innerHTML = '';
+            return;
+        }
+
+        let controlsHtml = `
+            <div class="flex items-center space-x-2">
+                <button id="prev-page" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 ${!pagination.has_prev ? 'opacity-50 cursor-not-allowed' : ''}" ${!pagination.has_prev ? 'disabled' : ''}>
+                    Previous
+                </button>
+        `;
+
+        // Page numbers
+        const startPage = Math.max(1, pagination.current_page - 2);
+        const endPage = Math.min(pagination.total_pages, pagination.current_page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            controlsHtml += `
+                <button class="page-btn px-3 py-2 text-sm font-medium rounded-lg ${i === pagination.current_page ? 'bg-blue-600 text-white' : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'}" data-page="${i}">
+                    ${i}
+                </button>
+            `;
+        }
+
+        controlsHtml += `
+                <button id="next-page" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 ${!pagination.has_next ? 'opacity-50 cursor-not-allowed' : ''}" ${!pagination.has_next ? 'disabled' : ''}>
+                    Next
+                </button>
+            </div>
+        `;
+
+        controlsDiv.innerHTML = controlsHtml;
+
+        // Add event listeners for pagination
+        document.getElementById('prev-page')?.addEventListener('click', () => {
+            if (pagination.has_prev) {
+                this.currentPage = pagination.current_page - 1;
+                this.loadUsers();
+            }
+        });
+
+        document.getElementById('next-page')?.addEventListener('click', () => {
+            if (pagination.has_next) {
+                this.currentPage = pagination.current_page + 1;
+                this.loadUsers();
+            }
+        });
+
+        // Add event listeners for page numbers
+        document.querySelectorAll('.page-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const page = parseInt(btn.dataset.page);
+                if (page !== pagination.current_page) {
+                    this.currentPage = page;
+                    this.loadUsers();
+                }
+            });
+        });
     }
 
     getRoleBadgeClass(role) {
@@ -358,7 +479,7 @@ class AdminUsersManager {
 
             if (data.success) {
                 this.showNotification(data.message, 'success');
-                this.loadUsers(); // Refresh user list
+                this.loadUsers(); // Refresh current page
             } else {
                 this.showNotification('Failed to assign FF roles: ' + data.error, 'error');
             }
@@ -399,7 +520,7 @@ class AdminUsersManager {
                 this.showNotification('User role updated successfully!', 'success');
                 document.getElementById('user-id-input').value = '';
                 document.getElementById('role-select').value = '';
-                this.loadUsers(); // Refresh user list
+                this.loadUsers(); // Refresh current page
             } else {
                 this.showNotification('Failed to update user role: ' + data.error, 'error');
             }

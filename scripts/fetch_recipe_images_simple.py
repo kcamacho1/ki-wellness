@@ -22,9 +22,9 @@ def get_database_connection():
         db_path = DATABASE_URL.replace('sqlite:///', '')
         return sqlite3.connect(db_path), 'sqlite'
     else:
-        # For PostgreSQL, you'd use psycopg2
-        import psycopg2
-        return psycopg2.connect(DATABASE_URL), 'postgresql'
+            # For PostgreSQL, you'd use psycopg
+    import psycopg
+    return psycopg.connect(DATABASE_URL), 'postgresql'
 
 def search_images_simple(query):
     """Search for images using Unsplash Source API (no API keys required)"""

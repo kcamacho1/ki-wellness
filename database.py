@@ -32,6 +32,10 @@ class User(UserMixin, db.Model):
     # Stripe customer ID for payments
     stripe_customer_id = db.Column(db.String(255))
     
+    # Password reset fields
+    reset_token = db.Column(db.String(255), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+    
     # Relationships
     food_logs = db.relationship('FoodLog', backref='user', lazy=True)
     water_logs = db.relationship('WaterLog', backref='user', lazy=True)

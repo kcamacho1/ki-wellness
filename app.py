@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import uuid
+import re
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
@@ -482,6 +483,12 @@ def register():
         name = request.form.get('name')
         password = request.form.get('password')
         
+        # Validate password strength
+        is_valid_password, password_error = validate_password_strength(password)
+        if not is_valid_password:
+            flash(password_error, 'error')
+            return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
+        
         # Validate agreements
         agree_terms = request.form.get('agree_terms') == 'on'
         agree_privacy = request.form.get('agree_privacy') == 'on'
@@ -533,6 +540,69 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Handle forgot password request"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').lower()
+        
+        if not email:
+            flash('Please enter your email address', 'error')
+            return render_template('forgot_password.html')
+        
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # Generate reset token
+            reset_token = str(uuid.uuid4())
+            user.reset_token = reset_token
+            user.reset_token_expires = datetime.utcnow() + timedelta(hours=24)
+            db.session.commit()
+            
+            # In a real application, you would send an email here
+            # For now, we'll just show the token (in production, remove this)
+            flash(f'Password reset link sent to {email}. Reset token: {reset_token}', 'success')
+        else:
+            # Don't reveal if email exists or not for security
+            flash('If an account with that email exists, a password reset link has been sent.', 'success')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Handle password reset with token"""
+    user = User.query.filter_by(reset_token=token).first()
+    
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+        flash('Invalid or expired reset token', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        # Validate password strength
+        is_valid_password, password_error = validate_password_strength(password)
+        if not is_valid_password:
+            flash(password_error, 'error')
+            return render_template('reset_password.html', token=token)
+        
+        # Update password and clear reset token
+        user.password_hash = generate_password_hash(password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        db.session.commit()
+        
+        flash('Password has been reset successfully. Please log in with your new password.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
 
 @app.route('/dashboard')
 @login_required
@@ -782,11 +852,27 @@ def admin_system():
 @app.route('/api/admin/users')
 @admin_required
 def get_admin_users():
-    """Get all users for admin dashboard"""
+    """Get users for admin dashboard with pagination and search"""
     try:
-        users = User.query.all()
-        users_data = []
+        # Get query parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 5, type=int)  # Show 5 users per page
+        search_email = request.args.get('search_email', '').strip()
         
+        # Build query
+        query = User.query
+        
+        # Apply search filter if provided
+        if search_email:
+            query = query.filter(User.email.ilike(f'%{search_email}%'))
+        
+        # Get total count for pagination
+        total_users = query.count()
+        
+        # Apply pagination
+        users = query.order_by(User.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+        
+        users_data = []
         for user in users:
             users_data.append({
                 'id': user.id,
@@ -799,9 +885,22 @@ def get_admin_users():
                 'profile_image_url': get_profile_image_url(user.profile_image) if user.profile_image else None
             })
         
+        # Calculate pagination info
+        total_pages = (total_users + per_page - 1) // per_page
+        has_prev = page > 1
+        has_next = page < total_pages
+        
         return jsonify({
             'success': True,
-            'users': users_data
+            'users': users_data,
+            'pagination': {
+                'current_page': page,
+                'per_page': per_page,
+                'total_users': total_users,
+                'total_pages': total_pages,
+                'has_prev': has_prev,
+                'has_next': has_next
+            }
         })
         
     except Exception as e:
@@ -2243,6 +2342,41 @@ def get_avatars():
         'current_avatar': current_user.profile_image
     })
 
+@app.route('/api/profile/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    data = request.get_json()
+    
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    confirm_password = data.get('confirm_password')
+    
+    # Validate current password
+    if not current_password:
+        return jsonify({'success': False, 'message': 'Current password is required'})
+    
+    if not check_password_hash(current_user.password_hash, current_password):
+        return jsonify({'success': False, 'message': 'Current password is incorrect'})
+    
+    # Validate new password
+    if not new_password:
+        return jsonify({'success': False, 'message': 'New password is required'})
+    
+    if new_password != confirm_password:
+        return jsonify({'success': False, 'message': 'New passwords do not match'})
+    
+    # Validate password strength
+    is_valid_password, password_error = validate_password_strength(new_password)
+    if not is_valid_password:
+        return jsonify({'success': False, 'message': password_error})
+    
+    # Update password
+    current_user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Password changed successfully'})
+
 
 @app.route('/api/food-log/<int:food_id>', methods=['DELETE'])
 @login_required
@@ -2819,6 +2953,43 @@ def health_check():
             'status': 'unhealthy',
             'error': str(e)
         }), 500
+
+def validate_password_strength(password):
+    """
+    Validate password strength with comprehensive requirements.
+    Returns (is_valid, error_message)
+    """
+    if len(password) < 12:
+        return False, "Password must be at least 12 characters long"
+    
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
+    
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
+        return False, "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)"
+    
+    # Check for common patterns
+    common_patterns = [
+        'password', '123456', 'qwerty', 'abc123', 'password123',
+        'admin', 'user', 'test', 'welcome', 'letmein'
+    ]
+    
+    password_lower = password.lower()
+    for pattern in common_patterns:
+        if pattern in password_lower:
+            return False, "Password contains common patterns that are not allowed"
+    
+    # Check for repeated characters
+    if re.search(r'(.)\1{2,}', password):
+        return False, "Password cannot contain more than 2 consecutive identical characters"
+    
+    return True, "Password meets all requirements"
 
 if __name__ == '__main__':
     with app.app_context():

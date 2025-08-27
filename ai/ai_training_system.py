@@ -13,8 +13,8 @@ from pathlib import Path
 import PyPDF2
 import docx
 import csv
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 from typing import List, Dict, Any
 import hashlib
 from dotenv import load_dotenv
@@ -43,7 +43,7 @@ class AITrainingSystem:
     
     def init_embeddings_db(self):
         """Initialize PostgreSQL database for storing embeddings and knowledge base"""
-        conn = psycopg2.connect(self.database_url)
+        conn = psycopg.connect(self.database_url)
         cursor = conn.cursor()
         
         # Create tables for knowledge base
@@ -317,7 +317,7 @@ class AITrainingSystem:
     
     def store_knowledge_base(self, chunks: List[Dict[str, Any]]):
         """Store processed chunks in the knowledge base"""
-        conn = psycopg2.connect(self.database_url)
+        conn = psycopg.connect(self.database_url)
         cursor = conn.cursor()
         
         stored_count = 0
@@ -418,7 +418,7 @@ class AITrainingSystem:
     
     def create_training_dataset(self, qa_pairs: List[Dict[str, str]]):
         """Create training dataset from Q&A pairs"""
-        conn = psycopg2.connect(self.database_url)
+        conn = psycopg.connect(self.database_url)
         cursor = conn.cursor()
         
         for qa in qa_pairs:
@@ -438,7 +438,7 @@ class AITrainingSystem:
     
     def generate_fine_tuning_data(self) -> str:
         """Generate fine-tuning dataset in the format required by Ollama"""
-        conn = psycopg2.connect(self.database_url)
+        conn = psycopg.connect(self.database_url)
         cursor = conn.cursor()
         
         # Get training examples
@@ -530,7 +530,7 @@ class AITrainingSystem:
                 return []
             
             # Get all embeddings from knowledge base
-            conn = psycopg2.connect(self.database_url)
+            conn = psycopg.connect(self.database_url)
             cursor = conn.cursor()
             cursor.execute('SELECT content, embedding FROM knowledge_base')
             results = cursor.fetchall()
@@ -600,7 +600,7 @@ Please provide a comprehensive, personalized response based on the context and u
         """Evaluate model performance on test questions"""
         print("🔍 Evaluating model performance...")
         
-        conn = psycopg2.connect(self.database_url)
+        conn = psycopg.connect(self.database_url)
         cursor = conn.cursor()
         
         for test in test_questions:

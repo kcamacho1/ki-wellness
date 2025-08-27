@@ -25,7 +25,7 @@ class AICoachManager {
     async warmupModel() {
         try {
             console.log('Warming up AI model...');
-            await fetch('/api/warmup-ollama');
+            await fetch('/api/warmup-openrouter');
             console.log('Model warmed up successfully');
         } catch (error) {
             console.log('Model warmup failed, continuing anyway:', error);
