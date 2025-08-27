@@ -9,7 +9,7 @@ import sys
 import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-import ollama
+from openrouter_client import get_openrouter_client
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -24,8 +24,8 @@ else:
     # Development - SQLite
     DATABASE_URL = 'sqlite:///ki_wellness.db'
 
-# Ollama configuration
-OLLAMA_MODEL = "mistral"
+# OpenRouter configuration
+OPENROUTER_MODEL = os.getenv('MODEL', 'openai/gpt-4o-mini')
 
 def get_db_session():
     """Create database session"""
@@ -143,14 +143,12 @@ def generate_analysis(user_data):
     """
     
     try:
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "user", "content": analysis_prompt}
-            ]
+        client = get_openrouter_client()
+        ai_response = client.generate_response(
+            prompt=analysis_prompt,
+            model=OPENROUTER_MODEL,
+            max_tokens=800
         )
-        
-        ai_response = response['message']['content']
         
         # Parse the JSON response
         try:

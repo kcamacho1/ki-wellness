@@ -37,6 +37,9 @@ class AICoachManager {
         document.getElementById('chat-button-hero').addEventListener('click', () => this.openChat());
         document.getElementById('close-chat').addEventListener('click', () => this.closeChat());
         
+        // Chat resize functionality
+        document.getElementById('resize-chat').addEventListener('click', () => this.toggleChatSize());
+        
         // Chat functionality
         document.getElementById('send-message').addEventListener('click', () => this.sendMessage());
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
@@ -60,6 +63,36 @@ class AICoachManager {
 
     closeChat() {
         document.getElementById('chat-modal').classList.add('hidden');
+        // Reset chat size when closing
+        this.resetChatSize();
+    }
+
+    toggleChatSize() {
+        const container = document.getElementById('chat-container');
+        const resizeIcon = document.getElementById('resize-icon');
+        
+        if (container.classList.contains('expanded')) {
+            // Collapse to normal size
+            container.classList.remove('expanded');
+            container.classList.remove('w-[800px]', 'h-[700px]', 'bottom-6', 'right-6');
+            container.classList.add('w-96', 'h-[600px]', 'bottom-6', 'right-6');
+            resizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>';
+        } else {
+            // Expand to larger size
+            container.classList.add('expanded');
+            container.classList.remove('w-96', 'h-[600px]');
+            container.classList.add('w-[800px]', 'h-[700px]');
+            resizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4V4z"></path>';
+        }
+    }
+
+    resetChatSize() {
+        const container = document.getElementById('chat-container');
+        const resizeIcon = document.getElementById('resize-icon');
+        
+        container.classList.remove('expanded', 'w-[800px]', 'h-[700px]');
+        container.classList.add('w-96', 'h-[600px]');
+        resizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>';
     }
 
     async loadUserSummary() {
@@ -510,7 +543,7 @@ class AICoachManager {
             messageDiv.innerHTML = `
                 <div class="flex-1"></div>
                 <div class="bg-ki-green-600 text-white rounded-lg p-3 max-w-xs lg:max-w-md">
-                    <p class="text-sm">${content}</p>
+                    <p class="text-sm">${this.escapeHtml(content)}</p>
                 </div>
             `;
         } else {
@@ -521,13 +554,68 @@ class AICoachManager {
                     </svg>
                 </div>
                 <div class="bg-white rounded-lg p-3 shadow-sm max-w-xs lg:max-w-md">
-                    <p class="text-sm text-gray-800">${content}</p>
+                    <div class="text-sm text-gray-800 prose prose-sm max-w-none">
+                        ${this.formatMessageContent(content)}
+                    </div>
                 </div>
             `;
         }
         
         container.appendChild(messageDiv);
         container.scrollTop = container.scrollHeight;
+        
+        // Make links clickable after adding to DOM
+        if (role === 'assistant') {
+            this.makeLinksClickable(messageDiv);
+        }
+    }
+
+    formatMessageContent(content) {
+        // Convert URLs to clickable links
+        let formattedContent = content;
+        
+        // Handle links in the format [Link: Description]
+        formattedContent = formattedContent.replace(
+            /\[([^\]]+):\s*([^\]]+)\]/g,
+            '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$2</a>'
+        );
+        
+        // Handle plain URLs
+        formattedContent = formattedContent.replace(
+            /(https?:\/\/[^\s]+)/g,
+            '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">$1</a>'
+        );
+        
+        // Handle emojis and special formatting
+        formattedContent = formattedContent
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/📚/g, '<span class="text-purple-600">📚</span>')
+            .replace(/💡/g, '<span class="text-yellow-600">💡</span>')
+            .replace(/⚡/g, '<span class="text-orange-600">⚡</span>')
+            .replace(/💧/g, '<span class="text-blue-600">💧</span>');
+        
+        return formattedContent;
+    }
+
+    makeLinksClickable(messageDiv) {
+        const links = messageDiv.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = link.href;
+                if (url && url !== '#') {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                }
+            });
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     showTypingIndicator() {

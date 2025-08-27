@@ -11,7 +11,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import sqlite3
-import ollama
+# OpenRouter import for AI chat
+from openrouter_client import get_openrouter_client, generate_ai_response
 # Stripe import removed - using Calendly and donation links instead
 from food_data import BASIC_FOODS, COMMON_FOODS_DB
 from health_resources import get_relevant_resources, format_resources_for_prompt
@@ -559,7 +560,8 @@ def update_admin_settings():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Configure Ollama (local AI model)
-OLLAMA_MODEL = "mistral"  # Faster and smaller than llama2
+# OpenRouter model configuration
+OPENROUTER_MODEL = os.getenv('MODEL', 'openai/gpt-4o-mini')  # Use MODEL from .env
 FINE_TUNED_MODEL = "ki-wellness-mistral"  # Custom fine-tuned model
 
 @app.route('/api/user-data-for-analysis')
@@ -784,14 +786,25 @@ def generate_ai_analysis():
             recent_notes=json.dumps(recent_notes_list),
         )
         
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "user", "content": analysis_prompt}
-            ]
-        )
-        
-        ai_response = response['message']['content']
+        # Use OpenRouter for AI analysis
+        try:
+            client = get_openrouter_client()
+            ai_response = client.generate_response(
+                prompt=analysis_prompt,
+                model=OPENROUTER_MODEL,
+                max_tokens=800
+            )
+        except Exception as e:
+            print(f"OpenRouter error: {e}")
+            # Fallback response
+            ai_response = json.dumps({
+                "patterns": [
+                    {"title": "Data Analysis", "description": "We're analyzing your wellness patterns. Keep logging to get more personalized insights!"}
+                ],
+                "suggestions": [
+                    {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
+                ]
+            })
         
         # Parse the JSON response
         try:
@@ -838,55 +851,45 @@ def generate_ai_analysis():
         return jsonify({'success': False, 'error': str(e)})
 
 def enhanced_ai_response(question: str, user_data: dict = None) -> str:
-    """Generate enhanced AI response using fine-tuned model and RAG"""
+    """Generate enhanced AI response using OpenRouter API"""
     try:
-        # Try to use fine-tuned model first
-        try:
-            response = ollama.chat(
-                model=FINE_TUNED_MODEL,
-                messages=[{"role": "user", "content": question}]
-            )
-            return response['message']['content']
-        except:
-            # Fallback to base model
-            response = ollama.chat(
-                model=OLLAMA_MODEL,
-                messages=[{"role": "user", "content": question}]
-            )
-            return response['message']['content']
-            
+        client = get_openrouter_client()
+        return client.generate_response(
+            prompt=question,
+            model=OPENROUTER_MODEL,
+            max_tokens=500
+        )
     except Exception as e:
         print(f"❌ Error generating enhanced response: {e}")
         return "I apologize, but I encountered an error while processing your request."
 
-@app.route('/api/test-ollama')
+@app.route('/api/test-openrouter')
 @login_required
-def test_ollama():
+def test_openrouter():
     try:
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "user", "content": "Say 'Hello, AI is working!'"}
-            ]
+        client = get_openrouter_client()
+        response = client.generate_response(
+            prompt="Say 'Hello, AI is working!'",
+            model=OPENROUTER_MODEL
         )
         
-        return jsonify({'success': True, 'response': response['message']['content']})
+        return jsonify({'success': True, 'response': response})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/warmup-ollama')
+@app.route('/api/warmup-openrouter')
 @login_required
-def warmup_ollama():
-    """Warm up the Ollama model for faster subsequent requests"""
+def warmup_openrouter():
+    """Test OpenRouter API connection"""
     try:
-        # Simple warmup call
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "user", "content": "Hello"}
-            ]
+        # Simple test call
+        client = get_openrouter_client()
+        response = client.generate_response(
+            prompt="Hello",
+            model=OPENROUTER_MODEL,
+            max_tokens=10
         )
-        return jsonify({'success': True, 'message': 'Model warmed up'})
+        return jsonify({'success': True, 'message': 'OpenRouter API is working', 'response': response})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -1009,24 +1012,23 @@ def ai_chat():
             print(f"AI Chat - Prompt creation error: {str(prompt_error)}")
             return jsonify({'success': False, 'error': f'Prompt creation failed: {str(prompt_error)}'})
         
-        # Call Ollama with simple timeout
+        # Call OpenRouter API with timeout
         try:
-            response = ollama.chat(
-                model=OLLAMA_MODEL,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+            client = get_openrouter_client()
+            ai_response = client.generate_response(
+                prompt=prompt,
+                model=OPENROUTER_MODEL,
+                max_tokens=500
             )
             
-            ai_response = response['message']['content']
             print(f"AI Chat - Response received, length: {len(ai_response)} characters")
             
             return jsonify({'success': True, 'response': ai_response})
             
-        except Exception as ollama_error:
-            print(f"AI Chat - Ollama error: {str(ollama_error)}")
+        except Exception as openrouter_error:
+            print(f"AI Chat - OpenRouter error: {str(openrouter_error)}")
             
-            # Provide a helpful fallback response when Ollama is not available
+            # Provide a helpful fallback response when OpenRouter is not available
             fallback_response = _get_fallback_response(message, context_type)
             return jsonify({
                 'success': True, 

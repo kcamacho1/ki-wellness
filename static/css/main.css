@@ -541,3 +541,102 @@ body {
         max-height: 140px;
     }
 }
+
+/* Enhanced Chat Styles */
+.chat-message {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.chat-message a {
+    color: #2563eb;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.chat-message a:hover {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.chat-message strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.chat-message em {
+    font-style: italic;
+    color: #6b7280;
+}
+
+.chat-message br {
+    margin-bottom: 0.5rem;
+}
+
+/* Chat container transitions */
+#chat-container {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#chat-container.expanded {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Enhanced message bubbles */
+.chat-message-bubble {
+    position: relative;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+.chat-message-bubble.user {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    border-radius: 18px 18px 4px 18px;
+}
+
+.chat-message-bubble.assistant {
+    background: white;
+    color: #1f2937;
+    border-radius: 18px 18px 18px 4px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Link styling in chat */
+.chat-message-bubble.assistant a {
+    color: #2563eb;
+    text-decoration: underline;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.chat-message-bubble.assistant a:hover {
+    color: #1d4ed8;
+    text-decoration: none;
+    background-color: #eff6ff;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+/* Emoji enhancements */
+.chat-message-bubble .emoji {
+    font-size: 1.1em;
+    vertical-align: middle;
+}
+
+/* Responsive chat adjustments */
+@media (max-width: 768px) {
+    #chat-container {
+        width: calc(100vw - 2rem) !important;
+        height: calc(100vh - 8rem) !important;
+        bottom: 1rem !important;
+        right: 1rem !important;
+        left: 1rem !important;
+    }
+    
+    #chat-container.expanded {
+        width: calc(100vw - 2rem) !important;
+        height: calc(100vh - 8rem) !important;
+    }
+}

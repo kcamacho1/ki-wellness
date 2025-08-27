@@ -6,7 +6,7 @@ Lightweight version for basic document processing and model enhancement
 
 import os
 import json
-import ollama
+from openrouter_client import get_openrouter_client
 from pathlib import Path
 from typing import List, Dict
 from dotenv import load_dotenv
@@ -100,23 +100,14 @@ SYSTEM "You are an expert AI Health Coach for Ki Wellness. You provide personali
             return False
     
     def enhanced_response(self, question: str, user_data: Dict = None) -> str:
-        """Generate enhanced response using fine-tuned model"""
+        """Generate enhanced response using OpenRouter API"""
         try:
-            # Try fine-tuned model first
-            try:
-                response = ollama.chat(
-                    model=self.fine_tuned_model,
-                    messages=[{"role": "user", "content": question}]
-                )
-                return response['message']['content']
-            except:
-                # Fallback to base model
-                response = ollama.chat(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": question}]
-                )
-                return response['message']['content']
-                
+            client = get_openrouter_client()
+            return client.generate_response(
+                prompt=question,
+                model=os.getenv('MODEL', 'openai/gpt-4o-mini'),
+                max_tokens=500
+            )
         except Exception as e:
             print(f"❌ Error generating response: {e}")
             return "I apologize, but I encountered an error while processing your request."

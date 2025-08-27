@@ -141,7 +141,7 @@
         <!-- Enhanced Chat Modal -->
         <div id="chat-modal" class="fixed inset-0 z-50 hidden">
             <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-            <div class="absolute bottom-6 right-6 w-96 h-[600px] bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl flex flex-col border border-white/20">
+            <div id="chat-container" class="absolute bottom-6 right-6 w-96 h-[600px] bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl flex flex-col border border-white/20 transition-all duration-300">
                 <!-- Enhanced Chat Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-ki-green-50 to-blue-50 rounded-t-3xl">
                     <div class="flex items-center space-x-3">
@@ -155,11 +155,20 @@
                             <p class="text-xs text-gray-600">Mistral powered and trained by Ki Wellness • Always available</p>
                         </div>
                     </div>
-                    <button id="close-chat" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors">
-                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <!-- Resize button -->
+                        <button id="resize-chat" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors group" title="Expand/Collapse Chat">
+                            <svg id="resize-icon" class="w-4 h-4 text-gray-600 group-hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
+                        <!-- Close button -->
+                        <button id="close-chat" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Enhanced Chat Messages -->
@@ -172,7 +181,16 @@
                             </svg>
                         </div>
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 max-w-xs">
-                            <p class="text-sm text-gray-800">👋 Hello! I'm your AI Health Coach. I can help you with nutrition advice, wellness tips, and personalized recommendations. What would you like to know?</p>
+                            <div class="text-sm text-gray-800 prose prose-sm max-w-none">
+                                👋 **Hello!** I'm your AI Health Coach powered by OpenRouter. I can help you with:
+                                <br><br>
+                                💡 **Nutrition advice** and meal planning<br>
+                                ⚡ **Energy optimization** and wellness tips<br>
+                                💧 **Hydration strategies** and health goals<br>
+                                📚 **Personalized recommendations** based on your data
+                                <br><br>
+                                What would you like to know today?
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -8,7 +8,7 @@ python-dotenv==1.0.0
 requests==2.31.0
 Werkzeug==2.3.7
 email-validator==2.0.0
-ollama==0.5.3
+# ollama==0.5.3  # Removed - using OpenRouter API instead
 gunicorn==21.2.0
 PyPDF2==3.0.1
 python-docx==0.8.11
