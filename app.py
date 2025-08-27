@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, f
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -18,10 +19,44 @@ from food_data import BASIC_FOODS, COMMON_FOODS_DB
 from health_resources import get_relevant_resources, format_resources_for_prompt
 
 # Import database and models
-from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction
+from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction, Subscription
 
 # Import recipe API
 from apis.recipe_api import recipe_bp
+
+# Import Stripe client
+from stripe_client import get_stripe_client
+
+# Import analytics service
+from analytics_service import analytics_service
+
+def premium_required(f):
+    """Decorator to require premium subscription or admin access"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        
+        # Admin users always have access
+        if current_user.is_admin:
+            return f(*args, **kwargs)
+        
+        # Check if user has premium subscription
+        subscription = Subscription.query.filter_by(
+            user_id=current_user.id,
+            status='active'
+        ).first()
+        
+        if not subscription or not subscription.is_premium:
+            return jsonify({
+                'success': False, 
+                'error': 'Premium subscription required',
+                'requires_upgrade': True,
+                'message': 'You need a premium subscription to access this feature. Upgrade now for just $5/month!'
+            }), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Load environment variables
 load_dotenv()
@@ -504,6 +539,20 @@ def profile():
 @app.route('/ai-coach')
 @login_required
 def ai_coach():
+    # Check if user has premium access or is admin
+    if current_user.is_admin:
+        return render_template('ai_coach.html')
+    
+    subscription = Subscription.query.filter_by(
+        user_id=current_user.id,
+        status='active'
+    ).first()
+    
+    if not subscription or not subscription.is_premium:
+        # Redirect to profile page with upgrade prompt
+        flash('You need a premium subscription to access the AI Health Coach. Upgrade now for just $5/month!', 'info')
+        return redirect(url_for('profile'))
+    
     return render_template('ai_coach.html')
 
 @app.route('/admin')
@@ -559,9 +608,74 @@ def update_admin_settings():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Configure Ollama (local AI model)
+@app.route('/api/admin/analytics')
+@login_required
+def get_admin_analytics():
+    """Get comprehensive analytics for admin dashboard"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        # Get analytics for the last 12 months
+        analytics = analytics_service.get_monthly_analytics(months_back=12)
+        
+        return jsonify({
+            'success': True,
+            'analytics': analytics
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting admin analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/ai-usage')
+@login_required
+def get_admin_ai_usage():
+    """Get AI usage analytics for admin dashboard"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        # Get AI usage for the last 30 days
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+        
+        ai_usage = analytics_service.get_ai_usage_summary(start_date, end_date)
+        
+        return jsonify({
+            'success': True,
+            'ai_usage': ai_usage
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting AI usage analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/revenue')
+@login_required
+def get_admin_revenue():
+    """Get revenue analytics for admin dashboard"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        # Get revenue for the last 12 months
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=365)
+        
+        revenue = analytics_service.get_revenue_summary(start_date, end_date)
+        
+        return jsonify({
+            'success': True,
+            'revenue': revenue
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting revenue analytics: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # OpenRouter model configuration
-OPENROUTER_MODEL = os.getenv('MODEL', 'openai/gpt-4o-mini')  # Use MODEL from .env
+OPENROUTER_MODEL = "@preset/ki-wellness"  # Use custom preset
 FINE_TUNED_MODEL = "ki-wellness-mistral"  # Custom fine-tuned model
 
 @app.route('/api/user-data-for-analysis')
@@ -684,7 +798,7 @@ def get_stored_analysis():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/generate-ai-analysis', methods=['POST'])
-@login_required
+@premium_required
 def generate_ai_analysis():
     """Generate fresh analysis (for manual refresh)"""
     try:
@@ -853,6 +967,17 @@ def generate_ai_analysis():
 def enhanced_ai_response(question: str, user_data: dict = None) -> str:
     """Generate enhanced AI response using OpenRouter API"""
     try:
+        # Check if user has premium access (this function is called from other contexts)
+        if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+            if not current_user.is_admin:
+                subscription = Subscription.query.filter_by(
+                    user_id=current_user.id,
+                    status='active'
+                ).first()
+                
+                if not subscription or not subscription.is_premium:
+                    return "This feature requires a premium subscription. Upgrade now to access AI-powered wellness insights!"
+        
         client = get_openrouter_client()
         return client.generate_response(
             prompt=question,
@@ -988,7 +1113,7 @@ def get_user_summary():
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/ai-chat', methods=['POST'])
-@login_required
+@premium_required
 def ai_chat():
     try:
         data = request.get_json()
@@ -1014,6 +1139,7 @@ def ai_chat():
         
         # Call OpenRouter API with timeout
         try:
+            start_time = datetime.now()
             client = get_openrouter_client()
             ai_response = client.generate_response(
                 prompt=prompt,
@@ -1021,12 +1147,55 @@ def ai_chat():
                 max_tokens=500
             )
             
+            response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
             print(f"AI Chat - Response received, length: {len(ai_response)} characters")
+            
+            # Log AI usage for analytics (if we have usage data)
+            try:
+                # Estimate token counts (OpenRouter doesn't always return usage info)
+                estimated_input_tokens = len(prompt.split()) * 1.3  # Rough estimate
+                estimated_output_tokens = len(ai_response.split()) * 1.3
+                
+                # Get model pricing for cost calculation
+                model_pricing = client.get_model_pricing(OPENROUTER_MODEL)
+                input_cost = (estimated_input_tokens / 1000000) * model_pricing.get('input', 0.20)
+                output_cost = (estimated_output_tokens / 1000000) * model_pricing.get('output', 0.80)
+                
+                analytics_service.log_ai_usage(
+                    user_id=current_user.id,
+                    model_used=OPENROUTER_MODEL,
+                    input_tokens=int(estimated_input_tokens),
+                    output_tokens=int(estimated_output_tokens),
+                    input_cost=input_cost,
+                    output_cost=output_cost,
+                    endpoint='/api/ai-chat',
+                    response_time_ms=response_time_ms,
+                    success=True
+                )
+            except Exception as log_error:
+                print(f"⚠️ Could not log AI usage: {log_error}")
             
             return jsonify({'success': True, 'response': ai_response})
             
         except Exception as openrouter_error:
             print(f"AI Chat - OpenRouter error: {str(openrouter_error)}")
+            
+            # Log failed usage attempt
+            try:
+                analytics_service.log_ai_usage(
+                    user_id=current_user.id,
+                    model_used=OPENROUTER_MODEL,
+                    input_tokens=len(prompt.split()),
+                    output_tokens=0,
+                    input_cost=0,
+                    output_cost=0,
+                    endpoint='/api/ai-chat',
+                    response_time_ms=0,
+                    success=False,
+                    error_message=str(openrouter_error)
+                )
+            except Exception as log_error:
+                print(f"⚠️ Could not log failed AI usage: {log_error}")
             
             # Provide a helpful fallback response when OpenRouter is not available
             fallback_response = _get_fallback_response(message, context_type)
@@ -1971,9 +2140,273 @@ def human_help():
     """Human help page with Calendly booking"""
     return render_template('human_help.html')
 
-# Payment routes removed - using Calendly and donation links instead
+# Payment and Subscription Routes
+@app.route('/api/create-checkout-session', methods=['POST'])
+@login_required
+def create_checkout_session():
+    """Create a Stripe checkout session for subscription upgrade"""
+    try:
+        stripe_client = get_stripe_client()
+        
+        if not stripe_client or not stripe_client.is_configured():
+            return jsonify({
+                'success': False, 
+                'error': 'Payment system not configured. Please check your Stripe API keys in the .env file.',
+                'details': 'STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are required for payment features.'
+            }), 503
+        
+        # Get or create Stripe customer
+        if not current_user.stripe_customer_id:
+            customer = stripe_client.create_customer(
+                email=current_user.email,
+                name=current_user.name,
+                user_id=current_user.id
+            )
+            current_user.stripe_customer_id = customer.id
+            db.session.commit()
+        
+        # Create checkout session
+        success_url = url_for('payment_success', _external=True)
+        cancel_url = url_for('profile', _external=True)
+        
+        checkout_session = stripe_client.create_checkout_session(
+            customer_id=current_user.stripe_customer_id,
+            success_url=success_url,
+            cancel_url=cancel_url
+        )
+        
+        return jsonify({
+            'success': True,
+            'checkout_url': checkout_session.url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creating checkout session: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
-# Payment success and webhook routes removed - using Calendly booking instead
+@app.route('/api/customer-portal', methods=['POST'])
+@login_required
+def create_customer_portal_session():
+    """Create a customer portal session for subscription management"""
+    try:
+        if not current_user.stripe_customer_id:
+            return jsonify({'success': False, 'error': 'No subscription found'})
+        
+        stripe_client = get_stripe_client()
+        if not stripe_client or not stripe_client.is_configured():
+            return jsonify({
+                'success': False, 
+                'error': 'Payment system not configured. Please check your Stripe API keys in the .env file.',
+                'details': 'STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY are required for payment features.'
+            }), 503
+        
+        return_url = url_for('profile', _external=True)
+        
+        session = stripe_client.create_customer_portal_session(
+            customer_id=current_user.stripe_customer_id,
+            return_url=return_url
+        )
+        
+        return jsonify({
+            'success': True,
+            'portal_url': session.url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error creating customer portal session: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/subscription-status')
+@login_required
+def get_subscription_status():
+    """Get current user's subscription status"""
+    try:
+        # Get active subscription
+        subscription = Subscription.query.filter_by(
+            user_id=current_user.id,
+            status='active'
+        ).first()
+        
+        if subscription:
+            return jsonify({
+                'success': True,
+                'subscription': subscription.to_dict(),
+                'is_premium': subscription.is_premium
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'subscription': None,
+                'is_premium': False
+            })
+            
+    except Exception as e:
+        print(f"❌ Error getting subscription status: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/log-health-coaching-revenue', methods=['POST'])
+@login_required
+def log_health_coaching_revenue():
+    """Log revenue from health coaching sessions"""
+    try:
+        data = request.get_json()
+        amount = data.get('amount')
+        description = data.get('description', 'Health coaching session')
+        
+        if not amount:
+            return jsonify({'success': False, 'error': 'Amount is required'}), 400
+        
+        # Log the revenue
+        analytics_service.log_revenue(
+            user_id=current_user.id,
+            revenue_type='health_coaching',
+            amount=float(amount),
+            description=description
+        )
+        
+        return jsonify({'success': True, 'message': 'Revenue logged successfully'})
+        
+    except Exception as e:
+        print(f"❌ Error logging health coaching revenue: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/webhook/stripe', methods=['POST'])
+def stripe_webhook():
+    """Handle Stripe webhook events"""
+    try:
+        payload = request.get_data(as_text=True)
+        sig_header = request.headers.get('Stripe-Signature')
+        
+        if not sig_header:
+            return jsonify({'error': 'No signature header'}), 400
+        
+        # Get webhook secret from environment
+        webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+        if not webhook_secret:
+            print("⚠️ STRIPE_WEBHOOK_SECRET not set, skipping signature verification")
+            event = json.loads(payload)
+        else:
+            try:
+                event = stripe.Webhook.construct_event(
+                    payload, sig_header, webhook_secret
+                )
+            except ValueError as e:
+                print(f"❌ Invalid payload: {e}")
+                return jsonify({'error': 'Invalid payload'}), 400
+            except stripe.error.SignatureVerificationError as e:
+                print(f"❌ Invalid signature: {e}")
+                return jsonify({'error': 'Invalid signature'}), 400
+        
+        # Handle the event
+        stripe_client = get_stripe_client()
+        if not stripe_client or not stripe_client.is_configured():
+            print("⚠️ Stripe client not configured, skipping webhook processing")
+            return jsonify({'success': False, 'error': 'Stripe not configured'}), 500
+        
+        result = stripe_client.handle_webhook_event(event)
+        
+        # Update local database based on webhook events
+        if event['type'] == 'customer.subscription.created':
+            handle_subscription_created(event['data']['object'])
+        elif event['type'] == 'customer.subscription.updated':
+            handle_subscription_updated(event['data']['object'])
+        elif event['type'] == 'customer.subscription.deleted':
+            handle_subscription_deleted(event['data']['object'])
+        
+        return jsonify({'success': True, 'result': result})
+        
+    except Exception as e:
+        print(f"❌ Error handling webhook: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def handle_subscription_created(stripe_subscription):
+    """Handle subscription creation webhook"""
+    try:
+        customer_id = stripe_subscription['customer']
+        subscription_id = stripe_subscription['id']
+        
+        # Find user by Stripe customer ID
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if not user:
+            print(f"❌ User not found for customer ID: {customer_id}")
+            return
+        
+        # Create or update subscription record
+        subscription = Subscription.query.filter_by(
+            stripe_subscription_id=subscription_id
+        ).first()
+        
+        if not subscription:
+            subscription = Subscription(
+                user_id=user.id,
+                stripe_subscription_id=subscription_id,
+                stripe_customer_id=customer_id,
+                plan_type='premium',
+                status=stripe_subscription['status'],
+                current_period_start=datetime.fromtimestamp(stripe_subscription['current_period_start']),
+                current_period_end=datetime.fromtimestamp(stripe_subscription['current_period_end'])
+            )
+            db.session.add(subscription)
+        else:
+            subscription.status = stripe_subscription['status']
+            subscription.current_period_start = datetime.fromtimestamp(stripe_subscription['current_period_start'])
+            subscription.current_period_end = datetime.fromtimestamp(stripe_subscription['current_period_end'])
+        
+        db.session.commit()
+        print(f"✅ Subscription created/updated for user {user.id}")
+        
+    except Exception as e:
+        print(f"❌ Error handling subscription creation: {e}")
+        db.session.rollback()
+
+def handle_subscription_updated(stripe_subscription):
+    """Handle subscription update webhook"""
+    try:
+        subscription_id = stripe_subscription['id']
+        
+        subscription = Subscription.query.filter_by(
+            stripe_subscription_id=subscription_id
+        ).first()
+        
+        if subscription:
+            subscription.status = stripe_subscription['status']
+            subscription.current_period_start = datetime.fromtimestamp(stripe_subscription['current_period_start'])
+            subscription.current_period_end = datetime.fromtimestamp(stripe_subscription['current_period_end'])
+            subscription.cancel_at_period_end = stripe_subscription.get('cancel_at_period_end', False)
+            subscription.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            print(f"✅ Subscription updated: {subscription_id}")
+        
+    except Exception as e:
+        print(f"❌ Error handling subscription update: {e}")
+        db.session.rollback()
+
+def handle_subscription_deleted(stripe_subscription):
+    """Handle subscription deletion webhook"""
+    try:
+        subscription_id = stripe_subscription['id']
+        
+        subscription = Subscription.query.filter_by(
+            stripe_subscription_id=subscription_id
+        ).first()
+        
+        if subscription:
+            subscription.status = 'canceled'
+            subscription.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            print(f"✅ Subscription marked as canceled: {subscription_id}")
+        
+    except Exception as e:
+        print(f"❌ Error handling subscription deletion: {e}")
+        db.session.rollback()
+
+@app.route('/payment-success')
+@login_required
+def payment_success():
+    """Payment success page"""
+    return render_template('payment_success.html')
 
 # Register recipe blueprint
 app.register_blueprint(recipe_bp)

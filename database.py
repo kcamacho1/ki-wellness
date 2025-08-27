@@ -28,6 +28,9 @@ class User(UserMixin, db.Model):
     agreed_to_disclaimer = db.Column(db.Boolean, default=False)
     agreements_date = db.Column(db.DateTime)  # When agreements were accepted
     
+    # Stripe customer ID for payments
+    stripe_customer_id = db.Column(db.String(255))
+    
     # Relationships
     food_logs = db.relationship('FoodLog', backref='user', lazy=True)
     water_logs = db.relationship('WaterLog', backref='user', lazy=True)
@@ -35,6 +38,7 @@ class User(UserMixin, db.Model):
     notes = db.relationship('Note', backref='user', lazy=True)
     recipes = db.relationship('Recipe', backref='user', lazy=True)
     recipe_ratings = db.relationship('RecipeRating', backref='user', lazy=True)
+    subscriptions = db.relationship('Subscription', backref='user', lazy=True)
 
 class FoodLog(db.Model):
     __tablename__ = 'food_log'
@@ -228,3 +232,114 @@ class RecipeRating(db.Model):
             'review': self.review,
             'created_at': self.created_at.isoformat()
         }
+
+class Subscription(db.Model):
+    """Subscription model for managing user subscription plans"""
+    __tablename__ = 'subscription'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stripe_subscription_id = db.Column(db.String(255), unique=True, nullable=False)
+    stripe_customer_id = db.Column(db.String(255), nullable=False)
+    plan_type = db.Column(db.String(50), nullable=False, default='free')  # free, premium
+    status = db.Column(db.String(50), nullable=False, default='active')  # active, canceled, past_due, unpaid
+    current_period_start = db.Column(db.DateTime)
+    current_period_end = db.Column(db.DateTime)
+    cancel_at_period_end = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'stripe_subscription_id': self.stripe_subscription_id,
+            'stripe_customer_id': self.stripe_customer_id,
+            'plan_type': self.plan_type,
+            'status': self.status,
+            'current_period_start': self.current_period_start.isoformat() if self.current_period_start else None,
+            'current_period_end': self.current_period_end.isoformat() if self.current_period_end else None,
+            'cancel_at_period_end': self.cancel_at_period_end,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+class AIUsageLog(db.Model):
+    """Track AI usage costs for analytics"""
+    __tablename__ = 'ai_usage_log'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    session_id = db.Column(db.String(255), nullable=False)  # Unique session identifier
+    model_used = db.Column(db.String(255), nullable=False)  # Which model was used
+    input_tokens = db.Column(db.Integer, nullable=False)    # Input token count
+    output_tokens = db.Column(db.Integer, nullable=False)   # Output token count
+    input_cost = db.Column(db.Numeric(10, 6), nullable=False)  # Input cost in USD
+    output_cost = db.Column(db.Numeric(10, 6), nullable=False)   # Output cost in USD
+    total_cost = db.Column(db.Numeric(10, 6), nullable=False)  # Total cost in USD
+    endpoint = db.Column(db.String(100), nullable=False)   # Which endpoint was used
+    response_time_ms = db.Column(db.Integer)               # Response time in milliseconds
+    success = db.Column(db.Boolean, default=True)          # Whether the request succeeded
+    error_message = db.Column(db.Text)                     # Error message if failed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='ai_usage_logs')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'session_id': self.session_id,
+            'model_used': self.model_used,
+            'input_tokens': self.input_tokens,
+            'output_tokens': self.output_tokens,
+            'input_cost': float(self.input_cost),
+            'output_cost': float(self.output_cost),
+            'total_cost': float(self.total_cost),
+            'endpoint': self.endpoint,
+            'response_time_ms': self.response_time_ms,
+            'success': self.success,
+            'error_message': self.error_message,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class RevenueLog(db.Model):
+    """Track revenue from subscriptions and health coaching sessions"""
+    __tablename__ = 'revenue_log'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Can be null for anonymous sessions
+    revenue_type = db.Column(db.String(50), nullable=False)  # 'subscription', 'health_coaching', 'other'
+    amount = db.Column(db.Numeric(10, 2), nullable=False)    # Amount in USD
+    currency = db.Column(db.String(3), default='USD')
+    stripe_payment_intent_id = db.Column(db.String(255))     # Stripe payment intent ID
+    stripe_subscription_id = db.Column(db.String(255))       # Stripe subscription ID
+    description = db.Column(db.Text)                         # Description of the revenue
+    status = db.Column(db.String(50), default='completed')   # 'pending', 'completed', 'failed', 'refunded'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='revenue_logs')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'revenue_type': self.revenue_type,
+            'amount': float(self.amount),
+            'currency': self.currency,
+            'stripe_payment_intent_id': self.stripe_payment_intent_id,
+            'stripe_subscription_id': self.stripe_subscription_id,
+            'description': self.description,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+    
+    @property
+    def is_active(self):
+        """Check if subscription is currently active"""
+        return self.status in ['active', 'trialing'] and not self.cancel_at_period_end
+    
+    @property
+    def is_premium(self):
+        """Check if user has premium access"""
+        return self.is_active and self.plan_type == 'premium'

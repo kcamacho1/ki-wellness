@@ -15,6 +15,9 @@ class AICoachManager {
         // Load minimal user summary in background
         this.loadUserSummary();
         
+        // Check premium status
+        await this.checkPremiumStatus();
+        
         this.setupEventListeners();
         this.showMainContent();
     }
@@ -448,8 +451,13 @@ class AICoachManager {
                 this.chatHistory.push({ role: 'user', content: message });
                 this.chatHistory.push({ role: 'assistant', content: data.response });
             } else {
-                const errorMsg = data.error || 'Sorry, I encountered an error. Please try again.';
-                this.addMessageToChat('assistant', errorMsg);
+                // Handle premium upgrade requirement
+                if (data.requires_upgrade) {
+                    this.showUpgradePrompt(data.message);
+                } else {
+                    const errorMsg = data.error || 'Sorry, I encountered an error. Please try again.';
+                    this.addMessageToChat('assistant', errorMsg);
+                }
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -616,6 +624,74 @@ class AICoachManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    showUpgradePrompt(message) {
+        const upgradeMessage = `
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-900">Premium Feature</h3>
+                        <p class="text-blue-700 text-sm">${message}</p>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="window.location.href='/profile'" 
+                            class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+                        💳 Upgrade Now
+                    </button>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            class="px-3 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-all duration-200">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        this.addMessageToChat('assistant', upgradeMessage);
+    }
+
+    async checkPremiumStatus() {
+        try {
+            const response = await fetch('/api/subscription-status');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.isPremium = data.is_premium;
+                this.updateUIForPremiumStatus();
+            } else {
+                console.error('Failed to check premium status:', data.error);
+                this.isPremium = false;
+                this.updateUIForPremiumStatus();
+            }
+        } catch (error) {
+            console.error('Error checking premium status:', error);
+            this.isPremium = false;
+            this.updateUIForPremiumStatus();
+        }
+    }
+
+    updateUIForPremiumStatus() {
+        const premiumPrompt = document.getElementById('premium-upgrade-prompt');
+        const aiFeatures = document.getElementById('ai-features');
+        const chatButton = document.getElementById('chat-button');
+        
+        if (this.isPremium) {
+            // Premium user - show AI features
+            if (premiumPrompt) premiumPrompt.classList.add('hidden');
+            if (aiFeatures) aiFeatures.classList.remove('hidden');
+            if (chatButton) chatButton.classList.remove('hidden');
+        } else {
+            // Free user - show upgrade prompt, hide AI features
+            if (premiumPrompt) premiumPrompt.classList.remove('hidden');
+            if (aiFeatures) aiFeatures.classList.add('hidden');
+            if (chatButton) chatButton.classList.add('hidden');
+        }
     }
 
     showTypingIndicator() {

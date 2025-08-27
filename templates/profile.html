@@ -13,6 +13,31 @@
         
         <!-- Profile Form -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <!-- Subscription Status Section -->
+            <div id="subscription-status" class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <div>
+                            <span id="subscription-tier" class="text-blue-800 font-medium">Loading...</span>
+                            <p id="subscription-details" class="text-blue-700 text-sm mt-1">Checking your subscription status...</p>
+                        </div>
+                    </div>
+                    <div id="subscription-actions" class="hidden">
+                        <button type="button" id="upgrade-btn" 
+                                class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                            Upgrade to Premium
+                        </button>
+                        <button type="button" id="manage-subscription-btn" 
+                                class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md ml-2">
+                            Manage Subscription
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {% if current_user.is_admin %}
                 <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div class="flex items-center">
@@ -469,6 +494,136 @@
             hideLoading();
         }
     }
+
+    // Subscription Management
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSubscriptionStatus();
+    });
+
+    async function loadSubscriptionStatus() {
+        try {
+            const response = await fetch('/api/subscription-status');
+            const data = await response.json();
+            
+            if (data.success) {
+                updateSubscriptionDisplay(data);
+            } else {
+                console.error('Failed to load subscription status:', data.error);
+                updateSubscriptionDisplay({ subscription: null, is_premium: false });
+            }
+        } catch (error) {
+            console.error('Error loading subscription status:', error);
+            updateSubscriptionDisplay({ subscription: null, is_premium: false });
+        }
+    }
+
+    function updateSubscriptionDisplay(data) {
+        const tierElement = document.getElementById('subscription-tier');
+        const detailsElement = document.getElementById('subscription-details');
+        const actionsElement = document.getElementById('subscription-actions');
+        const upgradeBtn = document.getElementById('upgrade-btn');
+        const manageBtn = document.getElementById('manage-subscription-btn');
+
+        if (data.is_premium) {
+            // Premium user
+            tierElement.textContent = 'Premium Plan';
+            tierElement.className = 'text-purple-800 font-medium';
+            
+            const subscription = data.subscription;
+            const endDate = new Date(subscription.current_period_end);
+            const formattedDate = endDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            detailsElement.textContent = `Active until ${formattedDate}`;
+            detailsElement.className = 'text-purple-700 text-sm mt-1';
+            
+            // Show manage subscription button
+            upgradeBtn.classList.add('hidden');
+            manageBtn.classList.remove('hidden');
+            actionsElement.classList.remove('hidden');
+            
+            // Update subscription status styling
+            document.getElementById('subscription-status').className = 'mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg';
+            
+        } else {
+            // Free user
+            tierElement.textContent = 'Free Plan';
+            tierElement.className = 'text-gray-800 font-medium';
+            detailsElement.textContent = 'Upgrade to access AI Health Coach and premium features';
+            detailsElement.className = 'text-gray-700 text-sm mt-1';
+            
+            // Show upgrade button
+            upgradeBtn.classList.remove('hidden');
+            manageBtn.classList.add('hidden');
+            actionsElement.classList.remove('hidden');
+            
+            // Update subscription status styling
+            document.getElementById('subscription-status').className = 'mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg';
+        }
+    }
+
+    // Upgrade button click handler
+    document.getElementById('upgrade-btn').addEventListener('click', async function() {
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Redirect to Stripe checkout
+                window.location.href = data.checkout_url;
+            } else {
+                let errorMessage = data.error || 'Failed to create checkout session';
+                if (data.details) {
+                    errorMessage += `\n\n${data.details}`;
+                }
+                showToast(errorMessage, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating checkout session:', error);
+            showToast('Failed to create checkout session', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // Manage subscription button click handler
+    document.getElementById('manage-subscription-btn').addEventListener('click', async function() {
+        try {
+            showLoading();
+            
+            const response = await fetch('/api/customer-portal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Redirect to Stripe customer portal
+                window.location.href = data.portal_url;
+            } else {
+                showToast(data.error || 'Failed to create customer portal session', 'error');
+            }
+        } catch (error) {
+            console.error('Error creating customer portal session:', error);
+            showToast('Failed to create customer portal session', 'error');
+        } finally {
+            hideLoading();
+        }
+    });
 
 </script>
 {% endblock %}
