@@ -35,12 +35,23 @@ class SecurityMiddleware:
         """Security checks before each request"""
         g.request_start_time = time.time()
         
+        # Allow homepage access with more relaxed security
+        if request.endpoint in ['index', 'landing'] or request.path == '/':
+            # Only apply rate limiting and input validation for homepage
+            if not self.check_rate_limit(request.remote_addr):
+                return jsonify({'error': 'Rate limit exceeded'}), 429
+            if not self.validate_inputs(request):
+                return jsonify({'error': 'Invalid input detected'}), 400
+            return  # Skip bot detection for homepage
+        
         # Check if IP is blocked
         if self.is_ip_blocked(request.remote_addr):
+            print(f"🚫 Blocked IP attempted access: {request.remote_addr} for {request.path}")
             return jsonify({'error': 'Access denied'}), 403
             
-        # Bot detection
+        # Bot detection (skip for homepage)
         if self.detect_bot(request):
+            print(f"🤖 Bot detected and blocked: IP={request.remote_addr}, UA={request.headers.get('User-Agent', 'None')}, Path={request.path}")
             self.block_ip(request.remote_addr)
             return jsonify({'error': 'Bot access denied'}), 403
             
@@ -103,20 +114,33 @@ class SecurityMiddleware:
         with self.lock:
             self.bot_signatures['blocked_ips'].add(ip)
             
+    def unblock_ip(self, ip):
+        """Unblock an IP address"""
+        with self.lock:
+            self.bot_signatures['blocked_ips'].discard(ip)
+            
     def detect_bot(self, request):
         """Detect bot-like behavior"""
         user_agent = request.headers.get('User-Agent', '').lower()
         
-        # Check for bot signatures in User-Agent
-        for signature in self.bot_signatures['bot_headers']:
+        # Only block obvious bots/crawlers, not legitimate browsers
+        obvious_bot_signatures = [
+            'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider',
+            'yandexbot', 'facebookexternalhit', 'twitterbot', 'linkedinbot',
+            'whatsapp', 'telegrambot', 'wget', 'curl', 'postman', 'python-requests',
+            'scrapy', 'crawler', 'spider', 'scraper'
+        ]
+        
+        # Check for obvious bot signatures in User-Agent
+        for signature in obvious_bot_signatures:
             if signature in user_agent:
                 return True
-                
-        # Check for missing or suspicious headers
-        if not request.headers.get('Accept-Language'):
+        
+        # Only flag as bot if User-Agent is completely missing or suspiciously minimal
+        if not user_agent or len(user_agent.strip()) < 10:
             return True
             
-        # Check for automated request patterns
+        # Check for automated request patterns (more permissive)
         if self.detect_automated_patterns(request):
             return True
             
@@ -139,16 +163,17 @@ class SecurityMiddleware:
             ip_data['requests'] = [req_time for req_time in ip_data['requests'] 
                                  if current_time - req_time < 60]
             
-            # Check for suspicious patterns
-            if len(ip_data['requests']) > 100:  # More than 100 requests per minute
+            # Check for extremely suspicious patterns only
+            if len(ip_data['requests']) > 200:  # More than 200 requests per minute (very aggressive)
                 return True
                 
-            # Check for requests that are too regular (automated)
-            if len(ip_data['requests']) > 10:
+            # Check for requests that are extremely regular (clearly automated)
+            if len(ip_data['requests']) > 20:  # Require more requests to analyze patterns
                 intervals = [ip_data['requests'][i] - ip_data['requests'][i-1] 
                            for i in range(1, len(ip_data['requests']))]
-                if all(abs(interval - intervals[0]) < 0.1 for interval in intervals):
-                    return True  # Too regular intervals suggest automation
+                # Only flag if intervals are extremely regular (within 50ms)
+                if len(intervals) > 5 and all(abs(interval - intervals[0]) < 0.05 for interval in intervals):
+                    return True  # Extremely regular intervals suggest clear automation
                     
         return False
         
