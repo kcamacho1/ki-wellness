@@ -89,6 +89,7 @@ class SecurityMiddleware:
                 "img-src 'self' data: https:",
                 "connect-src 'self' https:",
                 "frame-src https:",
+                "worker-src 'self' blob:",  # Allow web workers for QuaggaJS barcode scanning
                 "object-src 'none'",
                 "base-uri 'self'"
             ]
@@ -96,12 +97,13 @@ class SecurityMiddleware:
             # Strict CSP for production (but Alpine.js needs 'unsafe-eval')
             csp = [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com",
                 "font-src 'self' https://fonts.gstatic.com",
                 "img-src 'self' data: https:",
                 "connect-src 'self' https://www.google.com https://www.gstatic.com",
                 "frame-src https://www.google.com",
+                "worker-src 'self' blob:",  # Allow web workers for QuaggaJS barcode scanning
                 "object-src 'none'",
                 "base-uri 'self'"
             ]

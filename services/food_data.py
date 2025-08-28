@@ -136,6 +136,90 @@ COMMON_FOODS_DB = {
         'sodium': 6,
         'source': 'common_foods'
     },
+    'cilantro': {
+        'name': 'Cilantro',
+        'brand': 'Generic',
+        'calories': 23,
+        'protein': 2.1,
+        'carbs': 3.7,
+        'fat': 0.5,
+        'fiber': 2.8,
+        'sugar': 0.9,
+        'sodium': 46,
+        'source': 'common_foods'
+    },
+    'coriander': {
+        'name': 'Coriander (Cilantro)',
+        'brand': 'Generic',
+        'calories': 23,
+        'protein': 2.1,
+        'carbs': 3.7,
+        'fat': 0.5,
+        'fiber': 2.8,
+        'sugar': 0.9,
+        'sodium': 46,
+        'source': 'common_foods'
+    },
+    'parsley': {
+        'name': 'Parsley',
+        'brand': 'Generic',
+        'calories': 36,
+        'protein': 3.0,
+        'carbs': 6.3,
+        'fat': 0.8,
+        'fiber': 3.3,
+        'sugar': 0.9,
+        'sodium': 56,
+        'source': 'common_foods'
+    },
+    'basil': {
+        'name': 'Basil',
+        'brand': 'Generic',
+        'calories': 22,
+        'protein': 3.2,
+        'carbs': 2.6,
+        'fat': 0.6,
+        'fiber': 1.6,
+        'sugar': 0.3,
+        'sodium': 4,
+        'source': 'common_foods'
+    },
+    'onion': {
+        'name': 'Onion',
+        'brand': 'Generic',
+        'calories': 40,
+        'protein': 1.1,
+        'carbs': 9.3,
+        'fat': 0.1,
+        'fiber': 1.7,
+        'sugar': 4.2,
+        'sodium': 4,
+        'source': 'common_foods'
+    },
+    'garlic': {
+        'name': 'Garlic',
+        'brand': 'Generic',
+        'calories': 149,
+        'protein': 6.4,
+        'carbs': 33.0,
+        'fat': 0.5,
+        'fiber': 2.1,
+        'sugar': 1.0,
+        'sodium': 17,
+        'source': 'common_foods'
+    },
+    'ginger': {
+        'name': 'Ginger',
+        'brand': 'Generic',
+        'calories': 80,
+        'protein': 1.8,
+        'carbs': 18.0,
+        'fat': 0.8,
+        'fiber': 2.0,
+        'sugar': 1.7,
+        'sodium': 13,
+        'source': 'common_foods'
+    },
     
     # Common proteins
     'eggs': {

@@ -2148,6 +2148,95 @@ def cleanup_cache():
         for i in range(items_to_remove):
             del food_search_cache[sorted_items[i][0]]
 
+def rank_food_search_results(results, query):
+    """
+    Rank food search results by match quality, prioritizing exact matches
+    Returns results sorted by relevance (best matches first)
+    """
+    if not results or not query:
+        return results
+    
+    query_lower = query.lower().strip()
+    ranked_results = []
+    
+    for result in results:
+        name = result.get('name', '').lower().strip()
+        brand = result.get('brand', '').lower().strip()
+        
+        # Calculate match score (higher = better match)
+        score = 0
+        
+        # Exact name match (highest priority)
+        if name == query_lower:
+            score += 1000
+        # Exact match ignoring articles (a, an, the)
+        elif name.replace('the ', '').replace('an ', '').replace('a ', '') == query_lower:
+            score += 950
+        # Exact match with commas/parentheses (e.g., "apple" matches "apple, red")
+        elif name.split(',')[0].strip() == query_lower or name.split('(')[0].strip() == query_lower:
+            score += 920
+        # Name starts with query (very high priority)
+        elif name.startswith(query_lower):
+            score += 800
+        # Query is whole word in name
+        elif f' {query_lower} ' in f' {name} ' or name.startswith(f'{query_lower} ') or name.endswith(f' {query_lower}'):
+            score += 700
+        # Name contains query as substring (high priority)
+        elif query_lower in name:
+            score += 500
+        
+        # Handle plurals and common variations
+        query_singular = query_lower.rstrip('s') if query_lower.endswith('s') and len(query_lower) > 3 else query_lower
+        query_plural = query_lower + 's' if not query_lower.endswith('s') else query_lower
+        
+        # Check singular/plural variations
+        if query_singular != query_lower and name == query_singular:
+            score += 980  # High score for singular match
+        elif query_plural != query_lower and name == query_plural:
+            score += 980  # High score for plural match
+        
+        # Brand exact match bonus
+        if brand and brand == query_lower:
+            score += 300
+        elif brand and query_lower in brand:
+            score += 100
+        
+        # Penalize very long names (they're often less relevant)
+        if len(name) > 50:
+            score -= 50
+        elif len(name) > 30:
+            score -= 20
+        
+        # Bonus for simple/common foods (shorter names often more relevant)
+        if len(name) <= 15:
+            score += 50
+        
+        # Bonus for foods with nutritional data
+        if result.get('calories', 0) > 0:
+            score += 25
+        
+        # Store the score in the result
+        result_with_score = result.copy()
+        result_with_score['match_score'] = score
+        ranked_results.append(result_with_score)
+    
+    # Sort by score (descending - highest scores first)
+    ranked_results.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+    
+    # Optional: Log ranking information for debugging (uncomment if needed)
+    # if ranked_results:
+    #     print(f"🔍 Search ranking for '{query}': Top 3 results:")
+    #     for i, result in enumerate(ranked_results[:3]):
+    #         score = result.get('match_score', 0)
+    #         name = result.get('name', 'Unknown')
+    #         print(f"  {i+1}. {name} (score: {score})")
+    
+    # Remove the temporary score field
+    for result in ranked_results:
+        result.pop('match_score', None)
+    
+    return ranked_results
+
 @app.route('/api/search-food', methods=['POST'])
 @login_required
 def search_food():
@@ -2186,9 +2275,10 @@ def search_food():
     # Combine results with exact matches first
     fallback_results = exact_matches + partial_matches
     
-    # If we have good fallback results, return them immediately
+    # If we have good fallback results, rank them and return immediately
     if len(fallback_results) >= 3:
-        result = fallback_results[:8]
+        ranked_fallback = rank_food_search_results(fallback_results, query)
+        result = ranked_fallback[:8]
         food_search_cache[cache_key] = (result, current_time)
         return jsonify({'success': True, 'results': result, 'fast': True, 'exact_matches': len(exact_matches)})
     
@@ -2222,24 +2312,22 @@ def search_food():
             except Exception as e:
                 print(f"Error in {name} API: {e}")
     
-    # Combine results (fallback first, then USDA, then Open Food Facts)
-    combined_results = fallback_results + usda_results + openfoodfacts_results
+    # Combine all results for ranking
+    all_results = fallback_results + usda_results + openfoodfacts_results
     
-    # Remove duplicates based on name, but prioritize generic foods
+    # Rank results by match quality (exact matches first)
+    ranked_results = rank_food_search_results(all_results, query)
+    
+    # Remove duplicates while preserving ranking
     unique_results = []
     seen_names = set()
     
-    # First, add all fallback results (generic foods)
-    for result in fallback_results:
-        if result['name'] not in seen_names:
+    for result in ranked_results:
+        # Use normalized name for duplicate detection
+        normalized_name = result['name'].lower().strip()
+        if normalized_name not in seen_names:
             unique_results.append(result)
-            seen_names.add(result['name'])
-    
-    # Then add API results, avoiding duplicates
-    for result in combined_results:
-        if result['name'] not in seen_names:
-            unique_results.append(result)
-            seen_names.add(result['name'])
+            seen_names.add(normalized_name)
     
     final_results = unique_results[:8]
     
@@ -3494,4 +3582,6 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"⚠️ Error initializing Stripe: {e}")
     
-    app.run(debug=True)
+    # Get port from environment variable or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='127.0.0.1', port=port)

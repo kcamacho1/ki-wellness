@@ -9,6 +9,7 @@ class FoodJournal {
         this.currentDate = new Date().toISOString().split('T')[0];
         this.searchCache = new Map();
         this.barcodeScanner = null;
+        this.stream = null; // Add stream property for camera management
         
         this.init();
     }
@@ -275,36 +276,431 @@ class FoodJournal {
         // Store selected food item data
         this.selectedFood = foodItem;
         
-        // Create a simplified food modal or directly add to log
-        this.addFoodToLog(foodItem);
+        // Show the food selection modal instead of directly adding to log
+        this.showFoodSelectionModal(foodItem);
         
         this.logActivity(`Food item selected: ${foodItem.name}`);
     }
     
     /**
-     * Start barcode scanner
+     * Show food selection modal for serving size and meal type
+     */
+    showFoodSelectionModal(foodItem) {
+        const modal = document.getElementById('food-selection-modal');
+        if (!modal) {
+            console.error('Food selection modal not found');
+            return;
+        }
+        
+        // Populate food information
+        document.getElementById('selected-food-name').textContent = foodItem.name || 'Unknown';
+        document.getElementById('selected-food-brand').textContent = foodItem.brand || 'Unknown Brand';
+        document.getElementById('selected-food-calories').textContent = Math.round(foodItem.calories || 0);
+        document.getElementById('selected-food-protein').textContent = Math.round(foodItem.protein || 0);
+        document.getElementById('selected-food-carbs').textContent = Math.round(foodItem.carbs || 0);
+        document.getElementById('selected-food-fat').textContent = Math.round(foodItem.fat || 0);
+        
+        // Set default serving size and meal type based on current time
+        const currentHour = new Date().getHours();
+        let defaultMealType = 'snack';
+        if (currentHour >= 6 && currentHour < 11) {
+            defaultMealType = 'breakfast';
+        } else if (currentHour >= 11 && currentHour < 15) {
+            defaultMealType = 'lunch';
+        } else if (currentHour >= 15 && currentHour < 21) {
+            defaultMealType = 'dinner';
+        }
+        
+        document.getElementById('food-selection-meal-type').value = defaultMealType;
+        document.getElementById('food-selection-amount').value = '1';
+        document.getElementById('food-selection-unit').value = 'serving';
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Set up event listeners for this modal
+        this.setupFoodSelectionModalEvents();
+        
+        this.logActivity(`Food selection modal opened for: ${foodItem.name}`);
+    }
+    
+    /**
+     * Setup event listeners for food selection modal
+     */
+    setupFoodSelectionModalEvents() {
+        // Remove any existing listeners to prevent duplicates
+        this.removeFoodSelectionModalEvents();
+        
+        // Close modal events
+        this.foodSelectionCloseHandler = () => this.closeFoodSelectionModal();
+        this.foodSelectionCancelHandler = () => this.closeFoodSelectionModal();
+        this.foodSelectionConfirmHandler = () => this.confirmFoodSelection();
+        this.foodSelectionEscapeHandler = (e) => {
+            if (e.key === 'Escape') this.closeFoodSelectionModal();
+        };
+        
+        // Add event listeners
+        const closeBtn = document.getElementById('close-food-selection-modal');
+        const cancelBtn = document.getElementById('cancel-add-food');
+        const confirmBtn = document.getElementById('confirm-add-food');
+        
+        if (closeBtn) closeBtn.addEventListener('click', this.foodSelectionCloseHandler);
+        if (cancelBtn) cancelBtn.addEventListener('click', this.foodSelectionCancelHandler);
+        if (confirmBtn) confirmBtn.addEventListener('click', this.foodSelectionConfirmHandler);
+        document.addEventListener('keydown', this.foodSelectionEscapeHandler);
+        
+        // Close modal on backdrop click
+        const modal = document.getElementById('food-selection-modal');
+        if (modal) {
+            this.foodSelectionBackdropHandler = (e) => {
+                if (e.target === modal) this.closeFoodSelectionModal();
+            };
+            modal.addEventListener('click', this.foodSelectionBackdropHandler);
+        }
+    }
+    
+    /**
+     * Remove event listeners for food selection modal
+     */
+    removeFoodSelectionModalEvents() {
+        const closeBtn = document.getElementById('close-food-selection-modal');
+        const cancelBtn = document.getElementById('cancel-add-food');
+        const confirmBtn = document.getElementById('confirm-add-food');
+        const modal = document.getElementById('food-selection-modal');
+        
+        if (closeBtn && this.foodSelectionCloseHandler) {
+            closeBtn.removeEventListener('click', this.foodSelectionCloseHandler);
+        }
+        if (cancelBtn && this.foodSelectionCancelHandler) {
+            cancelBtn.removeEventListener('click', this.foodSelectionCancelHandler);
+        }
+        if (confirmBtn && this.foodSelectionConfirmHandler) {
+            confirmBtn.removeEventListener('click', this.foodSelectionConfirmHandler);
+        }
+        if (this.foodSelectionEscapeHandler) {
+            document.removeEventListener('keydown', this.foodSelectionEscapeHandler);
+        }
+        if (modal && this.foodSelectionBackdropHandler) {
+            modal.removeEventListener('click', this.foodSelectionBackdropHandler);
+        }
+    }
+    
+    /**
+     * Close food selection modal
+     */
+    closeFoodSelectionModal() {
+        const modal = document.getElementById('food-selection-modal');
+        if (!modal) return;
+        
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Remove event listeners
+        this.removeFoodSelectionModalEvents();
+        
+        this.logActivity('Food selection modal closed');
+    }
+    
+    /**
+     * Confirm food selection and add to log
+     */
+    async confirmFoodSelection() {
+        if (!this.selectedFood) {
+            this.showToast('No food item selected', 'error');
+            return;
+        }
+        
+        // Get form values
+        const amount = parseFloat(document.getElementById('food-selection-amount').value) || 1;
+        const unit = document.getElementById('food-selection-unit').value || 'serving';
+        const mealType = document.getElementById('food-selection-meal-type').value || 'snack';
+        
+        // Validate inputs
+        if (amount <= 0) {
+            this.showToast('Please enter a valid amount', 'warning');
+            return;
+        }
+        
+        // Calculate nutrition values based on serving size
+        const multiplier = amount; // For now, treat amount as direct multiplier
+        
+        const adjustedFoodItem = {
+            ...this.selectedFood,
+            calories: (this.selectedFood.calories || 0) * multiplier,
+            protein: (this.selectedFood.protein || 0) * multiplier,
+            carbs: (this.selectedFood.carbs || 0) * multiplier,
+            fat: (this.selectedFood.fat || 0) * multiplier,
+            serving_size: (this.selectedFood.serving_size || 100) * multiplier,
+            serving_unit: unit
+        };
+        
+        // Add to log with selected parameters
+        await this.addFoodToLog(adjustedFoodItem, mealType);
+        
+        // Close the food selection modal
+        this.closeFoodSelectionModal();
+        
+        this.logActivity(`Food confirmed and added: ${this.selectedFood.name} (${amount} ${unit}, ${mealType})`);
+    }
+    
+    /**
+     * Start barcode scanner with mobile optimization
      */
     async startBarcodeScanner() {
-        const scannerContainer = document.getElementById('modal-barcode-scanner-container');
-        const video = document.getElementById('modal-barcode-video');
-        
-        if (!scannerContainer || !video) return;
-        
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
+            // Check if camera permissions are available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Camera access not supported in this browser');
+            }
+
+            // Check if we're on a mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Mobile-optimized camera constraints
+            const constraints = {
+                video: {
+                    facingMode: 'environment', // Use rear camera on mobile
+                    width: { ideal: isMobile ? 1280 : 1920, min: 640 },
+                    height: { ideal: isMobile ? 720 : 1080, min: 480 },
+                    aspectRatio: { ideal: 16/9 }
+                }
+            };
+
+            // On mobile, ensure we don't have multiple camera requests
+            if (this.stream) {
+                this.stopBarcodeScanner();
+                // Small delay to ensure previous stream is fully closed
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log('Requesting camera access...');
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            const video = document.getElementById('modal-barcode-video');
+            const scannerContainer = document.getElementById('modal-barcode-scanner-container');
+            
+            if (!video || !scannerContainer) {
+                throw new Error('Video element not found');
+            }
+            
+            video.srcObject = this.stream;
+            
+            // Wait for video to be ready
+            await new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
             });
             
-            video.srcObject = stream;
-            video.play();
+            // Show scanner UI
             scannerContainer.classList.remove('hidden');
             
-            // Note: In production, you'd integrate with a barcode scanning library like QuaggaJS
+            // Start barcode detection
+            this.startBarcodeDetection();
+            
+            this.showToast('Camera started - point at barcode to scan', 'success');
             this.logActivity('Barcode scanner started');
             
         } catch (error) {
-            console.error('Camera access error:', error);
-            this.showToast('Camera access denied or not available', 'error');
+            console.error('Error starting barcode scanner:', error);
+            
+            let errorMessage = 'Failed to start camera';
+            if (error.name === 'NotFoundError') {
+                errorMessage = 'No camera found. Please check if your device has a camera.';
+            } else if (error.name === 'NotAllowedError') {
+                errorMessage = 'Camera access denied. Please allow camera permissions and try again.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = 'Camera is in use by another application. Please close other camera apps.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            this.showToast(errorMessage, 'error');
+        }
+    }
+
+    /**
+     * Start barcode detection using QuaggaJS
+     */
+    startBarcodeDetection() {
+        if (!this.stream) return;
+        
+        const video = document.getElementById('modal-barcode-video');
+        
+        // Check if QuaggaJS is available
+        if (typeof Quagga === 'undefined') {
+            console.warn('QuaggaJS not loaded, falling back to basic camera');
+            this.updateScanningIndicator();
+            this.showToast('Barcode scanning not available. Use manual entry.', 'warning');
+            return;
+        }
+        
+        // Configure QuaggaJS with mobile-optimized settings
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: video,
+                constraints: {
+                    width: { min: 640, ideal: 1280 },
+                    height: { min: 480, ideal: 720 },
+                    facingMode: "environment", // Use rear camera
+                    aspectRatio: { min: 1, max: 2 }
+                },
+            },
+            locator: {
+                patchSize: "medium",
+                halfSample: true
+            },
+            numOfWorkers: navigator.hardwareConcurrency || 2, // Use available CPU cores
+            frequency: 10,
+            decoder: {
+                readers: [
+                    "ean_reader",        // Most common for food products
+                    "ean_8_reader",      // Shorter EAN codes
+                    "upc_reader",        // Universal Product Code
+                    "upc_e_reader",      // UPC-E format
+                    "code_128_reader",   // Code 128
+                    "code_39_reader",    // Code 39
+                    "code_39_vin_reader", // Code 39 VIN
+                    "codabar_reader",    // Codabar
+                    "i2of5_reader"       // Interleaved 2 of 5
+                ]
+            },
+            locate: true
+        }, (err) => {
+            if (err) {
+                console.error('Quagga initialization failed:', err);
+                this.showToast('Failed to initialize barcode scanner', 'error');
+                return;
+            }
+            
+            console.log('Quagga initialized successfully');
+            Quagga.start();
+            
+            // Add visual scanning indicator
+            this.updateScanningIndicator();
+        });
+        
+        // Listen for barcode detection with improved error handling
+        Quagga.onDetected((result) => {
+            const code = result.codeResult.code;
+            const format = result.codeResult.format;
+            console.log('Barcode detected:', code, 'Format:', format);
+            
+            // Validate barcode format and length
+            if (this.isValidBarcode(code, format)) {
+                // Stop scanning and search for the product
+                this.stopBarcodeScanner();
+                this.searchBarcodeByCode(code);
+            } else {
+                console.log('Invalid barcode format, continuing scan...');
+            }
+        });
+        
+        // Listen for processing with improved visual feedback
+        Quagga.onProcessed((result) => {
+            const drawingCanvas = Quagga.canvas.dom.overlay;
+            if (!drawingCanvas) return;
+            
+            const drawingCtx = drawingCanvas.getContext('2d');
+            
+            if (result) {
+                if (result.boxes) {
+                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                    result.boxes.filter((box) => box !== result.box).forEach((box) => {
+                        Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                    });
+                }
+                
+                if (result.box) {
+                    Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
+                }
+                
+                if (result.codeResult && result.codeResult.code) {
+                    Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                }
+            }
+        });
+    }
+    
+    /**
+     * Validate barcode format and length
+     */
+    isValidBarcode(code, format) {
+        if (!code || code.length < 8) return false;
+        
+        // Common barcode formats and their expected lengths
+        const formatLengths = {
+            'ean_13': 13,
+            'ean_8': 8,
+            'upc_a': 12,
+            'upc_e': 8,
+            'code_128': { min: 8, max: 50 },
+            'code_39': { min: 8, max: 50 }
+        };
+        
+        // Check if format matches expected length
+        if (formatLengths[format]) {
+            const expected = formatLengths[format];
+            if (typeof expected === 'number') {
+                return code.length === expected;
+            } else {
+                return code.length >= expected.min && code.length <= expected.max;
+            }
+        }
+        
+        // Default validation for unknown formats
+        return code.length >= 8 && code.length <= 50;
+    }
+    
+    /**
+     * Update scanning visual indicator
+     */
+    updateScanningIndicator() {
+        // Add a visual indicator that scanning is active
+        const video = document.getElementById('modal-barcode-video');
+        if (video && !video.classList.contains('scanning-active')) {
+            video.classList.add('scanning-active');
+            video.style.border = '3px solid #16a34a';
+            video.style.boxShadow = '0 0 20px rgba(22, 163, 74, 0.3)';
+        }
+    }
+    
+    /**
+     * Search for food by detected barcode
+     */
+    async searchBarcodeByCode(barcode) {
+        const resultsContainer = document.getElementById('modal-barcode-results');
+        
+        if (!resultsContainer) return;
+        
+        try {
+            this.showLoading(resultsContainer);
+            this.showToast(`Searching for barcode: ${barcode}`, 'info');
+            
+            const response = await fetch('/api/search-food-barcode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.result) {
+                this.displaySearchResults([data.result], resultsContainer);
+                this.showToast('Product found! Click to add to your log.', 'success');
+                this.logActivity(`Barcode search successful: ${barcode}`);
+            } else {
+                this.showError(resultsContainer, 'Food not found for this barcode');
+                this.showToast('Product not found. Try manual entry.', 'warning');
+            }
+        } catch (error) {
+            console.error('Barcode search error:', error);
+            this.showError(resultsContainer, 'Network error occurred');
+            this.showToast('Search failed. Check your connection.', 'error');
         }
     }
     
@@ -312,15 +708,28 @@ class FoodJournal {
      * Stop barcode scanner
      */
     stopBarcodeScanner() {
-        const scannerContainer = document.getElementById('modal-barcode-scanner-container');
-        const video = document.getElementById('modal-barcode-video');
+        // Stop QuaggaJS
+        if (typeof Quagga !== 'undefined') {
+            Quagga.stop();
+        }
         
-        if (video && video.srcObject) {
-            const tracks = video.srcObject.getTracks();
-            tracks.forEach(track => track.stop());
+        // Stop camera stream
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+        
+        // Reset video styling
+        const video = document.getElementById('modal-barcode-video');
+        if (video) {
+            video.classList.remove('scanning-active');
+            video.style.border = '';
+            video.style.boxShadow = '';
             video.srcObject = null;
         }
         
+        // Hide scanner UI
+        const scannerContainer = document.getElementById('modal-barcode-scanner-container');
         if (scannerContainer) {
             scannerContainer.classList.add('hidden');
         }
@@ -329,7 +738,7 @@ class FoodJournal {
     }
     
     /**
-     * Search food by barcode
+     * Search food by barcode (manual entry)
      */
     async searchBarcode() {
         const barcodeInput = document.getElementById('modal-manual-barcode');
@@ -343,27 +752,7 @@ class FoodJournal {
             return;
         }
         
-        try {
-            this.showLoading(resultsContainer);
-            
-            const response = await fetch('/api/search-food-barcode', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ barcode })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success && data.result) {
-                this.displaySearchResults([data.result], resultsContainer);
-                this.logActivity(`Barcode search performed: ${barcode}`);
-            } else {
-                this.showError(resultsContainer, 'Food not found for this barcode');
-            }
-        } catch (error) {
-            console.error('Barcode search error:', error);
-            this.showError(resultsContainer, 'Network error occurred');
-        }
+        await this.searchBarcodeByCode(barcode);
     }
     
     /**
