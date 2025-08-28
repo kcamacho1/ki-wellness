@@ -49,11 +49,11 @@ This document outlines the comprehensive security measures implemented to protec
 - `(`, `)`, `{`, `}`, `[`, `]`
 - Null bytes (`\x00`)
 
-### **5. reCAPTCHA v2 Protection**
-- **Google reCAPTCHA v2**: Industry-standard bot protection
-- **Checkbox Verification**: Simple "I'm not a robot" checkbox
-- **Registration Protection**: Required for new account creation
-- **Advanced Bot Detection**: Google's machine learning algorithms
+### **5. Cloudflare Bot Protection**
+- **Cloudflare Security**: Enterprise-grade bot protection and DDoS mitigation
+- **Automatic Protection**: Invisible bot detection without user interaction
+- **DDoS Mitigation**: Advanced traffic filtering and rate limiting
+- **Global Network**: Protection powered by Cloudflare's global edge network
 
 ### **6. Security Headers**
 - **X-Content-Type-Options**: `nosniff`

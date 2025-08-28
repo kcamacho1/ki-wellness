@@ -38,7 +38,7 @@ from services.analytics_service import analytics_service
 # Import security modules
 from security_middleware import SecurityMiddleware, rate_limit, sanitize_input
 from database_security import validate_user_input, sanitize_user_input, create_safe_query
-from services.recaptcha_service import recaptcha_service, require_recaptcha, get_recaptcha_site_key
+# reCAPTCHA removed - using Cloudflare bot protection instead
 
 def premium_required(f):
     """Decorator to require premium subscription or special role access"""
@@ -94,9 +94,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# reCAPTCHA configuration
-app.config['RECAPTCHA_SITE_KEY'] = os.getenv('RECAPTCHA_SITE_KEY')
-app.config['RECAPTCHA_SECRET_KEY'] = os.getenv('RECAPTCHA_SECRET_KEY')
+# reCAPTCHA removed - using Cloudflare bot protection instead
 
 # Database configuration - Multi-driver approach
 db_url = os.getenv('DATABASE_URL')
@@ -589,11 +587,11 @@ def login():
         # Input validation
         if not validate_user_input(username, max_length=50):
             flash('Invalid username format', 'error')
-            return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
+            return render_template('login.html')
             
         if not validate_user_input(password, max_length=100):
             flash('Invalid password format', 'error')
-            return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
+            return render_template('login.html')
         
         # Sanitize inputs
         username = sanitize_user_input(username, max_length=50)
@@ -606,11 +604,10 @@ def login():
         else:
             flash('Invalid username or password', 'error')
     
-    return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
+    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 @rate_limit(max_requests=5, window=300)  # Limit registration attempts
-@require_recaptcha  # Require reCAPTCHA for registration
 def register():
     # Check if new account creation is enabled
     new_accounts_enabled = get_app_setting('new_accounts_enabled', 'true').lower() == 'true'
@@ -710,7 +707,7 @@ def register():
     return render_template('register.html', 
                          registration_disabled=registration_disabled, 
                          allowed_emails=allowed_emails,
-                         recaptcha_site_key=get_recaptcha_site_key())
+)
 
 @app.route('/logout')
 @login_required
@@ -1117,7 +1114,7 @@ def admin_system():
         security_stats = {
             'blocked_ips': len(security_middleware.bot_signatures['blocked_ips']),
             'suspicious_ips': len(security_middleware.bot_signatures['suspicious_ips']),
-            'recaptcha_configured': recaptcha_service.is_configured(),
+            'cloudflare_protection': True,  # Using Cloudflare bot protection
             'rate_limit_violations': sum(1 for ip_data in security_middleware.rate_limit_db.values() 
                                        if len(ip_data['requests']) > 50)
         }
@@ -1132,7 +1129,7 @@ def admin_system():
         security_stats = {
             'blocked_ips': len(security_middleware.bot_signatures['blocked_ips']),
             'suspicious_ips': len(security_middleware.bot_signatures['suspicious_ips']),
-            'recaptcha_configured': recaptcha_service.is_configured(),
+            'cloudflare_protection': True,  # Using Cloudflare bot protection
             'rate_limit_violations': 0
         }
         return render_template('admin_system.html', system_info=system_info, security_stats=security_stats)
@@ -1246,8 +1243,7 @@ def get_security_stats():
         security_stats = {
             'blocked_ips': list(security_middleware.bot_signatures['blocked_ips']),
             'suspicious_ips': list(security_middleware.bot_signatures['suspicious_ips']),
-            'recaptcha_configured': recaptcha_service.is_configured(),
-            'recaptcha_site_key': get_recaptcha_site_key() if recaptcha_service.is_configured() else None,
+            'cloudflare_protection': True,  # Using Cloudflare bot protection
             'rate_limit_data': {
                 ip: {
                     'requests_count': len(data['requests']),

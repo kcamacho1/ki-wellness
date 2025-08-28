@@ -3,10 +3,7 @@
 {% block title %}Login - Ki Wellness{% endblock %}
 
 {% block head %}
-<!-- reCAPTCHA v2 Script -->
-{% if recaptcha_site_key %}
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-{% endif %}
+<!-- Bot protection handled by Cloudflare -->
 {% endblock %}
 
 {% block content %}
@@ -55,12 +52,7 @@
                         </div> -->
                     </div>
                     
-                    <!-- reCAPTCHA -->
-                    {% if recaptcha_site_key %}
-                    <div id="recaptcha-container" class="hidden">
-                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
-                    </div>
-                    {% endif %}
+                    <!-- Bot protection handled by Cloudflare -->
                     
                     <!-- Submit Button -->
                     <button type="submit" 
@@ -81,34 +73,12 @@
     </div>
 </div>
 
-{% if recaptcha_site_key %}
+<!-- Cloudflare handles bot protection automatically -->
 <script>
-    // Wait for DOM to be fully loaded and base script functions to be available
+    // Simplified login form handling - no manual bot checks needed
     document.addEventListener('DOMContentLoaded', function() {
-        // Check if shouldShowRecaptcha function exists and reCAPTCHA should be shown
-        if (typeof shouldShowRecaptcha === 'function' && shouldShowRecaptcha()) {
-            const recaptchaContainer = document.getElementById('recaptcha-container');
-            if (recaptchaContainer) {
-                recaptchaContainer.classList.remove('hidden');
-            }
-            
-            // Add reCAPTCHA validation to form
-            document.getElementById('login-form').addEventListener('submit', function(e) {
-                if (typeof grecaptcha !== 'undefined') {
-                    const recaptchaResponse = grecaptcha.getResponse();
-                    if (!recaptchaResponse) {
-                        e.preventDefault();
-                        if (typeof showToast === 'function') {
-                            showToast('Please complete the reCAPTCHA verification', 'error');
-                        } else {
-                            alert('Please complete the reCAPTCHA verification');
-                        }
-                        return false;
-                    }
-                }
-            });
-        }
+        // Form submission is clean - Cloudflare handles bot protection
+        console.log('Login form ready - Protected by Cloudflare');
     });
 </script>
-{% endif %}
 {% endblock %}

@@ -95,10 +95,7 @@
     </script>
     {% endif %}
     
-    <!-- reCAPTCHA v2 - only load if configured -->
-    {% if config.get('RECAPTCHA_SITE_KEY') or request.endpoint == 'register' %}
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    {% endif %}
+    <!-- Bot protection handled by Cloudflare -->
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -178,10 +175,7 @@
             }, 3000);
         }
         
-        // Check if domain is kiwellness.org for reCAPTCHA
-        function shouldShowRecaptcha() {
-            return window.location.hostname === 'kiwellness.org';
-        }
+        // Bot protection handled by Cloudflare
         
         // Session timeout management
         {% if current_user.is_authenticated %}
