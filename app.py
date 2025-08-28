@@ -94,6 +94,10 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
+# reCAPTCHA configuration
+app.config['RECAPTCHA_SITE_KEY'] = os.getenv('RECAPTCHA_SITE_KEY')
+app.config['RECAPTCHA_SECRET_KEY'] = os.getenv('RECAPTCHA_SECRET_KEY')
+
 # Database configuration - Multi-driver approach
 db_url = os.getenv('DATABASE_URL')
 is_production = bool(db_url and 'postgresql' in db_url)
@@ -2586,7 +2590,7 @@ def get_dashboard_data():
     total_protein = sum(log.protein for log in food_logs)
     total_carbs = sum(log.carbs for log in food_logs)
     total_fat = sum(log.fat for log in food_logs)
-    total_water = sum(log.amount for log in water_logs) * 8  # Convert cups to oz
+    total_water = sum(log.amount for log in water_logs)  # Amount already in oz
     
     return jsonify({
         'success': True,
@@ -2609,7 +2613,7 @@ def get_dashboard_data():
             } for log in food_logs],
             'water_logs': [{
                 'id': log.id,
-                'amount': log.amount * 8,  # Convert to oz
+                'amount': log.amount,  # Amount already in oz
                 'timestamp': log.timestamp.isoformat()
             } for log in water_logs],
             'mood_logs': [{

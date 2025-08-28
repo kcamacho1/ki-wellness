@@ -30,15 +30,20 @@
         <!-- Three Vertical Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Water Intake Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6 cursor-pointer hover:shadow-md transition-all duration-200" onclick="addQuickWater()">
                 <div class="text-center mb-4 sm:mb-6">
-                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Water Intake</h2>
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Water Intake</h2>
+                        <button onclick="event.stopPropagation(); openWaterSettingsModal()" class="text-gray-400 hover:text-blue-500 p-1 hover:bg-blue-50 rounded-lg transition-colors" title="Edit quick add amount">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="text-center mb-4 sm:mb-6">
-                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-                        </svg>
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <img src="{{ url_for('static', filename='assets/icons/water.svg') }}" alt="Water" class="w-10 h-10 sm:w-12 sm:h-12">
                     </div>
                     <div class="text-3xl sm:text-4xl lg:text-5xl font-bold text-blue-600 mb-2" id="water-display">0 oz</div>
                     <p class="text-gray-500 text-xs sm:text-sm">Daily Goal: 64 oz</p>
@@ -49,14 +54,15 @@
                     <div id="water-progress" class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
                 
-                <!-- Quick Add Buttons -->
-                <div class="grid grid-cols-2 gap-2 sm:gap-3">
-                    <button onclick="addWater(1)" class="bg-blue-50 text-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
-                        +8 oz
-                    </button>
-                    <button onclick="addWater(2)" class="bg-blue-50 text-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-xs sm:text-sm font-medium hover:bg-blue-100 transition-all duration-200 border border-blue-200">
-                        +16 oz
-                    </button>
+                <!-- Click to Add Instruction -->
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-2">Click to add <span id="quick-add-amount" class="font-semibold text-blue-600">8 oz</span></p>
+                    <div class="flex items-center justify-center space-x-2 text-xs text-gray-400">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        <span>Click edit icon to customize amount</span>
+                    </div>
                 </div>
             </div>
 
@@ -470,6 +476,55 @@
                 <div class="grid grid-cols-2 gap-4">
                     <button id="confirm-copy" class="bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">Copy Food Item</button>
                     <button id="cancel-copy" class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Water Settings Modal -->
+<div id="water-settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Water Quick Add Settings</h3>
+                    <button id="close-water-settings-modal" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <img src="{{ url_for('static', filename='assets/icons/water.svg') }}" alt="Water" class="w-5 h-5">
+                            <span class="text-sm font-medium text-blue-800">Quick Add Amount:</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" id="water-quick-amount" value="8" min="1" max="64" 
+                                   class="w-20 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-center">
+                            <span class="text-sm text-blue-700 font-medium">oz</span>
+                        </div>
+                        <p class="text-xs text-blue-600 mt-2">Set how many ounces to add when you click the water card</p>
+                    </div>
+                    
+                    <!-- Common Amounts -->
+                    <div class="mt-4">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Quick Select:</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="setWaterAmount(4)" class="bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">4 oz</button>
+                            <button onclick="setWaterAmount(8)" class="bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">8 oz</button>
+                            <button onclick="setWaterAmount(12)" class="bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">12 oz</button>
+                            <button onclick="setWaterAmount(16)" class="bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">16 oz</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="save-water-settings" class="bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors">Save Settings</button>
+                    <button id="cancel-water-settings" class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">Cancel</button>
                 </div>
             </div>
         </div>

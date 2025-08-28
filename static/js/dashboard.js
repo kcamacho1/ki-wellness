@@ -7,6 +7,7 @@ class DashboardManager {
         this.selectedFood = null;
         this.stream = null;
         this.macroChart = null;
+        this.quickWaterAmount = 8; // Default to 8 oz
         this.init();
     }
 
@@ -16,6 +17,7 @@ class DashboardManager {
         this.updateFoodLoggingDate();
         this.initMacroChart();
         this.loadDashboardData();
+        this.loadWaterSettings();
         // Note: initTabs() removed - tab functionality moved to food-journal.js
     }
 
@@ -67,6 +69,11 @@ class DashboardManager {
         document.getElementById('cancel-copy').addEventListener('click', () => this.closeCopyModal());
         document.getElementById('confirm-copy').addEventListener('click', () => this.confirmCopyFood());
         document.getElementById('copy-use-current-date').addEventListener('click', () => this.setCurrentDate('copy-date'));
+
+        // Water settings modal controls
+        document.getElementById('close-water-settings-modal').addEventListener('click', () => closeWaterSettingsModal());
+        document.getElementById('cancel-water-settings').addEventListener('click', () => closeWaterSettingsModal());
+        document.getElementById('save-water-settings').addEventListener('click', () => saveWaterSettings());
     }
 
     initTabs() {
@@ -1044,6 +1051,32 @@ class DashboardManager {
             `;
         }).join('');
     }
+
+    // Water settings methods
+    loadWaterSettings() {
+        const savedAmount = localStorage.getItem('quickWaterAmount');
+        if (savedAmount) {
+            this.quickWaterAmount = parseInt(savedAmount);
+        }
+        this.updateQuickAddDisplay();
+    }
+
+    getQuickWaterAmount() {
+        return this.quickWaterAmount;
+    }
+
+    setQuickWaterAmount(amount) {
+        this.quickWaterAmount = amount;
+        localStorage.setItem('quickWaterAmount', amount.toString());
+        this.updateQuickAddDisplay();
+    }
+
+    updateQuickAddDisplay() {
+        const displayElement = document.getElementById('quick-add-amount');
+        if (displayElement) {
+            displayElement.textContent = `${this.quickWaterAmount} oz`;
+        }
+    }
 }
 
 // Global functions for onclick handlers
@@ -1069,6 +1102,63 @@ function addWater(cups) {
         console.error('Error logging water:', error);
         showToast('Failed to log water intake', 'error');
     });
+}
+
+// Water quick add functionality
+function addQuickWater() {
+    const amount = dashboardManager.getQuickWaterAmount();
+    const date = dashboardManager.currentDate.toISOString().split('T')[0];
+    
+    fetch('/api/water-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amount, date: date })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Added ${amount} oz of water!`, 'success');
+            dashboardManager.loadDashboardData();
+        } else {
+            showToast('Failed to log water intake', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error logging water:', error);
+        showToast('Failed to log water intake', 'error');
+    });
+}
+
+// Water settings functions
+function openWaterSettingsModal() {
+    const modal = document.getElementById('water-settings-modal');
+    const amountInput = document.getElementById('water-quick-amount');
+    
+    // Load current amount
+    amountInput.value = dashboardManager.getQuickWaterAmount();
+    
+    modal.classList.remove('hidden');
+}
+
+function closeWaterSettingsModal() {
+    document.getElementById('water-settings-modal').classList.add('hidden');
+}
+
+function setWaterAmount(amount) {
+    document.getElementById('water-quick-amount').value = amount;
+}
+
+function saveWaterSettings() {
+    const amount = parseInt(document.getElementById('water-quick-amount').value);
+    
+    if (isNaN(amount) || amount < 1 || amount > 64) {
+        showToast('Please enter a valid amount between 1 and 64 oz', 'warning');
+        return;
+    }
+    
+    dashboardManager.setQuickWaterAmount(amount);
+    closeWaterSettingsModal();
+    showToast(`Quick add amount set to ${amount} oz`, 'success');
 }
 
 function setMood(emoji, moodText) {
