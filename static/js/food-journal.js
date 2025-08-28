@@ -241,13 +241,14 @@ class FoodJournal {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <p>No food items found</p>
-                    <p class="text-xs">Try a different search term</p>
+                    <p class="text-xs">Try a different search term or add it to the database</p>
                 </div>
+                ${this.createAddProductButton()}
             `;
             return;
         }
         
-        container.innerHTML = results.map(item => `
+        const resultsHTML = results.map(item => `
             <div class="food-search-result p-4 cursor-pointer hover:bg-gray-50 border rounded-lg transition-colors"
                  onclick="foodJournal.selectFoodItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
                 <div class="flex justify-between items-start">
@@ -267,6 +268,9 @@ class FoodJournal {
                 </div>
             </div>
         `).join('');
+        
+        // Add the "Add Product" option at the bottom
+        container.innerHTML = resultsHTML + this.createAddProductButton();
     }
     
     /**
@@ -694,8 +698,8 @@ class FoodJournal {
                 this.showToast('Product found! Click to add to your log.', 'success');
                 this.logActivity(`Barcode search successful: ${barcode}`);
             } else {
-                this.showError(resultsContainer, 'Food not found for this barcode');
-                this.showToast('Product not found. Try manual entry.', 'warning');
+                this.showBarcodeNotFound(resultsContainer, barcode);
+                this.showToast('Product not found. You can add it to the database!', 'warning');
             }
         } catch (error) {
             console.error('Barcode search error:', error);
@@ -951,6 +955,187 @@ class FoodJournal {
             isModalOpen: this.isModalOpen(),
             currentDate: this.currentDate
         };
+    }
+
+    /**
+     * Create "Add Product to Database" button HTML
+     */
+    createAddProductButton() {
+        return `
+            <div class="mt-4 p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-10 h-10 bg-ki-green-100 rounded-full mb-2">
+                        <svg class="w-5 h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-sm font-medium text-gray-900 mb-1">Can't find your product?</h4>
+                    <p class="text-xs text-gray-600 mb-3">Help the community by adding it to the database</p>
+                    <button onclick="foodJournal.showAddProductModal()" 
+                            class="bg-ki-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-ki-green-700 transition-colors touch-manipulation">
+                        Add to Database
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Show barcode not found with add product option
+     */
+    showBarcodeNotFound(container, barcode) {
+        container.innerHTML = `
+            <div class="text-center py-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-3">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base font-medium text-gray-900 mb-2">Product Not Found</h3>
+                <p class="text-sm text-gray-600 mb-3">Barcode: <code class="bg-gray-100 px-2 py-1 rounded text-xs">${this.escapeHtml(barcode)}</code></p>
+                <p class="text-xs text-gray-500 mb-4">Not in database yet - help add it!</p>
+                
+                <button onclick="foodJournal.showAddProductModal('${this.escapeHtml(barcode)}')" 
+                        class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors touch-manipulation">
+                    Add to Database
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * Show the add product modal
+     */
+    showAddProductModal(barcode = '') {
+        const modal = document.getElementById('add-product-modal');
+        const barcodeInput = document.getElementById('product-barcode');
+        
+        if (barcode) {
+            barcodeInput.value = barcode;
+        }
+        
+        // Clear the form
+        document.getElementById('add-product-form').reset();
+        if (barcode) {
+            barcodeInput.value = barcode; // Restore barcode after reset
+        }
+        
+        modal.classList.remove('hidden');
+        
+        // Setup event listeners if not already done
+        this.setupAddProductModalEvents();
+    }
+
+    /**
+     * Setup event listeners for add product modal
+     */
+    setupAddProductModalEvents() {
+        // Prevent duplicate event listeners
+        if (this.addProductEventsSetup) return;
+        this.addProductEventsSetup = true;
+
+        const modal = document.getElementById('add-product-modal');
+        const closeBtn = document.getElementById('close-add-product-modal');
+        const cancelBtn = document.getElementById('cancel-add-product');
+        const submitBtn = document.getElementById('submit-add-product');
+
+        closeBtn.addEventListener('click', () => this.closeAddProductModal());
+        cancelBtn.addEventListener('click', () => this.closeAddProductModal());
+        submitBtn.addEventListener('click', () => this.submitProductToDatabase());
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeAddProductModal();
+            }
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                this.closeAddProductModal();
+            }
+        });
+    }
+
+    /**
+     * Close the add product modal
+     */
+    closeAddProductModal() {
+        const modal = document.getElementById('add-product-modal');
+        modal.classList.add('hidden');
+    }
+
+    /**
+     * Submit product data to Open Food Facts database
+     */
+    async submitProductToDatabase() {
+        const form = document.getElementById('add-product-form');
+        const formData = new FormData(form);
+        
+        // Get image files
+        const imageFiles = document.getElementById('product-images').files;
+        
+        // Basic validation
+        const productName = formData.get('product_name');
+        if (!productName || !productName.trim()) {
+            this.showToast('Product name is required', 'error');
+            return;
+        }
+
+        try {
+            // Show loading state
+            const submitBtn = document.getElementById('submit-add-product');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            // Create FormData for API submission
+            const apiFormData = new FormData();
+            
+            // Add all form fields
+            for (let [key, value] of formData.entries()) {
+                if (value && value.trim()) {
+                    apiFormData.append(key, value);
+                }
+            }
+            
+            // Add images
+            for (let i = 0; i < imageFiles.length; i++) {
+                apiFormData.append('images', imageFiles[i]);
+            }
+
+            const response = await fetch('/api/add-product-to-off', {
+                method: 'POST',
+                body: apiFormData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showToast('Product successfully added to Open Food Facts! Thank you!', 'success');
+                this.closeAddProductModal();
+                
+                // If this was from a barcode search, try searching again
+                const barcode = formData.get('barcode');
+                if (barcode) {
+                    setTimeout(() => {
+                        this.searchBarcodeByCode(barcode);
+                    }, 2000); // Wait 2 seconds for the database to update
+                }
+            } else {
+                this.showToast(`Failed to add product: ${data.message || 'Unknown error'}`, 'error');
+            }
+
+        } catch (error) {
+            console.error('Error adding product:', error);
+            this.showToast('Network error. Please try again.', 'error');
+        } finally {
+            // Restore button state
+            const submitBtn = document.getElementById('submit-add-product');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
     }
 }
 

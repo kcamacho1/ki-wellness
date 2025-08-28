@@ -74,6 +74,10 @@ class DashboardManager {
         document.getElementById('close-water-settings-modal').addEventListener('click', () => closeWaterSettingsModal());
         document.getElementById('cancel-water-settings').addEventListener('click', () => closeWaterSettingsModal());
         document.getElementById('save-water-settings').addEventListener('click', () => saveWaterSettings());
+        
+        // Log tab controls
+        document.getElementById('food-log-tab').addEventListener('click', () => this.switchLogTab('food'));
+        document.getElementById('mood-notes-tab').addEventListener('click', () => this.switchLogTab('mood-notes'));
     }
 
     initTabs() {
@@ -537,6 +541,152 @@ class DashboardManager {
             default:
                 return 'bg-blue-100 text-blue-700';
         }
+    }
+
+    switchLogTab(tabName) {
+        // Update tab buttons
+        const tabs = document.querySelectorAll('.log-tab');
+        tabs.forEach(tab => {
+            tab.classList.remove('active', 'text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
+            tab.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-white');
+        });
+
+        // Update content visibility
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.add('hidden'));
+
+        // Update action buttons
+        const addFoodBtn = document.getElementById('add-food-btn');
+        const addMoodNoteBtn = document.getElementById('add-mood-note-btn');
+
+        if (tabName === 'food') {
+            // Activate food log tab
+            const foodTab = document.getElementById('food-log-tab');
+            foodTab.classList.add('active', 'text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
+            foodTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-white');
+            
+            // Show food content
+            document.getElementById('food-log-content').classList.remove('hidden');
+            
+            // Show food action button
+            addFoodBtn.classList.remove('hidden');
+            addMoodNoteBtn.classList.add('hidden');
+        } else if (tabName === 'mood-notes') {
+            // Activate mood & notes tab
+            const moodTab = document.getElementById('mood-notes-tab');
+            moodTab.classList.add('active', 'text-purple-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
+            moodTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-white');
+            
+            // Show mood & notes content
+            document.getElementById('mood-notes-content').classList.remove('hidden');
+            
+            // Show mood & notes action button
+            addMoodNoteBtn.classList.remove('hidden');
+            addFoodBtn.classList.add('hidden');
+            
+            // Load mood and notes history for current date
+            this.loadMoodNotesHistory();
+        }
+    }
+
+    async loadMoodNotesHistory() {
+        const dateStr = this.currentDate.toISOString().split('T')[0];
+        
+        try {
+            const response = await fetch(`/api/dashboard-data?date=${dateStr}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayMoodHistory(data.mood_logs);
+                this.displayNotesHistory(data.notes);
+            }
+        } catch (error) {
+            console.error('Error loading mood and notes history:', error);
+        }
+    }
+
+    displayMoodHistory(moodLogs) {
+        const container = document.getElementById('mood-history');
+        
+        if (moodLogs.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-gray-500">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293L12 11l.707-.707A1 1 0 0113.414 10H15M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900 mb-1">No mood entries for this date</p>
+                    <p class="text-xs text-gray-500">Add your first mood entry above</p>
+                </div>
+            `;
+            return;
+        }
+
+        const moodEmojis = ['😢', '😕', '😐', '😊', '😄'];
+        const moodTexts = ['Very Sad', 'Sad', 'Neutral', 'Happy', 'Very Happy'];
+
+        container.innerHTML = moodLogs.map(log => {
+            const timestamp = new Date(log.timestamp).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            });
+            const moodEmoji = moodEmojis[log.rating - 1];
+            const moodText = moodTexts[log.rating - 1];
+
+            return `
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl">${moodEmoji}</span>
+                            <div>
+                                <p class="font-medium text-gray-900">${moodText}</p>
+                                <p class="text-xs text-gray-500">${timestamp}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    displayNotesHistory(notes) {
+        const container = document.getElementById('notes-history');
+        
+        if (notes.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-gray-500">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900 mb-1">No notes for this date</p>
+                    <p class="text-xs text-gray-500">Add notes in the Mood & Notes card above</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = notes.map(note => {
+            const timestamp = new Date(note.timestamp).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            });
+
+            return `
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <p class="text-gray-900 text-sm mb-1">${note.content}</p>
+                            <p class="text-xs text-gray-500">${timestamp}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     async startBarcodeScanner() {

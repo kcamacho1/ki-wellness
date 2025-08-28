@@ -2392,6 +2392,115 @@ def search_food_barcode():
         print(f"Barcode search error: {e}")
         return jsonify({'success': False, 'message': 'Failed to search product'})
 
+@app.route('/api/add-product-to-off', methods=['POST'])
+@login_required
+def add_product_to_open_food_facts():
+    """Add a new product to Open Food Facts database"""
+    try:
+        # Get form data
+        barcode = request.form.get('barcode', '').strip()
+        product_name = request.form.get('product_name', '').strip()
+        
+        # Validate required fields
+        if not product_name:
+            return jsonify({'success': False, 'message': 'Product name is required'})
+        
+        # Prepare data for Open Food Facts API
+        form_data = {
+            'user_id': 'kiwellness-app',  # Our app's username
+            'password': os.environ.get('OPENFOODFACTS_PASSWORD', ''),  # Set this in environment
+            'product_name': product_name,
+        }
+        
+        # Add barcode if provided
+        if barcode:
+            form_data['code'] = barcode
+        
+        # Add optional fields if provided
+        optional_fields = {
+            'brands': request.form.get('brands'),
+            'categories': request.form.get('categories'),
+            'quantity': request.form.get('quantity'),
+            'ingredients_text': request.form.get('ingredients_text'),
+        }
+        
+        for field, value in optional_fields.items():
+            if value and value.strip():
+                form_data[field] = value.strip()
+        
+        # Add nutrition facts if provided
+        nutrition_fields = {
+            'nutrition_data_per': '100g',
+            'nutrition_data_prepared_per': '100g',
+        }
+        
+        nutrition_mapping = {
+            'nutrition_energy_kcal': 'energy-kcal',
+            'nutrition_proteins': 'proteins',
+            'nutrition_carbohydrates': 'carbohydrates', 
+            'nutrition_fat': 'fat',
+            'nutrition_fiber': 'fiber',
+            'nutrition_sugars': 'sugars'
+        }
+        
+        for form_field, off_field in nutrition_mapping.items():
+            value = request.form.get(form_field)
+            if value and value.strip():
+                try:
+                    # Convert to float and add to form data
+                    float_value = float(value)
+                    form_data[f'nutriment_{off_field}'] = str(float_value)
+                    form_data[f'nutriment_{off_field}_unit'] = 'g' if off_field != 'energy-kcal' else 'kcal'
+                except ValueError:
+                    pass  # Skip invalid nutrition values
+        
+        # Handle image uploads
+        files = {}
+        uploaded_files = request.files.getlist('images')
+        
+        for i, file in enumerate(uploaded_files):
+            if file and file.filename:
+                # Determine image type based on order
+                if i == 0:
+                    field_name = 'imgupload_front'
+                elif i == 1:
+                    field_name = 'imgupload_ingredients'
+                elif i == 2:
+                    field_name = 'imgupload_nutrition'
+                else:
+                    field_name = f'imgupload_other_{i}'
+                
+                files[field_name] = (file.filename, file.stream, file.content_type)
+        
+        # Submit to Open Food Facts
+        url = 'https://world.openfoodfacts.org/cgi/product_jqm2.pl'
+        headers = {
+            'User-Agent': 'KiWellness/1.0 (https://kiwellness.org; contact@kiwellness.org)'
+        }
+        
+        response = requests.post(url, data=form_data, files=files, headers=headers, timeout=30)
+        
+        # Check if submission was successful
+        if response.status_code == 200:
+            # Open Food Facts doesn't always return clear success indicators
+            # We'll assume success if we get a 200 response
+            return jsonify({
+                'success': True, 
+                'message': 'Product successfully added to Open Food Facts database!'
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'message': f'Failed to add product (HTTP {response.status_code})'
+            })
+            
+    except Exception as e:
+        print(f"Error adding product to Open Food Facts: {e}")
+        return jsonify({
+            'success': False, 
+            'message': 'Network error occurred while adding product'
+        })
+
 @app.route('/api/product/<barcode>')
 @login_required
 def get_product(barcode):
