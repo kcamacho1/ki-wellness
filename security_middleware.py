@@ -35,14 +35,22 @@ class SecurityMiddleware:
         """Security checks before each request"""
         g.request_start_time = time.time()
         
-        # Allow homepage access with more relaxed security
-        if request.endpoint in ['index', 'landing'] or request.path == '/':
-            # Only apply rate limiting and input validation for homepage
+        # Allow static files with minimal security (no rate limiting, no bot detection)
+        if request.endpoint == 'static' or request.path.startswith('/static/'):
+            # Skip all security checks for static files - they need to load fast
+            return
+        
+        # Allow public pages with more relaxed security (no bot detection)
+        public_endpoints = ['index', 'landing', 'robots_txt', 'sitemap_xml', 'privacy', 'terms', 'disclaimer', 'human_help', 'health_check']
+        public_paths = ['/', '/robots.txt', '/sitemap.xml', '/privacy', '/terms', '/disclaimer', '/human-help', '/health']
+        
+        if request.endpoint in public_endpoints or request.path in public_paths:
+            # Only apply rate limiting and input validation for public pages
             if not self.check_rate_limit(request.remote_addr):
                 return jsonify({'error': 'Rate limit exceeded'}), 429
             if not self.validate_inputs(request):
                 return jsonify({'error': 'Invalid input detected'}), 400
-            return  # Skip bot detection for homepage
+            return  # Skip bot detection for public pages
         
         # Check if IP is blocked
         if self.is_ip_blocked(request.remote_addr):

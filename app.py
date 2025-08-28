@@ -566,18 +566,7 @@ def search_openfoodfacts_api(query):
         return []
 
 # Routes
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serve static files with proper headers"""
-    response = send_from_directory(app.static_folder, filename)
-    
-    # Set proper MIME types for JavaScript and CSS files
-    if filename.endswith('.js'):
-        response.headers['Content-Type'] = 'application/javascript'
-    elif filename.endswith('.css'):
-        response.headers['Content-Type'] = 'text/css'
-    
-    return response
+# Static files are handled automatically by Flask with MIME types configured above
 
 @app.route('/')
 def index():
@@ -596,11 +585,11 @@ def login():
         # Input validation
         if not validate_user_input(username, max_length=50):
             flash('Invalid username format', 'error')
-            return render_template('login.html')
+            return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
             
         if not validate_user_input(password, max_length=100):
             flash('Invalid password format', 'error')
-            return render_template('login.html')
+            return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
         
         # Sanitize inputs
         username = sanitize_user_input(username, max_length=50)
@@ -613,7 +602,7 @@ def login():
         else:
             flash('Invalid username or password', 'error')
     
-    return render_template('login.html')
+    return render_template('login.html', recaptcha_site_key=get_recaptcha_site_key())
 
 @app.route('/register', methods=['GET', 'POST'])
 @rate_limit(max_requests=5, window=300)  # Limit registration attempts
@@ -3365,6 +3354,16 @@ app.register_blueprint(recipe_bp)
 def recipes():
     """Recipe management page"""
     return render_template('recipes/recipes.html', current_user_id=current_user.id)
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Serve robots.txt for AI crawlers and search engines"""
+    return send_from_directory(app.static_folder, 'robots.txt', mimetype='text/plain')
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    """Serve sitemap.xml for search engines"""
+    return send_from_directory(app.static_folder, 'sitemap.xml', mimetype='application/xml')
 
 @app.route('/health')
 def health_check():

@@ -2,6 +2,13 @@
 
 {% block title %}Login - Ki Wellness{% endblock %}
 
+{% block head %}
+<!-- reCAPTCHA v2 Script -->
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-ki-green-50 to-white flex items-center justify-center px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full">
@@ -48,10 +55,12 @@
                         </div> -->
                     </div>
                     
-                    <!-- reCAPTCHA (only for kiwellness.org) -->
+                    <!-- reCAPTCHA -->
+                    {% if recaptcha_site_key %}
                     <div id="recaptcha-container" class="hidden">
-                        <div class="g-recaptcha" data-sitekey="6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"></div>
+                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
                     </div>
+                    {% endif %}
                     
                     <!-- Submit Button -->
                     <button type="submit" 
@@ -72,20 +81,34 @@
     </div>
 </div>
 
+{% if recaptcha_site_key %}
 <script>
-    // Check if reCAPTCHA should be shown
-    if (shouldShowRecaptcha()) {
-        document.getElementById('recaptcha-container').classList.remove('hidden');
-        
-        // Add reCAPTCHA validation to form
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            const recaptchaResponse = grecaptcha.getResponse();
-            if (!recaptchaResponse) {
-                e.preventDefault();
-                showToast('Please complete the reCAPTCHA verification', 'error');
-                return false;
+    // Wait for DOM to be fully loaded and base script functions to be available
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if shouldShowRecaptcha function exists and reCAPTCHA should be shown
+        if (typeof shouldShowRecaptcha === 'function' && shouldShowRecaptcha()) {
+            const recaptchaContainer = document.getElementById('recaptcha-container');
+            if (recaptchaContainer) {
+                recaptchaContainer.classList.remove('hidden');
             }
-        });
-    }
+            
+            // Add reCAPTCHA validation to form
+            document.getElementById('login-form').addEventListener('submit', function(e) {
+                if (typeof grecaptcha !== 'undefined') {
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (!recaptchaResponse) {
+                        e.preventDefault();
+                        if (typeof showToast === 'function') {
+                            showToast('Please complete the reCAPTCHA verification', 'error');
+                        } else {
+                            alert('Please complete the reCAPTCHA verification');
+                        }
+                        return false;
+                    }
+                }
+            });
+        }
+    });
 </script>
+{% endif %}
 {% endblock %}
