@@ -16,7 +16,7 @@ class DashboardManager {
         this.updateFoodLoggingDate();
         this.initMacroChart();
         this.loadDashboardData();
-        this.initTabs();
+        // Note: initTabs() removed - tab functionality moved to food-journal.js
     }
 
     setupEventListeners() {
@@ -26,41 +26,32 @@ class DashboardManager {
         document.getElementById('today-btn').addEventListener('click', () => this.goToToday());
         document.getElementById('date-selector').addEventListener('change', (e) => this.selectDate(e.target.value));
 
-        // Food search
-        document.getElementById('search-btn').addEventListener('click', () => this.searchFood());
-        document.getElementById('food-search').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.searchFood();
-        });
+        // Note: Food journal functionality moved to food-journal.js
+        // Modal controls (with null checks)
+        const cancelModal = document.getElementById('cancel-modal');
+        const addToLog = document.getElementById('add-to-log');
+        
+        if (cancelModal) cancelModal.addEventListener('click', () => this.closeModal());
+        // Note: addToLog functionality moved to food-journal.js
 
-        // Barcode scanner
-        document.getElementById('start-barcode-scanner').addEventListener('click', () => this.startBarcodeScanner());
-        document.getElementById('stop-barcode-scanner').addEventListener('click', () => this.stopBarcodeScanner());
-        document.getElementById('search-barcode').addEventListener('click', () => this.searchBarcode());
+        // Modal input changes (with null checks)
+        const modalAmount = document.getElementById('modal-amount');
+        const modalUnit = document.getElementById('modal-unit');
+        const modalQuantity = document.getElementById('modal-quantity');
+        
+        if (modalAmount) modalAmount.addEventListener('input', () => this.updateConversion());
+        if (modalUnit) modalUnit.addEventListener('change', () => this.updateConversion());
+        if (modalQuantity) modalQuantity.addEventListener('input', () => this.updateConversion());
 
-        // Manual food entry
-        document.getElementById('add-manual').addEventListener('click', () => this.addManualFood());
+        // Date selection controls (with null checks)
+        const modalUseDateBtn = document.getElementById('modal-use-current-date');
+        if (modalUseDateBtn) {
+            modalUseDateBtn.addEventListener('click', () => this.syncWithDashboardDate());
+        }
 
-        // Modal controls
-        document.getElementById('close-modal').addEventListener('click', () => this.closeModal());
-        document.getElementById('cancel-modal').addEventListener('click', () => this.closeModal());
-        document.getElementById('add-to-log').addEventListener('click', () => this.addFoodToLog());
-
-        // Modal input changes
-        document.getElementById('modal-amount').addEventListener('input', () => this.updateConversion());
-        document.getElementById('modal-unit').addEventListener('change', () => this.updateConversion());
-        document.getElementById('modal-quantity').addEventListener('input', () => this.updateConversion());
-
-        // Date selection controls
-        document.getElementById('use-current-date').addEventListener('click', () => this.syncWithDashboardDate());
-        document.getElementById('modal-use-current-date').addEventListener('click', () => this.syncWithDashboardDate());
-
-        // Date input change listeners
-        const manualDateInput = document.getElementById('manual-date');
+        // Date input change listeners (with null checks)
         const modalDateInput = document.getElementById('modal-date');
         
-        if (manualDateInput) {
-            manualDateInput.addEventListener('change', () => this.onDateInputChange('manual-date'));
-        }
         if (modalDateInput) {
             modalDateInput.addEventListener('change', () => this.onDateInputChange('modal-date'));
         }
@@ -79,42 +70,41 @@ class DashboardManager {
     }
 
     initTabs() {
-        const tabs = ['search', 'barcode', 'manual', 'mood-notes'];
-        const contents = ['search-content', 'barcode-content', 'manual-content', 'mood-notes-content'];
-
-        tabs.forEach((tab, index) => {
-            document.getElementById(`${tab}-tab`).addEventListener('click', () => {
-                this.switchTab(tab, contents[index]);
-            });
-        });
-
-
+        // Note: Tab functionality moved to food-journal.js
+        // This method is kept for compatibility but no longer needed
     }
 
     switchTab(activeTab, activeContent) {
-        // Update tab buttons
+        // Note: Tab functionality moved to food-journal.js
+        // This method is kept for compatibility but adds null checks for safety
+        
+        // Update tab buttons (with null checks)
         ['search-tab', 'barcode-tab', 'manual-tab', 'mood-notes-tab'].forEach(tabId => {
             const tab = document.getElementById(tabId);
-            if (tabId === `${activeTab}-tab`) {
-                tab.classList.add('text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
-                tab.classList.remove('text-gray-500', 'hover:bg-white');
-            } else {
-                tab.classList.remove('text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
-                tab.classList.add('text-gray-500', 'hover:bg-white');
+            if (tab) {
+                if (tabId === `${activeTab}-tab`) {
+                    tab.classList.add('text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
+                    tab.classList.remove('text-gray-500', 'hover:bg-white');
+                } else {
+                    tab.classList.remove('text-ki-green-600', 'bg-white', 'shadow-sm', 'border', 'border-gray-200');
+                    tab.classList.add('text-gray-500', 'hover:bg-white');
+                }
             }
         });
 
-        // Update content
+        // Update content (with null checks)
         ['search-content', 'barcode-content', 'manual-content', 'mood-notes-content'].forEach(contentId => {
             const content = document.getElementById(contentId);
-            if (contentId === activeContent) {
-                content.classList.remove('hidden');
-                // Load mood and notes history when the tab is opened
-                if (contentId === 'mood-notes-content') {
-                    this.loadMoodNotesHistory();
+            if (content) {
+                if (contentId === activeContent) {
+                    content.classList.remove('hidden');
+                    // Load mood and notes history when the tab is opened
+                    if (contentId === 'mood-notes-content') {
+                        this.loadMoodNotesHistory();
+                    }
+                } else {
+                    content.classList.add('hidden');
                 }
-            } else {
-                content.classList.add('hidden');
             }
         });
 
@@ -431,25 +421,27 @@ class DashboardManager {
     }
 
     displayFoodLog(foodLogs) {
-        const container = document.getElementById('food-log');
+        const container = document.getElementById('food-log-display');
         
-        // Check if the food-log container exists (it was removed from the template)
+        console.log('displayFoodLog called with:', foodLogs);
+        console.log('Container found:', !!container);
+        
         if (!container) {
+            console.error('food-log-display container not found!');
             return;
         }
         
         if (foodLogs.length === 0) {
-                    container.innerHTML = `
-            <div class="text-center py-8 sm:py-12 text-gray-500">
-                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            // Use the default empty state that's already in the template
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
                     </svg>
+                    <p>No food entries for today</p>
+                    <p class="text-xs">Click "Add Food" or click the macronutrients chart to start logging</p>
                 </div>
-                <p class="text-base sm:text-lg font-medium text-gray-900 mb-2">No food logged yet today</p>
-                <p class="text-xs sm:text-sm text-gray-500">Start by searching for food or adding manually</p>
-            </div>
-        `;
+            `;
             return;
         }
 
@@ -494,295 +486,21 @@ class DashboardManager {
         `).join('');
     }
 
-    async searchFood() {
-        const query = document.getElementById('food-search').value.trim();
-        if (!query) {
-            showToast('Please enter a food item to search', 'warning');
-            return;
-        }
+    // Note: searchFood() removed - functionality moved to food-journal.js
 
-        try {
-            showLoading();
-            const response = await fetch('/api/search-food', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query })
-            });
+    // Note: displaySearchResults() removed - functionality moved to food-journal.js
 
-            const data = await response.json();
-            
-            if (data.success) {
-                this.displaySearchResults(data.results);
-            } else {
-                showToast('Failed to search for food', 'error');
-            }
-        } catch (error) {
-            console.error('Error searching food:', error);
-            showToast('Failed to search for food', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
+    // Note: selectFood() removed - functionality moved to food-journal.js
 
-    displaySearchResults(results) {
-        const container = document.getElementById('search-results');
-        
-        if (results.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-center py-4">No food items found</p>';
-            container.classList.remove('hidden');
-            return;
-        }
+    // Note: showFoodModal() removed - functionality moved to food-journal.js
 
-        container.innerHTML = results.map(food => `
-            <div class="food-result" onclick="dashboardManager.selectFood(${JSON.stringify(food).replace(/\"/g, '&quot;')})">
-                <div class="food-result-info">
-                    <div class="food-result-name">${food.name}</div>
-                    <div class="food-result-brand">${food.brand}</div>
-                    <div class="flex space-x-2 mt-1 text-xs">
-                        <span class="text-red-600">${Math.round(food.protein)}g protein</span>
-                        <span class="text-yellow-600">${Math.round(food.carbs)}g carbs</span>
-                        <span class="text-green-600">${Math.round(food.fat)}g fat</span>
-                        <span class="text-purple-600">${Math.round(food.calories)} cal</span>
-                    </div>
-                    <div class="mt-1">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
-                            food.source === 'usda' ? 'bg-indigo-50 text-indigo-700' :
-                            food.source === 'openfoodfacts' ? 'bg-orange-50 text-orange-700' :
-                            food.source === 'common_foods' ? 'bg-gray-100 text-gray-700' :
-                            'bg-gray-100 text-gray-600'
-                        }">
-                            Source: ${
-                                food.source === 'usda' ? 'USDA' :
-                                food.source === 'openfoodfacts' ? 'Open Food Facts' :
-                                food.source === 'common_foods' ? 'Ki Wellness (local)' :
-                                'Unknown'
-                            }
-                        </span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+    // Note: closeModal() removed - functionality moved to food-journal.js
 
-        container.classList.remove('hidden');
-    }
+    // Note: updateConversion() removed - functionality moved to food-journal.js
 
-    selectFood(food) {
-        this.selectedFood = food;
-        this.showFoodModal(food);
-    }
+    // Note: addFoodToLog() removed - functionality moved to food-journal.js
 
-    showFoodModal(food) {
-        this.selectedFood = food;
-        document.getElementById('modal-food-name').textContent = food.name;
-        
-        const infoHtml = `
-            <div class="space-y-2">
-                <p class="text-sm text-gray-600">Brand: ${food.brand}</p>
-                <p class="text-xs">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${
-                        food.source === 'usda' ? 'bg-indigo-50 text-indigo-700' :
-                        food.source === 'openfoodfacts' ? 'bg-orange-50 text-orange-700' :
-                        food.source === 'common_foods' ? 'bg-gray-100 text-gray-700' :
-                        'bg-gray-100 text-gray-600'
-                    }">
-                        Source: ${
-                            food.source === 'usda' ? 'USDA' :
-                            food.source === 'openfoodfacts' ? 'Open Food Facts' :
-                            food.source === 'common_foods' ? 'Ki Wellness (local)' :
-                            'Unknown'
-                        }
-                    </span>
-                </p>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <div class="bg-red-50 p-2 rounded">
-                        <span class="text-red-600 font-medium">Protein:</span> ${Math.round(food.protein)}g
-                    </div>
-                    <div class="bg-yellow-50 p-2 rounded">
-                        <span class="text-yellow-600 font-medium">Carbs:</span> ${Math.round(food.carbs)}g
-                    </div>
-                    <div class="bg-green-50 p-2 rounded">
-                        <span class="text-green-600 font-medium">Fat:</span> ${Math.round(food.fat)}g
-                    </div>
-                    <div class="bg-purple-50 p-2 rounded">
-                        <span class="text-purple-600 font-medium">Calories:</span> ${Math.round(food.calories)}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('modal-food-info').innerHTML = infoHtml;
-        
-        // Set the modal date to match the current dashboard date
-        const modalDateInput = document.getElementById('modal-date');
-        if (modalDateInput) {
-            modalDateInput.value = this.currentDate.toISOString().split('T')[0];
-        }
-        
-        this.updateConversion();
-        document.getElementById('food-modal').classList.remove('hidden');
-    }
-
-    closeModal() {
-        document.getElementById('food-modal').classList.add('hidden');
-        this.selectedFood = null;
-    }
-
-    updateConversion() {
-        if (!this.selectedFood) return;
-
-        const amount = parseFloat(document.getElementById('modal-amount').value) || 0;
-        const unit = document.getElementById('modal-unit').value;
-        const quantity = parseFloat(document.getElementById('modal-quantity').value) || 1;
-
-        // Convert to grams (simplified conversion)
-        let grams = amount;
-        switch (unit) {
-            case 'oz': grams = amount * 28.35; break;
-            case 'cup': grams = amount * 240; break;
-            case 'tbsp': grams = amount * 15; break;
-            case 'tsp': grams = amount * 5; break;
-            default: grams = amount; // already in grams
-        }
-
-        const totalGrams = grams * quantity;
-        document.getElementById('total-grams').textContent = `${Math.round(totalGrams)}g`;
-    }
-
-    async addFoodToLog() {
-        if (!this.selectedFood) return;
-
-        const amount = parseFloat(document.getElementById('modal-amount').value) || 0;
-        const unit = document.getElementById('modal-unit').value;
-        const quantity = parseFloat(document.getElementById('modal-quantity').value) || 1;
-
-        if (amount <= 0) {
-            showToast('Please enter a valid amount', 'warning');
-            return;
-        }
-
-        // Convert to grams
-        let grams = amount;
-        switch (unit) {
-            case 'oz': grams = amount * 28.35; break;
-            case 'cup': grams = amount * 240; break;
-            case 'tbsp': grams = amount * 15; break;
-            case 'tsp': grams = amount * 5; break;
-            default: grams = amount;
-        }
-
-        const totalGrams = grams * quantity;
-        const multiplier = totalGrams / 100; // Assuming nutrition is per 100g
-
-        const timeOfDay = document.getElementById('modal-time-of-day').value;
-        const selectedDate = this.getSelectedDate('modal-date');
-        
-        const foodData = {
-            name: this.selectedFood.name,
-            brand: this.selectedFood.brand,
-            calories: Math.round(this.selectedFood.calories * multiplier),
-            protein: Math.round(this.selectedFood.protein * multiplier),
-            carbs: Math.round(this.selectedFood.carbs * multiplier),
-            fat: Math.round(this.selectedFood.fat * multiplier),
-            fiber: Math.round((this.selectedFood.fiber || 0) * multiplier),
-            sugar: Math.round((this.selectedFood.sugar || 0) * multiplier),
-            sodium: Math.round((this.selectedFood.sodium || 0) * multiplier),
-            serving_size: totalGrams,
-            original_amount: amount,
-            original_unit: unit,
-            quantity: quantity,
-            time_of_day: timeOfDay,
-            date: selectedDate
-        };
-
-        try {
-            const response = await fetch('/api/food-log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(foodData)
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                showToast('Food added to log successfully!', 'success');
-                this.closeModal();
-                this.loadDashboardData();
-            } else {
-                showToast('Failed to add food to log', 'error');
-            }
-        } catch (error) {
-            console.error('Error adding food:', error);
-            showToast('Failed to add food to log', 'error');
-        }
-    }
-
-    async addManualFood() {
-        const name = document.getElementById('manual-name').value.trim();
-        const brand = document.getElementById('manual-brand').value.trim();
-        const calories = parseFloat(document.getElementById('manual-calories').value) || 0;
-        const protein = parseFloat(document.getElementById('manual-protein').value) || 0;
-        const carbs = parseFloat(document.getElementById('manual-carbs').value) || 0;
-        const fat = parseFloat(document.getElementById('manual-fat').value) || 0;
-        const amount = parseFloat(document.getElementById('manual-amount').value) || 0;
-        const unit = document.getElementById('manual-unit').value;
-        const quantity = parseFloat(document.getElementById('manual-quantity').value) || 1;
-
-        if (!name || calories <= 0) {
-            showToast('Please enter food name and calories', 'warning');
-            return;
-        }
-
-        // Convert to grams
-        let grams = amount;
-        switch (unit) {
-            case 'oz': grams = amount * 28.35; break;
-            case 'cup': grams = amount * 240; break;
-            case 'tbsp': grams = amount * 15; break;
-            case 'tsp': grams = amount * 5; break;
-            default: grams = amount;
-        }
-
-        const totalGrams = grams * quantity;
-
-        const timeOfDay = document.getElementById('manual-time-of-day').value;
-        const selectedDate = this.getSelectedDate('manual-date');
-        
-        const foodData = {
-            name: name,
-            brand: brand,
-            calories: calories,
-            protein: protein,
-            carbs: carbs,
-            fat: fat,
-            serving_size: totalGrams,
-            original_amount: amount,
-            original_unit: unit,
-            quantity: quantity,
-            time_of_day: timeOfDay,
-            date: selectedDate
-        };
-
-        try {
-            const response = await fetch('/api/food-log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(foodData)
-            });
-
-            const data = await response.json();
-            
-            if (data.success) {
-                showToast('Food added to log successfully!', 'success');
-                this.clearManualForm();
-                this.loadDashboardData();
-            } else {
-                showToast('Failed to add food to log', 'error');
-            }
-        } catch (error) {
-            console.error('Error adding manual food:', error);
-            showToast('Failed to add food to log', 'error');
-        }
-    }
+    // Note: addManualFood() removed - functionality moved to food-journal.js
 
     getTimeOfDayBadgeClass(timeOfDay) {
         switch (timeOfDay.toLowerCase()) {
@@ -798,17 +516,7 @@ class DashboardManager {
         }
     }
 
-    clearManualForm() {
-        document.getElementById('manual-name').value = '';
-        document.getElementById('manual-brand').value = '';
-        document.getElementById('manual-calories').value = '';
-        document.getElementById('manual-protein').value = '';
-        document.getElementById('manual-carbs').value = '';
-        document.getElementById('manual-fat').value = '';
-        document.getElementById('manual-time-of-day').value = 'snack';
-        document.getElementById('manual-amount').value = '1';
-        document.getElementById('manual-quantity').value = '1';
-    }
+    // Note: clearManualForm() removed - functionality moved to food-journal.js
 
     getTimeOfDayBadgeClass(timeOfDay) {
         switch (timeOfDay.toLowerCase()) {
@@ -987,7 +695,8 @@ class DashboardManager {
             if (this.isValidBarcode(code, format)) {
                 // Stop scanning and search for the product
                 this.stopBarcodeScanner();
-                this.searchBarcodeByCode(code);
+                // Note: Barcode search moved to food-journal.js
+                console.log('Barcode found but search moved to food journal:', code);
             } else {
                 console.log('Invalid barcode format, continuing scan...');
             }
@@ -1056,52 +765,9 @@ class DashboardManager {
         }
     }
     
-    async searchBarcodeByCode(barcode) {
-        try {
-            showLoading();
-            const response = await fetch(`/api/product/${barcode}`);
-            const data = await response.json();
+    // Note: searchBarcodeByCode() removed - functionality moved to food-journal.js
 
-            if (data.success) {
-                this.selectFood(data.product);
-                showToast(`Product found: ${data.product.name}`, 'success');
-            } else {
-                showToast('Product not found in database. Try manual entry.', 'warning');
-                // Show manual entry option
-                document.getElementById('manual-barcode').value = barcode;
-            }
-        } catch (error) {
-            console.error('Error searching barcode:', error);
-            showToast('Failed to search barcode', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
-
-    async searchBarcode() {
-        const barcode = document.getElementById('manual-barcode').value.trim();
-        if (!barcode) {
-            showToast('Please enter a barcode', 'warning');
-            return;
-        }
-
-        try {
-            showLoading();
-            const response = await fetch(`/api/product/${barcode}`);
-            const data = await response.json();
-
-            if (data.success) {
-                this.selectFood(data.product);
-            } else {
-                showToast('Product not found', 'error');
-            }
-        } catch (error) {
-            console.error('Error searching barcode:', error);
-            showToast('Failed to search barcode', 'error');
-        } finally {
-            hideLoading();
-        }
-    }
+    // Note: searchBarcode() removed - functionality moved to food-journal.js
 
     async removeFoodItem(foodId) {
         if (!confirm('Are you sure you want to remove this food item?')) return;

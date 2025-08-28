@@ -61,9 +61,10 @@
             </div>
 
             <!-- Macronutrients Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6">
+            <div class="macronutrients-card bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6 cursor-pointer" onclick="openFoodJournalModal()">
                 <div class="text-center mb-4 sm:mb-6">
                     <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Macronutrients</h2>
+                    <p class="text-xs text-gray-500 mt-1">Click to add food</p>
                 </div>
                 
                 <!-- Pie Chart -->
@@ -194,61 +195,76 @@
             </div>
         </div>
 
-        <!-- Food Journal Section -->
+        <!-- Food Log Display Section -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
             <div class="p-4 sm:p-5 lg:p-6 border-b border-gray-100">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
-                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Food Journal</h2>
-                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-ki-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Today's Food Log</h2>
+                    <button onclick="openFoodJournalModal()" class="bg-ki-green-600 hover:bg-ki-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
-                    </div>
+                        Add Food
+                    </button>
                 </div>
                 
-                <!-- Food Search Tabs -->
-                <div class="flex space-x-1 mb-6 sm:mb-8 bg-gray-50 p-1 rounded-xl">
-                    <button id="search-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-ki-green-600 bg-white rounded-lg shadow-sm border border-gray-200">
+                <!-- Today's Food Entries Display -->
+                <div id="food-log-display" class="space-y-3">
+                    <!-- Food log entries will be populated here by JavaScript -->
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>
+                        </svg>
+                        <p>No food entries for today</p>
+                        <p class="text-xs">Click "Add Food" or click the macronutrients chart to start logging</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Food Journal Modal -->
+<div id="food-journal-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-900">Add Food to Journal</h2>
+                    <button onclick="closeFoodJournalModal()" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Food Entry Method Tabs -->
+                <div class="food-journal-tabs flex space-x-1 mb-6 bg-gray-50 p-1 rounded-xl">
+                    <button id="modal-search-tab" class="food-journal-tab active px-6 py-3 text-sm font-medium text-ki-green-600 bg-white rounded-lg shadow-sm border border-gray-200">
                         Search Food
                     </button>
-                    <button id="barcode-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
+                    <button id="modal-barcode-tab" class="food-journal-tab px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
                         Barcode Scanner
                     </button>
-                    <button id="manual-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
+                    <button id="modal-manual-tab" class="food-journal-tab px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
                         Manual Entry
-                    </button>
-                    <button id="mood-notes-tab" class="px-3 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-colors">
-                        Mood & Notes
                     </button>
                 </div>
 
-                <!-- Search Food Tab -->
-                <div id="search-content" class="space-y-6">
+                <!-- Search Food Tab Content -->
+                <div id="modal-search-content" class="space-y-4">
                     <div class="flex space-x-2">
-                        <input type="text" id="food-search" placeholder="Search for food items..." 
+                        <input type="text" id="modal-food-search" placeholder="Search for food items..." 
                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <button id="search-btn" class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
+                        <button id="modal-search-btn" class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
                             Search
                         </button>
                     </div>
-                    <div id="search-results" class="hidden space-y-2 max-h-64 overflow-y-auto"></div>
-                    
-                    <!-- Daily Food Log -->
-                    <div class="border-t border-gray-200 pt-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 text-ki-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Today's Food Log
-                        </h3>
-                        <div id="food-log" class="space-y-3">
-                            <!-- Food log entries will be populated here -->
-                        </div>
-                    </div>
+                    <div id="modal-search-results" class="space-y-2 max-h-80 overflow-y-auto"></div>
                 </div>
 
-                <!-- Barcode Scanner Tab -->
-                <div id="barcode-content" class="hidden space-y-4">
+                <!-- Barcode Scanner Tab Content -->
+                <div id="modal-barcode-content" class="hidden space-y-4">
                     <div class="text-center">
                         <div class="mb-4">
                             <svg class="w-16 h-16 text-blue-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,232 +272,85 @@
                             </svg>
                         </div>
                         <p class="text-gray-600 mb-4">Scan a barcode to find food information</p>
-                        <button id="start-barcode-scanner" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors mb-4">
+                        <button id="modal-start-barcode-scanner" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors mb-4">
                             Start Camera Scanner
                         </button>
                         <div class="text-xs text-gray-500 mb-4">
                             💡 If camera doesn't work, check browser permissions or try manual entry below
                         </div>
-                        <div id="barcode-scanner-container" class="hidden">
+                        <div id="modal-barcode-scanner-container" class="hidden">
                             <div class="relative w-full max-w-md mx-auto mb-4">
-                                <div id="interactive" class="viewport">
-                                    <video id="barcode-video" class="w-full rounded-lg border-2 border-gray-300"></video>
+                                <div id="modal-interactive" class="viewport">
+                                    <video id="modal-barcode-video" class="w-full rounded-lg border-2 border-gray-300"></video>
                                     <canvas class="drawingBuffer"></canvas>
                                 </div>
-                                <div class="barcode-overlay">
-                                    <div class="barcode-corner top-left"></div>
-                                    <div class="barcode-corner top-right"></div>
-                                    <div class="barcode-corner bottom-left"></div>
-                                    <div class="barcode-corner bottom-right"></div>
-                                    <div class="barcode-line"></div>
-                                </div>
-                                <div class="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
-                                    Point camera at barcode
-                                </div>
                             </div>
-                            <button id="stop-barcode-scanner" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
+                            <button id="modal-stop-barcode-scanner" class="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors">
                                 Stop Scanner
                             </button>
                         </div>
                         <div class="mt-4">
                             <p class="text-sm text-gray-500 mb-2">Or enter barcode manually:</p>
-                            <div class="flex space-x-2 max-w-md mx-auto">
-                                <input type="text" id="manual-barcode" placeholder="Enter barcode number" 
+                            <div class="flex space-x-2">
+                                <input type="text" id="modal-manual-barcode" placeholder="Enter barcode number" 
                                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                                <button id="search-barcode" class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
+                                <button id="modal-search-barcode" class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
                                     Search
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div id="barcode-results" class="hidden space-y-2 max-h-64 overflow-y-auto"></div>
+                    <div id="modal-barcode-results" class="space-y-2 max-h-80 overflow-y-auto"></div>
                 </div>
 
-                <!-- Manual Entry Tab -->
-                <div id="manual-content" class="hidden space-y-4">
-                    <!-- Date Selection for Manual Entry -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span class="text-sm font-medium text-blue-800">Add to date:</span>
-                            </div>
-                            <button id="use-current-date" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                Use dashboard date
-                            </button>
-                        </div>
-                        <input type="date" id="manual-date" 
-                               class="mt-2 w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    </div>
-                    
+                <!-- Manual Entry Tab Content -->
+                <div id="modal-manual-content" class="hidden space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="manual-name" placeholder="Food name" 
+                        <input type="text" id="modal-manual-name" placeholder="Food name" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <input type="text" id="manual-brand" placeholder="Brand (optional)" 
+                        <input type="text" id="modal-manual-brand" placeholder="Brand (optional)" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <input type="number" id="manual-calories" placeholder="Calories" 
+                        <input type="number" id="modal-manual-calories" placeholder="Calories" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <input type="number" id="manual-protein" placeholder="Protein (g)" 
+                        <input type="number" id="modal-manual-protein" placeholder="Protein (g)" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <input type="number" id="manual-carbs" placeholder="Carbs (g)" 
+                        <input type="number" id="modal-manual-carbs" placeholder="Carbs (g)" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <input type="number" id="manual-fat" placeholder="Fat (g)" 
+                        <input type="number" id="modal-manual-fat" placeholder="Fat (g)" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                     </div>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <select id="manual-time-of-day" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <select id="modal-manual-time-of-day" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                             <option value="breakfast">Breakfast</option>
                             <option value="lunch">Lunch</option>
                             <option value="dinner">Dinner</option>
                             <option value="snack">Snack</option>
                         </select>
-                        <input type="number" id="manual-amount" placeholder="Amount" value="1" 
+                        <input type="number" id="modal-manual-amount" placeholder="Amount" value="1" 
                                class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <select id="manual-unit" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
+                        <select id="modal-manual-unit" class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
                             <option value="g">grams (g)</option>
                             <option value="oz">ounces (oz)</option>
                             <option value="cup">cups</option>
                             <option value="tbsp">tablespoons (tbsp)</option>
                             <option value="tsp">teaspoons (tsp)</option>
                         </select>
-                        <input type="number" id="manual-quantity" placeholder="Quantity" value="1" min="0.1" step="0.1" 
-                               class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                        <button id="add-manual" class="bg-ki-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
-                            Add Food
+                    </div>
+                    <div class="flex justify-end">
+                        <button id="modal-add-manual" class="bg-ki-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">
+                            Add to Food Log
                         </button>
                     </div>
                 </div>
 
-                <!-- Mood & Notes Tab -->
-                <div id="mood-notes-content" class="hidden space-y-6">
-                    <!-- Date Info -->
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-                        <div class="flex items-center space-x-2">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-sm font-medium text-purple-800">Viewing entries for: <span id="mood-notes-date-display" class="font-semibold"></span></span>
-                        </div>
-                        <p class="text-xs text-purple-600 mt-1">Use the dashboard date navigation arrows to change dates</p>
-                    </div>
-
-                    <!-- Mood History -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-4">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            Mood History
-                        </h3>
-                        <div id="mood-history" class="space-y-3">
-                            <!-- Mood entries will be populated here -->
-                        </div>
-                    </div>
-
-                    <!-- Notes History -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-4">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Notes History
-                        </h3>
-                        <div id="notes-history" class="space-y-3">
-                            <!-- Notes entries will be populated here -->
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Food Item Modal -->
-<div id="food-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-semibold text-gray-900" id="modal-food-name">Food Item</h3>
-                    <button id="close-modal" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                <div id="modal-food-info" class="mb-6">
-                    <!-- Food information will be populated here -->
-                </div>
-                
-                <div class="space-y-4">
-                    <!-- Date Selection for Modal -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span class="text-sm font-medium text-blue-800">Add to date:</span>
-                            </div>
-                            <button id="modal-use-current-date" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                Use dashboard date
-                            </button>
-                        </div>
-                        <input type="date" id="modal-date" 
-                               class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time of Day</label>
-                        <select id="modal-time-of-day" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                            <option value="breakfast">Breakfast</option>
-                            <option value="lunch">Lunch</option>
-                            <option value="dinner">Dinner</option>
-                            <option value="snack">Snack</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                            <input type="number" id="modal-amount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500" value="1" min="0.1" step="0.1">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                            <select id="modal-unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500">
-                                <option value="g">grams (g)</option>
-                                <option value="oz">ounces (oz)</option>
-                                <option value="cup">cups</option>
-                                <option value="tbsp">tablespoons (tbsp)</option>
-                                <option value="tsp">teaspoons (tsp)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                            <input type="number" id="modal-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500" value="1" min="0.1" step="0.1">
-                        </div>
-                    </div>
-                    
-                    <div id="conversion-display" class="bg-gray-50 rounded-lg p-3 text-sm">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Total in grams:</span>
-                            <span id="total-grams" class="font-medium text-gray-900">100g</span>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <button id="add-to-log" class="bg-ki-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-ki-green-700 transition-colors">Add to Log</button>
-                        <button id="cancel-modal" class="bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors">Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Note: Old Food Item Modal removed - functionality moved to Food Journal Modal -->
 
 <!-- Move Food Modal -->
 <div id="move-food-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
@@ -610,5 +479,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/food-journal.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

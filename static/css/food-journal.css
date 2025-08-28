@@ -1,0 +1,366 @@
+/* Food Journal Modal Styles */
+.food-journal-modal {
+    backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease-in-out;
+}
+
+.food-journal-modal.show {
+    opacity: 1;
+}
+
+.food-journal-modal.hide {
+    opacity: 0;
+}
+
+/* Food Journal Tab Styling */
+.food-journal-tabs {
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.food-journal-tab {
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    border-radius: 8px;
+}
+
+.food-journal-tab.active {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: #059669;
+    transform: translateY(-1px);
+}
+
+.food-journal-tab:not(.active):hover {
+    background: rgba(255, 255, 255, 0.5);
+    color: #374151;
+}
+
+/* Macronutrients Card Hover Effect */
+.macronutrients-card {
+    transition: all 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.macronutrients-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+}
+
+.macronutrients-card:hover::before {
+    opacity: 1;
+}
+
+.macronutrients-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: #10b981;
+}
+
+.macronutrients-card:hover .chart-container {
+    transform: scale(1.02);
+}
+
+.chart-container {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Food Search Results */
+.food-search-result {
+    transition: all 0.2s ease-in-out;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.food-search-result:hover {
+    background: #f9fafb;
+    border-color: #10b981;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.food-search-result:active {
+    transform: translateY(0);
+}
+
+/* Food Log Entry */
+.food-log-entry {
+    transition: all 0.2s ease-in-out;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: white;
+}
+
+.food-log-entry:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.food-log-entry .entry-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.food-log-entry:hover .entry-actions {
+    opacity: 1;
+}
+
+/* Time of Day Pills */
+.time-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.time-pill.breakfast {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.time-pill.lunch {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.time-pill.dinner {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.time-pill.snack {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+/* Form Improvements */
+.food-journal-input {
+    transition: all 0.2s ease-in-out;
+    background: white;
+}
+
+.food-journal-input:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+    transform: scale(1.01);
+}
+
+.food-journal-button {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.food-journal-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.food-journal-button:hover::before {
+    left: 100%;
+}
+
+.food-journal-button:active {
+    transform: scale(0.98);
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 50%;
+    border-top-color: #10b981;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Barcode Scanner Overlay */
+.barcode-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 150px;
+    pointer-events: none;
+}
+
+.barcode-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #10b981;
+}
+
+.barcode-corner.top-left {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+}
+
+.barcode-corner.top-right {
+    top: 0;
+    right: 0;
+    border-left: none;
+    border-bottom: none;
+}
+
+.barcode-corner.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-right: none;
+    border-top: none;
+}
+
+.barcode-corner.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-left: none;
+    border-top: none;
+}
+
+.barcode-line {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #10b981;
+    animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+    0%, 100% {
+        opacity: 0.3;
+        transform: translateY(-10px);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(10px);
+    }
+}
+
+/* Nutrition Info Display */
+.nutrition-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 2px;
+}
+
+.nutrition-badge.calories {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.nutrition-badge.protein {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.nutrition-badge.carbs {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.nutrition-badge.fat {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state svg {
+    margin: 0 auto 1rem;
+    opacity: 0.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .food-journal-modal .bg-white {
+        margin: 1rem;
+        max-width: calc(100vw - 2rem);
+    }
+    
+    .food-journal-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .food-journal-tab {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .macronutrients-card {
+        padding: 1rem;
+    }
+    
+    .macronutrients-card h2 {
+        font-size: 1rem;
+    }
+}
+
+/* Accessibility */
+.food-journal-tab:focus,
+.food-journal-button:focus,
+.food-journal-input:focus {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .food-journal-modal,
+    .food-journal-tab,
+    .macronutrients-card,
+    .food-search-result,
+    .food-log-entry,
+    .food-journal-input,
+    .food-journal-button,
+    .chart-container {
+        transition: none;
+    }
+    
+    .barcode-line {
+        animation: none;
+    }
+    
+    .loading-spinner {
+        animation: none;
+    }
+}

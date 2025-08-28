@@ -2252,6 +2252,58 @@ def search_food():
         'cached': False
     })
 
+@app.route('/api/search-food-barcode', methods=['POST'])
+@login_required
+def search_food_barcode():
+    """Search for food by barcode"""
+    data = request.get_json()
+    barcode = data.get('barcode', '').strip()
+    
+    if not barcode:
+        return jsonify({'success': False, 'message': 'Barcode is required'})
+    
+    try:
+        # Clean and validate barcode
+        if not barcode or len(barcode) < 8:
+            return jsonify({'success': False, 'message': 'Invalid barcode format'})
+        
+        # Use the newer API endpoint for better reliability
+        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}"
+        headers = {
+            'User-Agent': 'KiWellness/1.0 (https://kiwellness.org)',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        api_data = response.json()
+        
+        if api_data.get('status') == 1 and api_data.get('product'):
+            product = api_data['product']
+            nutriments = product.get('nutriments', {})
+            
+            result = {
+                'name': product.get('product_name', 'Unknown Product'),
+                'brand': product.get('brands', ''),
+                'calories': int(nutriments.get('energy-kcal_100g', 0)),
+                'protein': round(nutriments.get('proteins_100g', 0), 1),
+                'carbs': round(nutriments.get('carbohydrates_100g', 0), 1),
+                'fat': round(nutriments.get('fat_100g', 0), 1),
+                'fiber': round(nutriments.get('fiber_100g', 0), 1),
+                'sugar': round(nutriments.get('sugars_100g', 0), 1),
+                'sodium': round(nutriments.get('sodium_100g', 0), 1),
+                'serving_size': 100,
+                'serving_unit': 'g'
+            }
+            
+            return jsonify({'success': True, 'result': result})
+        else:
+            return jsonify({'success': False, 'message': 'Product not found'})
+            
+    except Exception as e:
+        print(f"Barcode search error: {e}")
+        return jsonify({'success': False, 'message': 'Failed to search product'})
+
 @app.route('/api/product/<barcode>')
 @login_required
 def get_product(barcode):
