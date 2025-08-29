@@ -22,7 +22,8 @@ import sqlite3
 from services.openrouter_client import get_openrouter_client, generate_ai_response
 # Stripe import removed - using Calendly and donation links instead
 from services.food_data import BASIC_FOODS, COMMON_FOODS_DB
-from services.health_resources import get_relevant_resources, format_resources_for_prompt
+# Resource functions no longer needed since resources section was removed
+# from services.health_resources import get_relevant_resources, format_resources_for_prompt
 
 # Import database and models
 from database import db, User, FoodLog, WaterLog, MoodLog, Note, Recipe, RecipeIngredient, RecipeInstruction, Subscription, AIUsageLog
@@ -2096,23 +2097,7 @@ def _create_optimized_prompt(message, context, context_type, chat_history):
         base_prompt += f"Context: {relevant_context}\n"
         print(f"Extracted relevant context: {relevant_context}")
     
-    # Add only 1-2 most relevant resources to save space
-    resources = get_relevant_resources(context_type, _determine_topic(message))
-    if resources:
-        # Limit to 2 most relevant resources
-        limited_resources = resources[:2]
-        base_prompt += format_resources_for_prompt(limited_resources)
-        print(f"Added {len(limited_resources)} relevant resources")
-    
-    base_prompt += """Provide a short, helpful response (max 2-3 sentences) with relevant links. Format:
-    
-    [Your helpful response here]
-    
-    📚 Resources:
-    - [Link 1: Brief description]
-    - [Link 2: Brief description]
-    
-    Include Medium blog (kiwellness.medium.com) when relevant."""
+    base_prompt += """Provide a short, helpful response (max 2-3 sentences). Keep it concise and actionable. Do not include a resources section - just provide the direct response."""
     
     # Proactive prompt size management
     if len(base_prompt) > 800:  # Lower threshold for better optimization
@@ -2160,43 +2145,23 @@ def _get_fallback_response(message, context_type):
     
     # Anti-inflammation responses
     if any(word in message_lower for word in ['anti-inflammation', 'anti-inflammatory', 'inflammation']):
-        return """For anti-inflammatory meals, focus on foods rich in omega-3s, antioxidants, and fiber. Try a salmon salad with leafy greens, berries, and walnuts, or a turmeric-spiced lentil soup with ginger.
-
-📚 Helpful Resources:
-- [Anti-Inflammatory Diet Guide](https://kiwellness.medium.com/anti-inflammatory-foods) - Ki Wellness blog
-- [Mayo Clinic: Anti-inflammatory diet](https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/anti-inflammatory-diet/art-20457586) - Medical guidance"""
+        return """For anti-inflammatory meals, focus on foods rich in omega-3s, antioxidants, and fiber. Try a salmon salad with leafy greens, berries, and walnuts, or a turmeric-spiced lentil soup with ginger."""
     
     # Energy and nutrition
     elif any(word in message_lower for word in ['energy', 'energizing', 'boost', 'meal', 'food', 'nutrition']):
-        return """For sustained energy, combine complex carbs with protein and healthy fats. Try oatmeal with nuts and berries, or a quinoa bowl with vegetables and lean protein.
-
-📚 Helpful Resources:
-- [Energy-Boosting Foods](https://kiwellness.medium.com/energy-foods) - Ki Wellness blog
-- [Harvard Health: Foods that fight fatigue](https://www.health.harvard.edu/healthbeat/foods-that-fight-fatigue) - Expert advice"""
+        return """For sustained energy, combine complex carbs with protein and healthy fats. Try oatmeal with nuts and berries, or a quinoa bowl with vegetables and lean protein."""
     
     # Water and hydration
     elif any(word in message_lower for word in ['water', 'hydrate', 'drink']):
-        return """Stay hydrated by drinking water throughout the day. Aim for 8-10 glasses daily, and include hydrating foods like cucumbers, watermelon, and citrus fruits.
-
-📚 Helpful Resources:
-- [Hydration Tips](https://kiwellness.medium.com/hydration-guide) - Ki Wellness blog
-- [WebMD: How much water should you drink?](https://www.webmd.com/diet/how-much-water-to-drink) - Daily recommendations"""
+        return """Stay hydrated by drinking water throughout the day. Aim for 8-10 glasses daily, and include hydrating foods like cucumbers, watermelon, and citrus fruits."""
     
     # Mood and wellness
     elif any(word in message_lower for word in ['mood', 'feel', 'stress', 'anxiety', 'wellness']):
-        return """Support your mood with regular exercise, adequate sleep, and mood-boosting foods like dark chocolate, fatty fish, and leafy greens. Practice stress management techniques daily.
-
-📚 Helpful Resources:
-- [Mood-Boosting Habits](https://kiwellness.medium.com/mood-wellness) - Ki Wellness blog
-- [Mayo Clinic: Stress management](https://www.mayoclinic.org/healthy-lifestyle/stress-management) - Expert guidance"""
+        return """Support your mood with regular exercise, adequate sleep, and mood-boosting foods like dark chocolate, fatty fish, and leafy greens. Practice stress management techniques daily."""
     
     # General health
     else:
-        return """I'm here to support your wellness journey! For personalized guidance, try logging your meals, water intake, and mood regularly. This helps identify patterns and make informed health decisions.
-
-📚 Helpful Resources:
-- [Wellness Tips](https://kiwellness.medium.com/wellness-guide) - Ki Wellness blog
-- [Personalized Health Coaching](https://kiwellness.org/human-help) - Book a session with our certified nutritionist"""
+        return """I'm here to support your wellness journey! For personalized guidance, try logging your meals, water intake, and mood regularly. This helps identify patterns and make informed health decisions."""
 
 def _extract_relevant_context(message, context, context_type):
     """Extract only context that's relevant to the user's specific question"""
