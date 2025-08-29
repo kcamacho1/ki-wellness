@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+
+{% block title %}Review Nutrition - Ki Wellness{% endblock %}
+
+{% block head %}
+<style>
+    .nutrition-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 2px solid #16a34a;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .nutrition-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+    
+    .nutrition-item:hover {
+        border-color: #16a34a;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.1);
+    }
+    
+    .serving-input {
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 18px;
+        transition: all 0.2s ease;
+    }
+    
+    .serving-input:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+    }
+    
+    .meal-button {
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px 20px;
+        background: white;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .meal-button.active {
+        border-color: #16a34a;
+        background: #f0fdf4;
+        color: #15803d;
+        font-weight: 600;
+    }
+    
+    .meal-button:hover:not(.active) {
+        border-color: #9ca3af;
+        background: #f9fafb;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-4">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-800 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </button>
+                <h1 class="text-3xl font-bold text-gray-900">Review & Add</h1>
+            </div>
+            <p class="text-gray-600">Adjust serving size and add to your food log</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-ki-green-100 rounded-full mb-4">
+                <div class="w-8 h-8 border-4 border-ki-green-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p class="text-gray-600">Loading product information...</p>
+        </div>
+
+        <!-- Product Review Form -->
+        <div id="review-form" class="hidden animate-fade-in">
+            <!-- Product Information -->
+            <div class="nutrition-card p-6 mb-8">
+                <div class="text-center mb-6">
+                    <h2 id="product-name" class="text-2xl font-bold text-gray-900 mb-2">Product Name</h2>
+                    <p id="product-brand" class="text-gray-600">Brand Name</p>
+                </div>
+                
+                <!-- Current Nutrition Display -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="nutrition-item">
+                        <div id="display-calories" class="text-2xl font-bold text-orange-600">0</div>
+                        <div class="text-sm text-gray-600 mt-1">Calories</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div id="display-protein" class="text-xl font-semibold text-blue-600">0g</div>
+                        <div class="text-sm text-gray-600 mt-1">Protein</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div id="display-carbs" class="text-xl font-semibold text-green-600">0g</div>
+                        <div class="text-sm text-gray-600 mt-1">Carbs</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div id="display-fat" class="text-xl font-semibold text-red-600">0g</div>
+                        <div class="text-sm text-gray-600 mt-1">Fat</div>
+                    </div>
+                </div>
+                
+                <div class="text-center text-sm text-gray-500">
+                    Nutrition per <span id="base-serving">100g</span>
+                </div>
+            </div>
+
+            <!-- Serving Size Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Serving Size</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                        <input type="number" id="serving-amount" value="1" min="0.1" step="0.1" 
+                               class="serving-input w-full" placeholder="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                        <select id="serving-unit" class="serving-input w-full">
+                            <option value="serving">Serving</option>
+                            <option value="g">Grams (g)</option>
+                            <option value="oz">Ounces (oz)</option>
+                            <option value="cup">Cups</option>
+                            <option value="tbsp">Tablespoons</option>
+                            <option value="tsp">Teaspoons</option>
+                            <option value="piece">Piece</option>
+                            <option value="slice">Slice</option>
+                            <option value="bottle">Bottle</option>
+                            <option value="can">Can</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Quick Amount Buttons -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="text-sm text-gray-600 mr-2">Quick amounts:</span>
+                    <button onclick="setAmount(0.5)" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">½</button>
+                    <button onclick="setAmount(1)" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">1</button>
+                    <button onclick="setAmount(1.5)" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">1½</button>
+                    <button onclick="setAmount(2)" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">2</button>
+                    <button onclick="setAmount(3)" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">3</button>
+                </div>
+            </div>
+
+            <!-- Meal Type Selection -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Meal Type</h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button id="meal-breakfast" class="meal-button" onclick="selectMealType('breakfast')">
+                        <div class="text-2xl mb-1">🌅</div>
+                        <div class="text-sm">Breakfast</div>
+                    </button>
+                    <button id="meal-lunch" class="meal-button" onclick="selectMealType('lunch')">
+                        <div class="text-2xl mb-1">☀️</div>
+                        <div class="text-sm">Lunch</div>
+                    </button>
+                    <button id="meal-dinner" class="meal-button" onclick="selectMealType('dinner')">
+                        <div class="text-2xl mb-1">🌙</div>
+                        <div class="text-sm">Dinner</div>
+                    </button>
+                    <button id="meal-snack" class="meal-button" onclick="selectMealType('snack')">
+                        <div class="text-2xl mb-1">🍎</div>
+                        <div class="text-sm">Snack</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="goBack()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-4 px-6 rounded-xl font-medium transition-colors">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back
+                </button>
+                
+                <button id="add-to-log-btn" onclick="addToFoodLog()" class="flex-1 bg-ki-green-600 hover:bg-ki-green-700 text-white py-4 px-6 rounded-xl font-medium transition-colors">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add to Food Log
+                </button>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden text-center py-12">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Product Data</h3>
+            <p class="text-gray-600 mb-6">No product information was found. Please scan a barcode first.</p>
+            <a href="{{ url_for('scan_barcode') }}" class="bg-ki-green-600 hover:bg-ki-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                Scan Barcode
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+class NutritionReview {
+    constructor() {
+        this.product = null;
+        this.selectedMealType = 'snack';
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadProductData();
+        this.bindEvents();
+        this.setDefaultMealType();
+    }
+    
+    loadProductData() {
+        // Try to get product data from sessionStorage (from barcode scan)
+        const scannedProduct = sessionStorage.getItem('scannedProduct');
+        
+        if (scannedProduct) {
+            try {
+                this.product = JSON.parse(scannedProduct);
+                this.displayProduct();
+                sessionStorage.removeItem('scannedProduct'); // Clean up
+            } catch (error) {
+                console.error('Error parsing product data:', error);
+                this.showError();
+            }
+        } else {
+            // Could also check URL parameters for other sources
+            this.showError();
+        }
+    }
+    
+    displayProduct() {
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('review-form').classList.remove('hidden');
+        
+        // Populate product information
+        document.getElementById('product-name').textContent = this.product.name || 'Unknown Product';
+        document.getElementById('product-brand').textContent = this.product.brand || 'Unknown Brand';
+        document.getElementById('base-serving').textContent = `${this.product.serving_size || 100}${this.product.serving_unit || 'g'}`;
+        
+        // Display initial nutrition values
+        this.updateNutritionDisplay();
+    }
+    
+    bindEvents() {
+        const amountInput = document.getElementById('serving-amount');
+        const unitSelect = document.getElementById('serving-unit');
+        
+        amountInput.addEventListener('input', () => this.updateNutritionDisplay());
+        amountInput.addEventListener('change', () => this.updateNutritionDisplay());
+        unitSelect.addEventListener('change', () => this.updateNutritionDisplay());
+    }
+    
+    updateNutritionDisplay() {
+        if (!this.product) return;
+        
+        const amount = parseFloat(document.getElementById('serving-amount').value) || 1;
+        const unit = document.getElementById('serving-unit').value;
+        
+        // Open Food Facts API returns nutrition values per 100g
+        // So we always use 100g as the base serving size for calculations
+        const baseServingSize = 100; // Always 100g for Open Food Facts data
+        let actualAmount = amount;
+        
+        // Convert different units to grams for calculation
+        if (unit === 'g') {
+            actualAmount = amount;
+        } else if (unit === 'oz') {
+            actualAmount = amount * 28.35; // 1 oz = 28.35g
+        } else if (unit === 'serving') {
+            // For "serving", use the product's suggested serving size (usually 100g)
+            actualAmount = amount * (this.product.serving_size || 100);
+        } else if (unit === 'cup') {
+            // Rough conversion: 1 cup ≈ 240g for most foods
+            actualAmount = amount * 240;
+        } else if (unit === 'tbsp') {
+            // 1 tablespoon ≈ 15g
+            actualAmount = amount * 15;
+        } else if (unit === 'tsp') {
+            // 1 teaspoon ≈ 5g
+            actualAmount = amount * 5;
+        } else {
+            // For other units (piece, slice, bottle, can), assume they equal the serving size
+            actualAmount = amount * (this.product.serving_size || 100);
+        }
+        
+        // Calculate multiplier: actual amount in grams / 100g (since nutrition is per 100g)
+        const multiplier = actualAmount / baseServingSize;
+        
+        // Calculate scaled nutrition values
+        const calories = Math.round((this.product.calories || 0) * multiplier);
+        const protein = Math.round((this.product.protein || 0) * multiplier * 10) / 10;
+        const carbs = Math.round((this.product.carbs || 0) * multiplier * 10) / 10;
+        const fat = Math.round((this.product.fat || 0) * multiplier * 10) / 10;
+        
+        // Update display
+        document.getElementById('display-calories').textContent = calories;
+        document.getElementById('display-protein').textContent = protein + 'g';
+        document.getElementById('display-carbs').textContent = carbs + 'g';
+        document.getElementById('display-fat').textContent = fat + 'g';
+    }
+    
+    setDefaultMealType() {
+        // Set default meal type based on current time
+        const hour = new Date().getHours();
+        let defaultMeal = 'snack';
+        
+        if (hour >= 6 && hour < 11) {
+            defaultMeal = 'breakfast';
+        } else if (hour >= 11 && hour < 15) {
+            defaultMeal = 'lunch';
+        } else if (hour >= 15 && hour < 21) {
+            defaultMeal = 'dinner';
+        }
+        
+        this.selectMealType(defaultMeal);
+    }
+    
+    selectMealType(mealType) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.meal-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to selected button
+        document.getElementById(`meal-${mealType}`).classList.add('active');
+        this.selectedMealType = mealType;
+    }
+    
+    async addToFoodLog() {
+        if (!this.product) {
+            this.showToast('No product data available', 'error');
+            return;
+        }
+        
+        const amount = parseFloat(document.getElementById('serving-amount').value) || 1;
+        const unit = document.getElementById('serving-unit').value;
+        
+        if (amount <= 0) {
+            this.showToast('Please enter a valid amount', 'warning');
+            return;
+        }
+        
+        try {
+            // Show loading state
+            const btn = document.getElementById('add-to-log-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline mr-2"></div>Adding...';
+            
+            // Calculate nutrition for the API
+            // Open Food Facts API returns nutrition values per 100g
+            const baseServingSize = 100; // Always 100g for Open Food Facts data
+            let actualAmount = amount;
+            
+            // Convert different units to grams for calculation
+            if (unit === 'g') {
+                actualAmount = amount;
+            } else if (unit === 'oz') {
+                actualAmount = amount * 28.35; // 1 oz = 28.35g
+            } else if (unit === 'serving') {
+                // For "serving", use the product's suggested serving size (usually 100g)
+                actualAmount = amount * (this.product.serving_size || 100);
+            } else if (unit === 'cup') {
+                // Rough conversion: 1 cup ≈ 240g for most foods
+                actualAmount = amount * 240;
+            } else if (unit === 'tbsp') {
+                // 1 tablespoon ≈ 15g
+                actualAmount = amount * 15;
+            } else if (unit === 'tsp') {
+                // 1 teaspoon ≈ 5g
+                actualAmount = amount * 5;
+            } else {
+                // For other units (piece, slice, bottle, can), assume they equal the serving size
+                actualAmount = amount * (this.product.serving_size || 100);
+            }
+            
+            // Calculate multiplier: actual amount in grams / 100g (since nutrition is per 100g)
+            const multiplier = actualAmount / baseServingSize;
+            
+            const foodLogEntry = {
+                name: this.product.name,
+                brand: this.product.brand || '',
+                calories: Math.round((this.product.calories || 0) * multiplier),
+                protein: Math.round((this.product.protein || 0) * multiplier * 10) / 10,
+                carbs: Math.round((this.product.carbs || 0) * multiplier * 10) / 10,
+                fat: Math.round((this.product.fat || 0) * multiplier * 10) / 10,
+                serving_size: actualAmount,
+                original_amount: amount,
+                original_unit: unit,
+                quantity: 1,
+                time_of_day: this.selectedMealType,
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            const response = await fetch('/api/food-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(foodLogEntry)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showToast('Food added to log successfully!', 'success');
+                
+                // Add a flag to trigger dashboard refresh when we return
+                sessionStorage.setItem('refreshDashboard', 'true');
+                
+                // Redirect to dashboard after a short delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1500);
+            } else {
+                this.showToast(data.message || 'Failed to add food to log', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+            
+        } catch (error) {
+            console.error('Add to log error:', error);
+            this.showToast('Network error occurred', 'error');
+            
+            // Restore button
+            const btn = document.getElementById('add-to-log-btn');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+    
+    showError() {
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('error-state').classList.remove('hidden');
+    }
+    
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+            type === 'error' ? 'bg-red-600' : 
+            type === 'warning' ? 'bg-yellow-600' : 
+            type === 'success' ? 'bg-green-600' : 'bg-blue-600'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    }
+}
+
+// Global functions for the template
+function setAmount(amount) {
+    document.getElementById('serving-amount').value = amount;
+    window.nutritionReview.updateNutritionDisplay();
+}
+
+function selectMealType(mealType) {
+    window.nutritionReview.selectMealType(mealType);
+}
+
+function addToFoodLog() {
+    window.nutritionReview.addToFoodLog();
+}
+
+function goBack() {
+    history.back();
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.nutritionReview = new NutritionReview();
+});
+</script>
+{% endblock %}

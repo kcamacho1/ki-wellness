@@ -244,13 +244,8 @@ class DashboardUI {
             foodContent.classList.add('hidden');
             moodNotesContent.classList.remove('hidden');
             
-            // Update action buttons
-            actionButtons.innerHTML = `
-                <button onclick="window.foodJournal.openModal()" 
-                        class="bg-ki-green-600 hover:bg-ki-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Add Entry
-                </button>
-            `;
+            // Clear action buttons for mood & notes tab
+            actionButtons.innerHTML = '';
             
             // Load mood and notes history for current date
             this.loadMoodNotesHistory();

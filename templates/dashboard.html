@@ -159,19 +159,19 @@
                     <!-- Date Display with Integrated Date Picker -->
                     <div class="flex items-center space-x-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-4 py-2 shadow-sm hover:shadow-md transition-all duration-200 hover:border-ki-green-300 group">
                         <!-- Date Picker styled as Calendar Icon -->
-                        <div class="relative w-10 h-10">
+                        <div class="relative w-12 h-12 cursor-pointer" onclick="document.getElementById('date-selector').showPicker();" title="Click anywhere on circle to select a date">
                             <input type="date" id="date-selector" 
                                    class="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10" 
                                    title="Click to select a date">
-                            <div class="w-full h-full bg-ki-green-100 rounded-full flex items-center justify-center group-hover:bg-ki-green-200 transition-colors pointer-events-none">
-                                <svg class="w-6 h-6 text-ki-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-full h-full bg-ki-green-100 rounded-full flex items-center justify-center group-hover:bg-ki-green-200 transition-colors cursor-pointer">
+                                <svg class="w-7 h-7 text-ki-green-600 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
                         </div>
                         <div>
                             <div class="text-lg font-semibold text-gray-900" id="current-date-display">Loading...</div>
-                            <div class="text-xs text-gray-600">Click calendar to change date</div>
+                            <div class="text-xs text-gray-600">Click calendar circle to change date</div>
                         </div>
                     </div>
                     
@@ -207,13 +207,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
                             Add Food
-                        </button>
-                        <!-- Mood & Notes Action Button -->
-                        <button id="add-mood-note-btn" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Add Entry
                         </button>
                     </div>
                 </div>
@@ -972,5 +965,34 @@ function showToast(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+// Restore simple openFoodJournalModal function
+function openFoodJournalModal(tab = 'search') {
+    if (window.foodJournal) {
+        window.foodJournal.openModal();
+        if (tab !== 'search') {
+            setTimeout(() => {
+                window.foodJournal.switchTab(tab);
+            }, 100);
+        }
+    }
+}
+
+// Check for dashboard refresh flag when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('refreshDashboard') === 'true') {
+        sessionStorage.removeItem('refreshDashboard');
+        
+        // Wait for dashboard to initialize, then refresh
+        setTimeout(() => {
+            if (window.dashboardManager && window.dashboardManager.loadDashboardDataOptimized) {
+                window.dashboardManager.loadDashboardDataOptimized();
+            } else if (window.dashboardManager && window.dashboardManager.loadDashboardData) {
+                window.dashboardManager.loadDashboardData();
+            }
+            console.log('🔄 Dashboard refreshed after food addition');
+        }, 1000);
+    }
+});
 </script>
 {% endblock %}

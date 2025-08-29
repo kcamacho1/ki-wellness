@@ -933,6 +933,18 @@ def dashboard():
 def profile():
     return render_template('profile.html')
 
+@app.route('/scan-barcode')
+@login_required  
+def scan_barcode():
+    """Standalone barcode scanner page"""
+    return render_template('scan_barcode.html')
+
+@app.route('/nutrition-review')
+@login_required
+def nutrition_review():
+    """Nutrition review page for adjusting serving size and adding to log"""
+    return render_template('nutrition_review.html')
+
 
 
 @app.route('/ai-coach')

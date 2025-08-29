@@ -49,7 +49,7 @@ class SecurityMiddleware:
         public_paths = ['/', '/robots.txt', '/sitemap.xml', '/privacy', '/terms', '/disclaimer', '/human-help', '/health']
         
         # Allow authenticated API endpoints to skip bot detection (they're protected by login)
-        authenticated_api_paths = ['/api/dashboard-data', '/api/food-log', '/api/water-log', '/api/mood-log', '/api/notes']
+        authenticated_api_paths = ['/api/dashboard-data', '/api/food-log', '/api/water-log', '/api/mood-log', '/api/notes', '/api/ai-chat', '/api/user-data-for-analysis', '/api/get-stored-analysis', '/api/generate-ai-analysis']
         
         # Dashboard API: Apply rate limiting but skip input validation (date params trigger false positives)
         if request.path == '/api/dashboard-data':
