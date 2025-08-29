@@ -114,7 +114,18 @@ class StripeClient:
             # Verify Stripe is configured
             if not hasattr(stripe, 'api_key') or not stripe.api_key:
                 raise Exception("Stripe API key not configured")
-                
+            
+            # Additional validation
+            if not self.api_key or self.api_key.strip() == '':
+                raise Exception("STRIPE_SECRET_KEY environment variable is empty or not set")
+            
+            # Ensure Stripe API key is properly set
+            stripe.api_key = self.api_key
+            
+            # Debug logging for production troubleshooting
+            print(f"🔍 Creating Stripe customer for email: {email}, user_id: {user_id}")
+            print(f"🔍 Stripe API key configured: {bool(stripe.api_key and len(stripe.api_key) > 10)}")
+            
             customer = stripe.Customer.create(
                 email=email,
                 name=name,
@@ -123,9 +134,36 @@ class StripeClient:
                     "app": "ki_wellness"
                 }
             )
+            
+            # Validate the customer object
+            if not customer:
+                raise Exception("Stripe customer creation returned None")
+            
+            if not hasattr(customer, 'id') or not customer.id:
+                raise Exception("Stripe customer creation returned invalid object without ID")
+            
+            print(f"✅ Successfully created Stripe customer: {customer.id}")
             return customer
+            
+        except stripe.error.InvalidRequestError as e:
+            print(f"❌ Stripe Invalid Request Error creating customer: {e}")
+            print(f"🔍 API Key present: {bool(self.api_key)}")
+            print(f"🔍 API Key length: {len(self.api_key) if self.api_key else 0}")
+            raise Exception(f"Stripe configuration error: {e}")
+        except stripe.error.AuthenticationError as e:
+            print(f"❌ Stripe Authentication Error creating customer: {e}")
+            print(f"🔍 API Key starts with: {self.api_key[:7] if self.api_key and len(self.api_key) > 7 else 'N/A'}")
+            raise Exception(f"Stripe authentication failed: {e}")
+        except stripe.error.APIConnectionError as e:
+            print(f"❌ Stripe API Connection Error creating customer: {e}")
+            raise Exception(f"Stripe connection error: {e}")
+        except stripe.error.StripeError as e:
+            print(f"❌ Stripe Error creating customer: {e}")
+            raise Exception(f"Stripe error: {e}")
         except Exception as e:
             print(f"❌ Error creating Stripe customer: {e}")
+            print(f"🔍 Error type: {type(e).__name__}")
+            print(f"🔍 Error details: {str(e)}")
             raise
     
     def get_customer(self, customer_id: str) -> Optional[Dict[str, Any]]:
@@ -176,6 +214,46 @@ class StripeClient:
             return checkout_session
         except Exception as e:
             print(f"❌ Error creating checkout session: {e}")
+            raise
+    
+    def create_checkout_session_without_customer(
+        self, 
+        customer_email: str,
+        success_url: str, 
+        cancel_url: str,
+        user_id: int
+    ) -> Dict[str, Any]:
+        """Create a Stripe checkout session without pre-existing customer"""
+        try:
+            # Verify Stripe is configured
+            if not hasattr(stripe, 'api_key') or not stripe.api_key:
+                raise Exception("Stripe API key not configured")
+                
+            # Ensure products are set up
+            self.setup_products_and_prices()
+            
+            if not self.premium_plan_price_id:
+                raise Exception("Premium plan price not configured")
+                
+            checkout_session = stripe.checkout.Session.create(
+                customer_email=customer_email,
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': self.premium_plan_price_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata={
+                    "app": "ki_wellness",
+                    "subscription_type": "premium_monthly",
+                    "user_id": str(user_id)
+                }
+            )
+            return checkout_session
+        except Exception as e:
+            print(f"❌ Error creating checkout session without customer: {e}")
             raise
     
     def get_subscription(self, subscription_id: str) -> Optional[Dict[str, Any]]:
@@ -452,12 +530,41 @@ def get_stripe_client() -> StripeClient:
     global stripe_client
     if stripe_client is None:
         try:
+            # Check environment variable before creating client
+            stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
+            if not stripe_secret_key:
+                print("❌ STRIPE_SECRET_KEY environment variable not found")
+                print("⚠️ Stripe features will be disabled. Please set your STRIPE_SECRET_KEY environment variable.")
+                return None
+            
+            if stripe_secret_key.strip() == '':
+                print("❌ STRIPE_SECRET_KEY environment variable is empty")
+                print("⚠️ Stripe features will be disabled. Please check your STRIPE_SECRET_KEY environment variable.")
+                return None
+            
             stripe_client = StripeClient()
+            
+            # Test the client with a simple API call
+            try:
+                # This will validate the API key
+                stripe.api_key = stripe_secret_key
+                stripe.Account.retrieve()
+                print("✅ Stripe client initialized and API key validated")
+            except stripe.error.AuthenticationError:
+                print("❌ Stripe API key authentication failed")
+                print("⚠️ Please check your STRIPE_SECRET_KEY is valid")
+                stripe_client = None
+                return None
+            except Exception as test_e:
+                print(f"⚠️ Stripe API test failed but client created: {test_e}")
+                # Continue anyway - the key might work for other operations
+            
         except ValueError as e:
             print(f"❌ Stripe client initialization failed: {e}")
             print("⚠️ Stripe features will be disabled. Please check your STRIPE_SECRET_KEY environment variable.")
             return None
         except Exception as e:
             print(f"❌ Unexpected error initializing Stripe client: {e}")
+            print(f"🔍 Error type: {type(e).__name__}")
             return None
     return stripe_client
