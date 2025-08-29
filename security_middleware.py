@@ -27,6 +27,10 @@ class SecurityMiddleware:
             not app.config.get('DATABASE_URL', '').startswith('postgresql')
         )
         
+        # Clear any existing blocks for development IPs if in development mode
+        if self.is_development:
+            self.clear_development_blocks()
+        
     def init_app(self, app):
         app.before_request(self.before_request)
         app.after_request(self.after_request)
@@ -44,13 +48,24 @@ class SecurityMiddleware:
         public_endpoints = ['index', 'landing', 'robots_txt', 'sitemap_xml', 'privacy', 'terms', 'disclaimer', 'human_help', 'health_check']
         public_paths = ['/', '/robots.txt', '/sitemap.xml', '/privacy', '/terms', '/disclaimer', '/human-help', '/health']
         
-        if request.endpoint in public_endpoints or request.path in public_paths:
-            # Only apply rate limiting and input validation for public pages
+        # Allow authenticated API endpoints to skip bot detection (they're protected by login)
+        authenticated_api_paths = ['/api/dashboard-data', '/api/food-log', '/api/water-log', '/api/mood-log', '/api/notes']
+        
+        # Dashboard API: Apply rate limiting but skip input validation (date params trigger false positives)
+        if request.path == '/api/dashboard-data':
+            if not self.check_rate_limit(request.remote_addr):
+                return jsonify({'error': 'Rate limit exceeded'}), 429
+            return  # Skip input validation for dashboard API
+        
+        if request.endpoint in public_endpoints or request.path in public_paths or request.path in authenticated_api_paths:
+            # Only apply rate limiting and input validation for public pages and authenticated APIs
             if not self.check_rate_limit(request.remote_addr):
                 return jsonify({'error': 'Rate limit exceeded'}), 429
             if not self.validate_inputs(request):
+                print(f"🚨 Input validation failed for {request.path}")
+                print(f"🚨 Request data: args={dict(request.args)}, form={dict(request.form)}")
                 return jsonify({'error': 'Invalid input detected'}), 400
-            return  # Skip bot detection for public pages
+            return  # Skip bot detection for public pages and authenticated APIs
         
         # Check if IP is blocked
         if self.is_ip_blocked(request.remote_addr):
@@ -116,18 +131,48 @@ class SecurityMiddleware:
         
     def is_ip_blocked(self, ip):
         """Check if IP is blocked"""
+        # Never block localhost/development IPs
+        development_ips = ['127.0.0.1', '::1', 'localhost']
+        if ip in development_ips or (self.is_development and ip.startswith('192.168.')):
+            return False
+            
         with self.lock:
             return ip in self.bot_signatures['blocked_ips']
             
     def block_ip(self, ip):
         """Block an IP address"""
+        # Don't block development IPs
+        development_ips = ['127.0.0.1', '::1', 'localhost']
+        if ip in development_ips or (self.is_development and ip.startswith('192.168.')):
+            print(f"🚫 Attempted to block development IP {ip}, but skipping in development mode")
+            return
+            
         with self.lock:
             self.bot_signatures['blocked_ips'].add(ip)
+            print(f"🚫 Blocked IP: {ip}")
             
     def unblock_ip(self, ip):
         """Unblock an IP address"""
         with self.lock:
             self.bot_signatures['blocked_ips'].discard(ip)
+    
+    def clear_development_blocks(self):
+        """Clear any blocked development IPs"""
+        development_ips = ['127.0.0.1', '::1', 'localhost']
+        with self.lock:
+            # Remove any development IPs from blocked list
+            blocked_to_remove = {ip for ip in self.bot_signatures['blocked_ips'] 
+                               if ip in development_ips or ip.startswith('192.168.')}
+            self.bot_signatures['blocked_ips'] -= blocked_to_remove
+            
+            # Clear rate limit data for development IPs
+            dev_keys_to_clear = [ip for ip in self.rate_limit_db.keys() 
+                               if ip in development_ips or ip.startswith('192.168.')]
+            for ip in dev_keys_to_clear:
+                del self.rate_limit_db[ip]
+                
+            if blocked_to_remove or dev_keys_to_clear:
+                print(f"🧹 Cleared development IP blocks and rate limits: {blocked_to_remove | set(dev_keys_to_clear)}")
             
     def detect_bot(self, request):
         """Detect bot-like behavior"""
@@ -189,6 +234,11 @@ class SecurityMiddleware:
         
     def check_rate_limit(self, ip):
         """Check rate limiting for an IP"""
+        # Whitelist localhost and development IPs
+        development_ips = ['127.0.0.1', '::1', 'localhost']
+        if ip in development_ips or (self.is_development and ip.startswith('192.168.')):
+            return True  # Skip rate limiting for development
+            
         current_time = time.time()
         
         with self.lock:

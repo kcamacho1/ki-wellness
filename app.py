@@ -88,10 +88,10 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-pro
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-# Session configuration - Auto-logout after 1 hour of inactivity
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+# Session configuration - Auto-logout after 24 hours of inactivity
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Keep HttpOnly for security
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # reCAPTCHA removed - using Cloudflare bot protection instead
@@ -209,24 +209,11 @@ def load_user(user_id):
 def check_session_expiry():
     """Check if user session has expired and auto-logout if necessary"""
     if current_user.is_authenticated:
-        # Check if session is permanent and has expired
-        if session.permanent:
-            # Get the session expiry time
-            session_expiry = session.get('_permanent', None)
-            if session_expiry:
-                try:
-                    # Parse the expiry time
-                    expiry_datetime = datetime.fromisoformat(session_expiry)
-                    if datetime.utcnow() > expiry_datetime:
-                        # Session expired, logout user
-                        logout_user()
-                        flash('Your session has expired. Please log in again.', 'info')
-                        return redirect(url_for('login'))
-                except (ValueError, TypeError):
-                    # If we can't parse the expiry time, continue
-                    pass
+        # Only check for session expiry, don't force logout on every request
+        # Flask-Login and Flask sessions handle the expiry automatically
         
-        # Update session expiry on each request
+        # Update last activity time for session tracking
+        session['last_activity'] = datetime.utcnow().isoformat()
         session.permanent = True
         session.modified = True
 
@@ -577,7 +564,7 @@ def index():
     return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
-@rate_limit(max_requests=10, window=60)  # Limit login attempts
+@rate_limit(max_requests=50, window=60)  # Increased limit for development
 def login():
     if request.method == 'POST':
         # Validate and sanitize inputs
@@ -2748,86 +2735,132 @@ def get_mood_notes_history():
         print(f"❌ Error retrieving mood/notes history: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve history'}), 500
 
+@app.route('/api/test-auth')
+def test_auth():
+    """Simple test endpoint to debug authentication"""
+    print(f"🧪 Test auth endpoint called")
+    print(f"🧪 User authenticated: {current_user.is_authenticated}")
+    if current_user.is_authenticated:
+        return jsonify({'success': True, 'message': 'User is authenticated', 'user_id': current_user.id})
+    else:
+        return jsonify({'success': False, 'message': 'User not authenticated'}), 401
+
 @app.route('/api/dashboard-data')
 @login_required
 def get_dashboard_data():
+    # Use Flask-Login authentication (matching existing dashboard route)
+    user_id = current_user.id
     date_str = request.args.get('date', date.today().isoformat())
-    selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     
-    # Get food logs
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format', 'success': False}), 400
+    
+    # Get food logs using SQLAlchemy
     food_logs = FoodLog.query.filter_by(
-        user_id=current_user.id,
+        user_id=user_id,
         date=selected_date
     ).all()
     
     # Get water logs
     water_logs = WaterLog.query.filter_by(
-        user_id=current_user.id,
+        user_id=user_id,
         date=selected_date
     ).all()
     
     # Get mood logs
     mood_logs = MoodLog.query.filter_by(
-        user_id=current_user.id,
+        user_id=user_id,
         date=selected_date
     ).all()
     
     # Get notes
     notes = Note.query.filter_by(
-        user_id=current_user.id,
+        user_id=user_id,
         date=selected_date
     ).order_by(Note.timestamp.desc()).all()
     
     # Calculate totals
-    total_calories = sum(log.calories for log in food_logs)
-    total_protein = sum(log.protein for log in food_logs)
-    total_carbs = sum(log.carbs for log in food_logs)
-    total_fat = sum(log.fat for log in food_logs)
-    total_water = sum(log.amount for log in water_logs)  # Amount already in oz
+    total_calories = sum(log.calories or 0 for log in food_logs)
+    total_protein = sum(log.protein or 0 for log in food_logs)
+    total_carbs = sum(log.carbs or 0 for log in food_logs)
+    total_fat = sum(log.fat or 0 for log in food_logs)
+    total_water = sum(log.amount or 0 for log in water_logs)  # Amount already in oz
+    
+    # Convert to dictionaries for JSON serialization
+    food_logs_data = [
+        {
+            'id': log.id,
+            'name': log.name,
+            'brand': log.brand,
+            'calories': log.calories or 0,
+            'protein': log.protein or 0,
+            'carbs': log.carbs or 0,
+            'fat': log.fat or 0,
+            'fiber': log.fiber or 0,
+            'sugar': log.sugar or 0,
+            'sodium': log.sodium or 0,
+            'serving_size': log.serving_size or 0,
+            'quantity': log.quantity or 1,
+            'time_of_day': log.time_of_day,
+            'timestamp': log.timestamp.isoformat() if log.timestamp else None
+        } for log in food_logs
+    ]
+    
+    water_logs_data = [
+        {
+            'id': log.id,
+            'amount': log.amount or 0,
+            'timestamp': log.timestamp.isoformat() if log.timestamp else None
+        } for log in water_logs
+    ]
+    
+    mood_logs_data = [
+        {
+            'id': log.id,
+            'mood': log.mood,
+            'timestamp': log.timestamp.isoformat() if log.timestamp else None
+        } for log in mood_logs
+    ]
+    
+    notes_data = [
+        {
+            'id': log.id,
+            'content': log.content,
+            'timestamp': log.timestamp.isoformat() if log.timestamp else None
+        } for log in notes
+    ]
+    
+    # Get recent recipes (limit 5)
+    recent_recipes = Recipe.query.filter_by(user_id=user_id).order_by(Recipe.created_at.desc()).limit(5).all()
+    recipes_data = [
+        {
+            'id': recipe.id,
+            'name': recipe.name,
+            'description': recipe.description,
+            'image_path': recipe.image_path,
+            'created_at': recipe.created_at.isoformat() if recipe.created_at else None
+        } for recipe in recent_recipes
+    ]
     
     return jsonify({
         'success': True,
         'data': {
-            'food_logs': [{
-                'id': log.id,
-                'name': log.name,
-                'brand': log.brand,
-                'calories': log.calories,
-                'protein': log.protein,
-                'carbs': log.carbs,
-                'fat': log.fat,
-                'time_of_day': log.time_of_day,
-                'serving_size': log.serving_size,
-                'original_amount': log.original_amount,
-                'original_unit': log.original_unit,
-                'quantity': log.quantity,
-                'date': log.date.isoformat(),
-                'timestamp': log.timestamp.isoformat()
-            } for log in food_logs],
-            'water_logs': [{
-                'id': log.id,
-                'amount': log.amount,  # Amount already in oz
-                'timestamp': log.timestamp.isoformat()
-            } for log in water_logs],
-            'mood_logs': [{
-                'id': log.id,
-                'mood': log.mood,
-                'timestamp': log.timestamp.isoformat()
-            } for log in mood_logs],
-            'notes': [{
-                'id': note.id,
-                'content': note.content,
-                'timestamp': note.timestamp.isoformat()
-            } for note in notes],
+            'food_logs': food_logs_data,
+            'water_logs': water_logs_data,
+            'mood_logs': mood_logs_data,
+            'notes': notes_data,
+            'recent_recipes': recipes_data,
             'totals': {
                 'calories': total_calories,
                 'protein': total_protein,
                 'carbs': total_carbs,
                 'fat': total_fat,
-                'water': total_water,
-                'food_count': len(food_logs)
+                'water': total_water
             }
-        }
+        },
+        'date': date_str
     })
 
 @app.route('/api/profile', methods=['GET', 'POST'])
@@ -3031,6 +3064,20 @@ def edit_food_log(food_id):
         # Update time of day if provided
         if new_time_of_day:
             food_log.time_of_day = new_time_of_day
+        
+        # Update nutrition values if provided (for serving size changes)
+        if 'quantity' in data:
+            food_log.quantity = data['quantity']
+        if 'calories' in data:
+            food_log.calories = data['calories']
+        if 'protein' in data:
+            food_log.protein = data['protein']
+        if 'carbs' in data:
+            food_log.carbs = data['carbs']
+        if 'fat' in data:
+            food_log.fat = data['fat']
+        if 'serving_size' in data:
+            food_log.serving_size = data['serving_size']
         
         db.session.commit()
         

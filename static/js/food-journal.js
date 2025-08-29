@@ -121,6 +121,9 @@ class FoodJournal {
             this.modal.classList.remove('show', 'hide');
             document.body.style.overflow = '';
             this.stopBarcodeScanner();
+            
+            // Clear search fields when modal closes
+            this.clearSearchFields();
         }, 300);
         
         this.logActivity('Food journal modal closed');
@@ -326,6 +329,11 @@ class FoodJournal {
         // Set up event listeners for this modal
         this.setupFoodSelectionModalEvents();
         
+        // Calculate initial nutrition values after a small delay to ensure DOM is ready
+        setTimeout(() => {
+            this.updateFoodSelectionNutrition();
+        }, 100);
+        
         this.logActivity(`Food selection modal opened for: ${foodItem.name}`);
     }
     
@@ -362,6 +370,23 @@ class FoodJournal {
             };
             modal.addEventListener('click', this.foodSelectionBackdropHandler);
         }
+        
+        // Real-time nutrition calculation
+        this.foodSelectionNutritionHandler = () => this.updateFoodSelectionNutrition();
+        
+        const amountInput = document.getElementById('food-selection-amount');
+        const unitSelect = document.getElementById('food-selection-unit');
+        
+        if (amountInput) {
+            amountInput.addEventListener('input', this.foodSelectionNutritionHandler);
+            amountInput.addEventListener('change', this.foodSelectionNutritionHandler);
+            amountInput.addEventListener('blur', this.foodSelectionNutritionHandler);
+            amountInput.addEventListener('keyup', this.foodSelectionNutritionHandler);
+        }
+        
+        if (unitSelect) {
+            unitSelect.addEventListener('change', this.foodSelectionNutritionHandler);
+        }
     }
     
     /**
@@ -388,8 +413,72 @@ class FoodJournal {
         if (modal && this.foodSelectionBackdropHandler) {
             modal.removeEventListener('click', this.foodSelectionBackdropHandler);
         }
+        
+        // Remove nutrition calculation event listeners
+        const amountInput = document.getElementById('food-selection-amount');
+        const unitSelect = document.getElementById('food-selection-unit');
+        
+        if (amountInput && this.foodSelectionNutritionHandler) {
+            amountInput.removeEventListener('input', this.foodSelectionNutritionHandler);
+            amountInput.removeEventListener('change', this.foodSelectionNutritionHandler);
+            amountInput.removeEventListener('blur', this.foodSelectionNutritionHandler);
+            amountInput.removeEventListener('keyup', this.foodSelectionNutritionHandler);
+        }
+        
+        if (unitSelect && this.foodSelectionNutritionHandler) {
+            unitSelect.removeEventListener('change', this.foodSelectionNutritionHandler);
+        }
     }
     
+    /**
+     * Update nutrition display in food selection modal based on serving size
+     */
+    updateFoodSelectionNutrition() {
+        if (!this.selectedFood) {
+            console.warn('updateFoodSelectionNutrition called but no selectedFood available');
+            return;
+        }
+        
+        const amountInput = document.getElementById('food-selection-amount');
+        const unitSelect = document.getElementById('food-selection-unit');
+        
+        if (!amountInput || !unitSelect) {
+            console.warn('updateFoodSelectionNutrition called but input elements not found');
+            return;
+        }
+        
+        const amount = parseFloat(amountInput.value) || 1;
+        const unit = unitSelect.value || 'serving';
+        
+        // Validate selectedFood has required properties
+        if (typeof this.selectedFood !== 'object') {
+            console.error('selectedFood is not an object:', this.selectedFood);
+            return;
+        }
+        
+        // Calculate nutrition based on the same logic as confirmFoodSelection
+        const baseServingSize = this.selectedFood.serving_size || 100;
+        const actualAmount = unit === 'g' ? amount : amount * baseServingSize;
+        const multiplier = actualAmount / baseServingSize;
+        
+        // Calculate scaled nutrition values
+        const scaledCalories = Math.round((this.selectedFood.calories || 0) * multiplier);
+        const scaledProtein = Math.round((this.selectedFood.protein || 0) * multiplier * 10) / 10;
+        const scaledCarbs = Math.round((this.selectedFood.carbs || 0) * multiplier * 10) / 10;
+        const scaledFat = Math.round((this.selectedFood.fat || 0) * multiplier * 10) / 10;
+        
+        // Update the displayed nutrition values
+        const caloriesEl = document.getElementById('selected-food-calories');
+        const proteinEl = document.getElementById('selected-food-protein');
+        const carbsEl = document.getElementById('selected-food-carbs');
+        const fatEl = document.getElementById('selected-food-fat');
+        
+        if (caloriesEl) caloriesEl.textContent = scaledCalories;
+        if (proteinEl) proteinEl.textContent = scaledProtein + 'g';
+        if (carbsEl) carbsEl.textContent = scaledCarbs + 'g';
+        if (fatEl) fatEl.textContent = scaledFat + 'g';
+    }
+
     /**
      * Close food selection modal
      */
@@ -427,17 +516,24 @@ class FoodJournal {
         }
         
         // Calculate nutrition values based on serving size
-        const multiplier = amount; // For now, treat amount as direct multiplier
+        // Base nutrition values are typically per 100g, so we need to scale properly
+        const baseServingSize = this.selectedFood.serving_size || 100; // Default to 100g if not specified
+        const actualAmount = unit === 'g' ? amount : amount * baseServingSize; // Convert to grams if needed
+        const multiplier = actualAmount / baseServingSize; // Calculate the proper ratio
+        
+
         
         const adjustedFoodItem = {
             ...this.selectedFood,
-            calories: (this.selectedFood.calories || 0) * multiplier,
-            protein: (this.selectedFood.protein || 0) * multiplier,
-            carbs: (this.selectedFood.carbs || 0) * multiplier,
-            fat: (this.selectedFood.fat || 0) * multiplier,
-            serving_size: (this.selectedFood.serving_size || 100) * multiplier,
-            serving_unit: unit
+            calories: Math.round((this.selectedFood.calories || 0) * multiplier),
+            protein: Math.round((this.selectedFood.protein || 0) * multiplier * 10) / 10, // 1 decimal place
+            carbs: Math.round((this.selectedFood.carbs || 0) * multiplier * 10) / 10,
+            fat: Math.round((this.selectedFood.fat || 0) * multiplier * 10) / 10,
+            serving_size: actualAmount,
+            serving_unit: 'g'
         };
+        
+
         
         // Add to log with selected parameters
         await this.addFoodToLog(adjustedFoodItem, mealType);
@@ -810,7 +906,13 @@ class FoodJournal {
      * Add food item to the log
      */
     async addFoodToLog(foodItem, timeOfDay = 'snack', date = null) {
-        const logDate = date || this.currentDate;
+        // Use dashboard's selected date if available, otherwise fall back to journal's date
+        let logDate = date;
+        if (!logDate && window.dashboardManager && window.dashboardManager.currentDate) {
+            logDate = window.dashboardManager.currentDate.toISOString().split('T')[0];
+        } else if (!logDate) {
+            logDate = this.currentDate;
+        }
         
         try {
             const response = await fetch('/api/food-log', {
@@ -837,6 +939,9 @@ class FoodJournal {
             if (data.success) {
                 this.showToast('Food added to log successfully!', 'success');
                 this.refreshFoodLog();
+                
+                // Clear search fields before closing modal
+                this.clearSearchFields();
                 this.closeModal();
             } else {
                 this.showToast(data.message || 'Failed to add food to log', 'error');
@@ -851,12 +956,16 @@ class FoodJournal {
      * Refresh the food log display
      */
     async refreshFoodLog() {
-        // Trigger dashboard refresh if available
-        if (window.dashboardManager && typeof window.dashboardManager.loadDashboardData === 'function') {
-            await window.dashboardManager.loadDashboardData();
+        // Trigger dashboard refresh if available - use optimized version for better performance
+        if (window.dashboardManager) {
+            if (typeof window.dashboardManager.loadDashboardDataOptimized === 'function') {
+                await window.dashboardManager.loadDashboardDataOptimized();
+            } else if (typeof window.dashboardManager.loadDashboardData === 'function') {
+                await window.dashboardManager.loadDashboardData();
+            }
         }
         
-        // Macro chart is updated as part of loadDashboardData()
+        // Macro chart and all dashboard components are updated as part of loadDashboardData()
     }
     
     /**
@@ -879,6 +988,41 @@ class FoodJournal {
         if (amountInput) amountInput.value = '1';
     }
     
+    /**
+     * Clear search fields in the food journal
+     */
+    clearSearchFields() {
+        // Clear the main search input
+        const searchInput = document.getElementById('modal-food-search');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Clear barcode input (correct ID)
+        const barcodeInput = document.getElementById('modal-manual-barcode');
+        if (barcodeInput) {
+            barcodeInput.value = '';
+        }
+        
+        // Clear search results
+        const resultsContainer = document.getElementById('modal-search-results');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
+        }
+        
+        // Clear barcode results (find correct container)
+        const barcodeResultsContainer = document.getElementById('modal-barcode-results');
+        if (barcodeResultsContainer) {
+            barcodeResultsContainer.innerHTML = '';
+        }
+        
+        // Reset selected food
+        this.selectedFood = null;
+        
+        // Log for debugging
+        console.log('🧹 Search fields cleared');
+    }
+
     /**
      * Show loading state
      */
