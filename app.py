@@ -1939,12 +1939,37 @@ def ai_chat():
         if not validate_user_input(context_type, max_length=50):
             return jsonify({'success': False, 'error': 'Invalid context type'}), 400
             
-        if not validate_user_input(chat_history, max_length=1000):
-            return jsonify({'success': False, 'error': 'Invalid chat history'}), 400
+        # Validate chat history structure separately (list of dict objects with role/content)
+        if chat_history is not None:
+            if not isinstance(chat_history, list):
+                return jsonify({'success': False, 'error': 'Invalid chat history format - must be a list'}), 400
+            
+            # Limit the number of history items and validate each
+            if len(chat_history) > 10:  # Reasonable limit for chat history
+                return jsonify({'success': False, 'error': 'Too many chat history items'}), 400
+                
+            for i, item in enumerate(chat_history):
+                if not isinstance(item, dict):
+                    return jsonify({'success': False, 'error': f'Invalid chat history item {i} - must be a dict'}), 400
+                
+                role = item.get('role', '')
+                content = item.get('content', '')
+                
+                if role not in ['user', 'assistant']:
+                    return jsonify({'success': False, 'error': f'Invalid chat history role in item {i}'}), 400
+                    
+                if not validate_user_input(content, max_length=2000):  # Allow longer content for chat history
+                    return jsonify({'success': False, 'error': f'Invalid chat history content in item {i}'}), 400
         
         # Sanitize inputs
         message = sanitize_user_input(message, max_length=1000)
         context_type = sanitize_user_input(context_type, max_length=50)
+        
+        # Sanitize chat history content while preserving structure
+        if chat_history:
+            for item in chat_history:
+                if isinstance(item, dict) and 'content' in item:
+                    item['content'] = sanitize_user_input(item['content'], max_length=2000)
         
         print(f"AI Chat Request - Message: {message}")
         print(f"AI Chat Request - Context Type: {context_type}")
