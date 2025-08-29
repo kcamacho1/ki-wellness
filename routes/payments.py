@@ -43,7 +43,7 @@ def create_checkout_session():
         # Use environment variable or fallback price ID
         price_id = os.getenv('STRIPE_PREMIUM_PRICE_ID')
         if not price_id or price_id.strip() == '':
-            price_id = 'price_1QJk9lRrIqBKqK8jlJfvWKYE'  # Fallback price ID
+            price_id = 'price_1S1Wjb6d7DUvK3X6cz3XoG97'  # Your actual Ki Wellness Premium price ID
             current_app.logger.warning(f"Using fallback price ID: {price_id}")
         
         # Create checkout session without any customer management
