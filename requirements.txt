@@ -25,7 +25,7 @@ python-docx==0.8.11
 lxml==5.1.0
 
 # Payment processing
-stripe==7.8.0
+stripe==8.11.0
 
 # Email functionality
 Flask-Mail==0.9.1

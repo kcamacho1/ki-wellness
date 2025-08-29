@@ -25,3 +25,4 @@ RECAPTCHA_SECRET_KEY=your-recaptcha-secret-key
 STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
 STRIPE_SECRET_KEY=your-stripe-secret-key
 STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+STRIPE_PREMIUM_PRICE_ID=your-stripe-premium-price-id

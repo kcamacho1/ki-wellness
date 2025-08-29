@@ -47,8 +47,8 @@ class StripeClient:
                 stripe.api_key = self.api_key
             
             # Verify Stripe is properly configured before proceeding
-            if not hasattr(stripe, 'api_key') or not stripe.api_key:
-                print("⚠️ Stripe API key not configured")
+            if not self.api_key or self.api_key.strip() == '':
+                print("⚠️ Stripe API key not configured for product setup")
                 return
                 
             # Get or create the main product
@@ -103,8 +103,15 @@ class StripeClient:
             print(f"✅ Stripe products and prices configured")
             print(f"   Premium Plan Price ID: {self.premium_plan_price_id}")
             
+        except stripe.error.AuthenticationError as e:
+            print(f"❌ Stripe authentication error during product setup: {e}")
+            print("⚠️ Please check your STRIPE_SECRET_KEY is valid")
+        except stripe.error.APIConnectionError as e:
+            print(f"❌ Stripe connection error during product setup: {e}")
+            print("⚠️ Please check your internet connection")
         except Exception as e:
             print(f"❌ Error setting up Stripe products: {e}")
+            print(f"🔍 Error type: {type(e).__name__}")
             # Don't raise here - just log the error and continue
             print("⚠️ Stripe products not configured - payment features will be limited")
     
@@ -543,21 +550,7 @@ def get_stripe_client() -> StripeClient:
                 return None
             
             stripe_client = StripeClient()
-            
-            # Test the client with a simple API call
-            try:
-                # This will validate the API key
-                stripe.api_key = stripe_secret_key
-                stripe.Account.retrieve()
-                print("✅ Stripe client initialized and API key validated")
-            except stripe.error.AuthenticationError:
-                print("❌ Stripe API key authentication failed")
-                print("⚠️ Please check your STRIPE_SECRET_KEY is valid")
-                stripe_client = None
-                return None
-            except Exception as test_e:
-                print(f"⚠️ Stripe API test failed but client created: {test_e}")
-                # Continue anyway - the key might work for other operations
+            print("✅ Stripe client initialized successfully")
             
         except ValueError as e:
             print(f"❌ Stripe client initialization failed: {e}")

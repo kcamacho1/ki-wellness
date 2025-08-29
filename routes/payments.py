@@ -26,99 +26,88 @@ payments_bp = Blueprint('payments', __name__)
 @payments_bp.route('/api/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():
-    """Create Stripe checkout session for subscription"""
+    """Create Stripe checkout session for subscription - PURE WEBHOOK APPROACH"""
     try:
-        stripe_client = get_stripe_client()
-        if not stripe_client:
+        # Get environment variables directly - no Stripe client needed
+        stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
+        if not stripe_secret_key:
             return jsonify({
                 'success': False, 
-                'error': 'Payment system not ready. Please check your Stripe configuration.',
-                'details': 'The payment system is initializing. Please try again in a moment.'
+                'error': 'Payment system not configured.',
+                'details': 'STRIPE_SECRET_KEY not found'
             }), 503
         
-        # Create or get customer (simplified approach with webhooks)
-        customer_id = current_user.stripe_customer_id
+        # Set Stripe API key directly
+        stripe.api_key = stripe_secret_key
         
-        if not customer_id:
-            try:
-                # Create customer only if we need to - let webhooks handle the linking
-                customer = stripe_client.create_customer(
-                    email=current_user.email,
-                    name=current_user.name or current_user.username,
-                    user_id=current_user.id
-                )
-                if not customer or not hasattr(customer, 'id'):
-                    raise Exception("Failed to create Stripe customer - invalid response")
-                
-                customer_id = customer.id
-                # Don't save to database yet - let the webhook handle it for consistency
-                current_app.logger.info(f"Created Stripe customer {customer_id} for user {current_user.id}")
-                
-            except Exception as e:
-                current_app.logger.error(f"Failed to create Stripe customer for user {current_user.id}: {e}")
-                
-                # Fallback: Try to create checkout session without customer
-                # Stripe will create customer automatically during checkout
-                customer_id = None
-                current_app.logger.info(f"Will create checkout session without pre-existing customer for user {current_user.id}")
+        # Use environment variable or fallback price ID
+        price_id = os.getenv('STRIPE_PREMIUM_PRICE_ID')
+        if not price_id or price_id.strip() == '':
+            price_id = 'price_1QJk9lRrIqBKqK8jlJfvWKYE'  # Fallback price ID
+            current_app.logger.warning(f"Using fallback price ID: {price_id}")
         
-        # If we still don't have a customer_id, let Stripe create one during checkout
-        if not customer_id:
-            # Create checkout session without customer - Stripe will create customer
-            try:
-                checkout_session = stripe_client.create_checkout_session_without_customer(
-                    customer_email=current_user.email,
-                    success_url=url_for('payments.payment_success', _external=True),
-                    cancel_url=url_for('dashboard.profile', _external=True),
-                    user_id=current_user.id
-                )
-            except Exception as e:
-                current_app.logger.error(f"Failed to create checkout session for user {current_user.id}: {e}")
-                return jsonify({
-                    'success': False, 
-                    'error': 'Failed to create payment session. Please try again later.',
-                    'details': 'Checkout session creation failed'
-                }), 500
-        else:
-            # Create checkout session with existing customer
-            try:
-                checkout_session = stripe_client.create_checkout_session(
-                    customer_id=customer_id,
-                    success_url=url_for('payments.payment_success', _external=True),
-                    cancel_url=url_for('dashboard.profile', _external=True)
-                )
-            except Exception as e:
-                current_app.logger.error(f"Failed to create checkout session for user {current_user.id}: {e}")
-                return jsonify({
-                    'success': False, 
-                    'error': 'Failed to create payment session. Please try again later.',
-                    'details': 'Checkout session creation failed'
-                }), 500
+        # Create checkout session without any customer management
+        # Let Stripe handle EVERYTHING - webhooks will do the rest
+        checkout_session = stripe.checkout.Session.create(
+            customer_email=current_user.email,  # Just provide email, Stripe creates customer
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=url_for('payments.payment_success', _external=True),
+            cancel_url=url_for('dashboard.profile', _external=True),
+            metadata={
+                "app": "ki_wellness",
+                "user_id": str(current_user.id),
+                "email": current_user.email,
+                "username": current_user.username or "unknown"
+            }
+        )
         
-        # At this point, checkout_session should be created already
-        # Just validate it exists
+        # Store minimal payment session info
+        payment_session = PaymentSession(
+            session_id=checkout_session.id,
+            user_id=current_user.id,
+            email=current_user.email,
+            name=current_user.name or current_user.username,
+            payment_type='subscription',
+            amount=500,  # $5.00 in cents
+            status='pending'
+        )
+        db.session.add(payment_session)
+        db.session.commit()
         
-        if checkout_session:
-            # Store payment session in database
-            payment_session = PaymentSession(
-                user_id=current_user.id,
-                stripe_session_id=checkout_session.id,
-                status='pending'
-            )
-            db.session.add(payment_session)
-            db.session.commit()
+        current_app.logger.info(f"✅ Pure webhook checkout session created for user {current_user.id}: {checkout_session.id}")
+        
+        return jsonify({
+            'success': True,
+            'session_id': checkout_session.id,
+            'checkout_url': checkout_session.url
+        })
             
-            return jsonify({
-                'success': True,
-                'session_id': checkout_session.id,
-                'checkout_url': checkout_session.url
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create payment session'}), 500
-            
+    except stripe.error.AuthenticationError as e:
+        current_app.logger.error(f"Stripe authentication error: {e}")
+        return jsonify({
+            'success': False, 
+            'error': 'Payment system authentication failed.',
+            'details': 'Invalid Stripe API key'
+        }), 503
+    except stripe.error.InvalidRequestError as e:
+        current_app.logger.error(f"Stripe invalid request: {e}")
+        return jsonify({
+            'success': False, 
+            'error': 'Invalid payment configuration.',
+            'details': str(e)
+        }), 400
     except Exception as e:
         current_app.logger.error(f"Error creating checkout session: {e}")
-        return jsonify({'success': False, 'error': 'Failed to create payment session'}), 500
+        return jsonify({
+            'success': False, 
+            'error': 'Failed to create payment session.',
+            'details': 'Internal server error'
+        }), 500
 
 
 @payments_bp.route('/api/customer-portal', methods=['POST'])
@@ -289,6 +278,8 @@ def stripe_webhook():
             handle_payment_intent_failed_webhook(event_data)
         elif event_type == 'customer.created':
             handle_customer_created_webhook(event_data)
+        elif event_type == 'checkout.session.completed':
+            handle_checkout_session_completed_webhook(event_data)
         elif event_type == 'customer.updated':
             handle_customer_updated_webhook(event_data)
         elif event_type == 'charge.succeeded':
@@ -331,16 +322,15 @@ def handle_subscription_created_webhook(subscription_data):
             subscription = Subscription(
                 user_id=user.id,
                 stripe_subscription_id=subscription_id,
+                stripe_customer_id=customer_id,
+                plan_type='premium',
                 status=status,
-                plan_name='premium',
-                is_premium=True,
-                current_period_end=datetime.fromtimestamp(current_period_end) if current_period_end else None,
-                created_at=datetime.utcnow()
+                current_period_end=datetime.fromtimestamp(current_period_end) if current_period_end else None
             )
             db.session.add(subscription)
         else:
             subscription.status = status
-            subscription.is_premium = True
+            subscription.plan_type = 'premium'
             subscription.current_period_end = datetime.fromtimestamp(current_period_end) if current_period_end else None
         
         db.session.commit()
@@ -386,7 +376,7 @@ def handle_subscription_updated_webhook(subscription_data):
         
         if subscription:
             subscription.status = status
-            subscription.is_premium = status == 'active'
+            subscription.plan_type = 'premium' if status == 'active' else 'free'
             subscription.current_period_end = datetime.fromtimestamp(current_period_end) if current_period_end else None
             db.session.commit()
             current_app.logger.info(f"✅ Subscription updated for user {user.id}: {subscription_id} - {status}")
@@ -418,7 +408,7 @@ def handle_subscription_deleted_webhook(subscription_data):
         
         if subscription:
             subscription.status = 'cancelled'
-            subscription.is_premium = False
+            subscription.plan_type = 'free'
             db.session.commit()
             current_app.logger.info(f"✅ Subscription cancelled for user {user.id}: {subscription_id}")
         else:
@@ -504,21 +494,71 @@ def handle_payment_intent_failed_webhook(payment_intent_data):
 
 
 def handle_customer_created_webhook(customer_data):
-    """Handle customer creation webhook"""
+    """Handle customer creation webhook - PURE WEBHOOK APPROACH"""
     try:
         customer_id = customer_data.get('id')
         email = customer_data.get('email')
-        user_id = customer_data.get('metadata', {}).get('user_id')
         
-        if user_id:
-            user = User.query.get(int(user_id))
-            if user and not user.stripe_customer_id:
-                user.stripe_customer_id = customer_id
-                db.session.commit()
-                current_app.logger.info(f"✅ Customer created and linked: {email} (ID: {customer_id})")
+        # Find user by email since we don't have user_id in customer metadata yet
+        user = User.query.filter_by(email=email).first()
+        if user and not user.stripe_customer_id:
+            user.stripe_customer_id = customer_id
+            db.session.commit()
+            current_app.logger.info(f"✅ Customer created and linked via email: {email} → User {user.id} (Customer ID: {customer_id})")
+        elif not user:
+            current_app.logger.warning(f"⚠️ Customer created but no user found with email: {email}")
+        else:
+            current_app.logger.info(f"ℹ️ Customer already linked: {email} → {user.stripe_customer_id}")
         
     except Exception as e:
         current_app.logger.error(f"Error handling customer created webhook: {e}")
+        db.session.rollback()
+
+
+def handle_checkout_session_completed_webhook(session_data):
+    """Handle checkout session completion webhook - PURE WEBHOOK APPROACH"""
+    try:
+        session_id = session_data.get('id')
+        customer_id = session_data.get('customer')
+        subscription_id = session_data.get('subscription')
+        metadata = session_data.get('metadata', {})
+        
+        # Get user from metadata or customer email
+        user_id = metadata.get('user_id')
+        email = metadata.get('email')
+        
+        user = None
+        if user_id:
+            user = User.query.get(int(user_id))
+        elif email:
+            user = User.query.filter_by(email=email).first()
+        elif customer_id:
+            user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        
+        if not user:
+            current_app.logger.warning(f"⚠️ Checkout completed but no user found: session {session_id}")
+            return
+        
+        # Link customer if not already linked
+        if customer_id and not user.stripe_customer_id:
+            user.stripe_customer_id = customer_id
+            current_app.logger.info(f"✅ Customer linked via checkout: User {user.id} → Customer {customer_id}")
+        
+        # Update payment session status
+        payment_session = PaymentSession.query.filter_by(
+            session_id=session_id,
+            user_id=user.id
+        ).first()
+        
+        if payment_session:
+            payment_session.status = 'completed'
+            current_app.logger.info(f"✅ Payment session completed: {session_id} for user {user.id}")
+        
+        db.session.commit()
+        current_app.logger.info(f"✅ Checkout session completed for user {user.id}: {session_id}")
+        
+    except Exception as e:
+        current_app.logger.error(f"Error handling checkout session completed webhook: {e}")
         db.session.rollback()
 
 
