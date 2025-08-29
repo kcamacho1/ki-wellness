@@ -714,15 +714,90 @@ def extend_session():
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-    """Handle forgot password request - DISABLED"""
-    flash('Password reset is currently disabled. Please contact support if you need assistance.', 'info')
-    return redirect(url_for('login'))
+    """Handle forgot password request"""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email:
+            flash('Please enter your email address.', 'error')
+            return render_template('forgot_password.html')
+        
+        # Find user by email
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            try:
+                # Generate reset token
+                reset_token = str(uuid.uuid4())
+                reset_expires = datetime.now() + timedelta(hours=24)
+                
+                # Update user with reset token
+                user.reset_token = reset_token
+                user.reset_token_expires = reset_expires
+                db.session.commit()
+                
+                # Send password reset email
+                from services.email_service import EmailService
+                email_service = EmailService()
+                
+                if email_service.send_password_reset_email(email, reset_token, user.name):
+                    flash('Password reset link has been sent to your email address.', 'success')
+                else:
+                    flash('There was an error sending the reset email. Please try again or contact support.', 'error')
+                    
+            except Exception as e:
+                print(f"Error in forgot password: {e}")
+                flash('There was an error processing your request. Please try again.', 'error')
+        else:
+            # Don't reveal whether email exists or not for security
+            flash('If your email address exists in our system, you will receive a password reset link.', 'info')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
 
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    """Handle password reset with token - DISABLED"""
-    flash('Password reset is currently disabled. Please contact support if you need assistance.', 'info')
-    return redirect(url_for('login'))
+    """Handle password reset with token"""
+    # Find user by reset token
+    user = User.query.filter_by(reset_token=token).first()
+    
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.now():
+        flash('Invalid or expired reset link. Please request a new password reset.', 'error')
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not password or not confirm_password:
+            flash('Please fill in all fields.', 'error')
+            return render_template('reset_password.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('reset_password.html')
+        
+        # Validate password strength
+        if not validate_password_strength(password):
+            flash('Password does not meet security requirements.', 'error')
+            return render_template('reset_password.html')
+        
+        try:
+            # Update password and clear reset token
+            user.password = generate_password_hash(password)
+            user.reset_token = None
+            user.reset_token_expires = None
+            db.session.commit()
+            
+            flash('Your password has been successfully reset. You can now log in with your new password.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            flash('There was an error resetting your password. Please try again.', 'error')
+    
+    return render_template('reset_password.html')
 
 @app.route('/dashboard')
 @login_required
