@@ -1,7 +1,7 @@
 import logging
 import os
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, To, Content, HtmlContent
+from sendgrid.helpers.mail import Mail, Email, To, Content, HtmlContent, Cc
 from config.email_config import EmailConfig
 
 logger = logging.getLogger(__name__)
@@ -41,23 +41,38 @@ class EmailService:
     def _send_sendgrid_email(self, to_email, subject, html_content, text_content=None, cc_email=None):
         """Send email via SendGrid"""
         try:
+            # Validate required fields
+            if not self.from_email:
+                logger.error("Cannot send email: FROM_EMAIL not configured")
+                return False
+            
+            if not to_email:
+                logger.error("Cannot send email: to_email is empty")
+                return False
+            
+            if not subject:
+                logger.error("Cannot send email: subject is empty")
+                return False
+            
+            # Create email objects using the correct SendGrid v6 format
             from_email = Email(self.from_email, self.from_name)
             to_email_obj = To(to_email)
             
-            mail = Mail(
-                from_email=from_email,
-                to_emails=to_email_obj,
-                subject=subject,
-                html_content=html_content
-            )
+            # Use Content object for HTML content
+            content = Content("text/html", html_content)
+            
+            # Create the mail object using positional arguments
+            mail = Mail(from_email, to_email_obj, subject, content)
             
             # Add CC if provided
             if cc_email:
-                mail.add_cc(Email(cc_email))
+                mail.add_cc(Cc(cc_email))
             
             # Add plain text content if provided
             if text_content:
                 mail.add_content(Content("text/plain", text_content))
+            
+            logger.info(f"Attempting to send email from {self.from_email} to {to_email}" + (f" with CC to {cc_email}" if cc_email else ""))
             
             response = self.sendgrid_client.send(mail)
             
@@ -70,6 +85,7 @@ class EmailService:
                 
         except Exception as e:
             logger.error(f"Failed to send SendGrid email: {str(e)}")
+            logger.error(f"Email config - from_email: {self.from_email}, from_name: {self.from_name}")
             return False
     
     def _render_email_template(self, template_path, context):
