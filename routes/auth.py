@@ -45,6 +45,11 @@ def login():
                 return render_template('login.html')
             
             login_user(user, remember=True)  # Enable remember me functionality
+            
+            # Update last login time
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
             session.permanent = True  # Make session permanent for timeout tracking
             return redirect(url_for('dashboard.dashboard'))
         else:

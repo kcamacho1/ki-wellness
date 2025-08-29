@@ -392,7 +392,7 @@ def get_admin_users():
                     'role': user.role or 'user',
                     'email_verified': user.email_verified,
                     'created_at': user.created_at.isoformat() if user.created_at else None,
-                    'last_login': user.last_login.isoformat() if user.last_login else None
+                    'last_login': getattr(user, 'last_login', None).isoformat() if getattr(user, 'last_login', None) else None
                 }
                 for user in users.items
             ],
