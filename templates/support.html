@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Support - Ki Wellness{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-ki-green-500 to-ki-green-600 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Support Center</h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                We're here to help you get the most out of Ki Wellness. Find documentation or submit a support ticket below.
+            </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-8">
+                    {% for category, message in messages %}
+                        <div class="{% if category == 'error' %}bg-red-50 border-red-200 text-red-800{% elif category == 'success' %}bg-green-50 border-green-200 text-green-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %} border px-4 py-3 rounded-lg mb-4">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {% if category == 'error' %}
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    {% elif category == 'success' %}
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    {% else %}
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    {% endif %}
+                                </svg>
+                                <span>{{ message }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Documentation Section -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-ki-green-500 to-ki-green-600 p-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">Documentation</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-6">
+                        Learn how to use Ki Wellness effectively with our comprehensive documentation and guides.
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <h3 class="font-semibold text-gray-900 mb-2">Getting Started Guide</h3>
+                            <p class="text-sm text-gray-600 mb-3">Learn the basics of tracking your nutrition, water intake, and mood.</p>
+                            <a href="#" class="inline-flex items-center text-ki-green-600 hover:text-ki-green-700 font-medium">
+                                <span>Read Guide</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <h3 class="font-semibold text-gray-900 mb-2">AI Coach Features</h3>
+                            <p class="text-sm text-gray-600 mb-3">Discover how to make the most of your AI wellness coach.</p>
+                            <a href="#" class="inline-flex items-center text-ki-green-600 hover:text-ki-green-700 font-medium">
+                                <span>Read Guide</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <h3 class="font-semibold text-gray-900 mb-2">Privacy & Security</h3>
+                            <p class="text-sm text-gray-600 mb-3">Understanding how we protect your health data.</p>
+                            <a href="{{ url_for('static_pages.privacy') }}" class="inline-flex items-center text-ki-green-600 hover:text-ki-green-700 font-medium">
+                                <span>Read Policy</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-ki-green-50 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-ki-green-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm text-ki-green-800">
+                                    <strong>Quick Tip:</strong> Use the search feature in the top navigation to quickly find specific foods and track your nutrition more efficiently.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Ticket Form -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">Submit Support Ticket</h2>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-6">
+                        Can't find what you're looking for? Send us a message and we'll get back to you soon.
+                    </p>
+
+                    <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                        <!-- Ticket Type -->
+                        <div>
+                            <label for="ticket_type" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Issue Type <span class="text-red-500">*</span>
+                            </label>
+                            <select id="ticket_type" name="ticket_type" required 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors">
+                                <option value="">Select an issue type</option>
+                                <option value="Bug">Bug Report</option>
+                                <option value="Suggestion">Feature Suggestion</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject -->
+                        <div>
+                            <label for="subject" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Subject <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="subject" name="subject" required maxlength="100"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="Brief description of your issue">
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Your Email <span class="text-red-500">*</span>
+                            </label>
+                            <input type="email" id="email" name="email" required 
+                                   value="{{ current_user.email if current_user.is_authenticated else '' }}"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors"
+                                   placeholder="your.email@example.com">
+                            <p class="text-xs text-gray-500 mt-1">We'll send a copy of your ticket to this email</p>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Description <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="description" name="description" required rows="6" maxlength="2000"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors resize-none"
+                                      placeholder="Please provide as much detail as possible. Include steps to reproduce the issue, what you expected to happen, and what actually happened."></textarea>
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Be as detailed as possible</span>
+                                <span id="description-count">0/2000</span>
+                            </div>
+                        </div>
+
+                        <!-- Screenshot Upload -->
+                        <div>
+                            <label for="screenshot" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Screenshot (optional)
+                            </label>
+                            <div class="relative">
+                                <input type="file" id="screenshot" name="screenshot" accept="image/*"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-ki-green-50 file:text-ki-green-700 hover:file:bg-ki-green-100">
+                                <p class="text-xs text-gray-500 mt-1">Attach a screenshot to help us understand the issue (PNG, JPG, GIF)</p>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-4">
+                            <button type="submit" 
+                                    class="w-full bg-gradient-to-r from-ki-green-500 to-ki-green-600 text-white py-3 px-6 rounded-lg hover:from-ki-green-600 hover:to-ki-green-700 focus:ring-2 focus:ring-ki-green-500 focus:ring-offset-2 transition-all duration-200 font-semibold">
+                                <div class="flex items-center justify-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                    Submit Support Ticket
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Character counter for description
+    const descriptionTextarea = document.getElementById('description');
+    const descriptionCount = document.getElementById('description-count');
+    
+    descriptionTextarea.addEventListener('input', function() {
+        const count = this.value.length;
+        descriptionCount.textContent = `${count}/2000`;
+        
+        if (count > 1800) {
+            descriptionCount.classList.add('text-red-500');
+        } else {
+            descriptionCount.classList.remove('text-red-500');
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const ticketType = document.getElementById('ticket_type').value;
+        const subject = document.getElementById('subject').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const email = document.getElementById('email').value.trim();
+        
+        if (!ticketType || !subject || !description || !email) {
+            e.preventDefault();
+            showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+        
+        if (subject.length < 5) {
+            e.preventDefault();
+            showToast('Subject must be at least 5 characters long.', 'error');
+            return;
+        }
+        
+        if (description.length < 20) {
+            e.preventDefault();
+            showToast('Please provide a more detailed description (at least 20 characters).', 'error');
+            return;
+        }
+        
+        // Show loading state
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <div class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Submitting...
+            </div>
+        `;
+        
+        // Reset button after 10 seconds if form doesn't submit
+        setTimeout(() => {
+            if (submitButton.disabled) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        }, 10000);
+    });
+</script>
+{% endblock %}

@@ -353,7 +353,7 @@ class AICoachManager {
             const response = await fetch('/api/get-stored-analysis');
             const data = await response.json();
             
-            if (data.success) {
+            if (data.success && data.analysis) {
                 this.analysis = data.analysis;
                 this.displayAnalysis();
                 
@@ -364,6 +364,11 @@ class AICoachManager {
                     
                     const daysAgo = Math.floor((new Date() - updatedDate) / (1000 * 60 * 60 * 24));
                     console.log(`Analysis last updated ${daysAgo} days ago`);
+                    
+                    // Show encouragement if analysis is more than 7 days old
+                    if (daysAgo >= 7) {
+                        this.showRefreshEncouragement(daysAgo);
+                    }
                 }
 
                 // If analysis exists, do not show CTA unless there are no logs in the last 7 days
@@ -396,7 +401,46 @@ class AICoachManager {
         const lastUpdatedElement = document.getElementById('last-updated');
         if (lastUpdatedElement) {
             lastUpdatedElement.textContent = `Last updated: ${timeText}`;
-            lastUpdatedElement.style.display = 'block';
+            lastUpdatedElement.classList.remove('hidden');
+        }
+    }
+
+    showRefreshEncouragement(daysAgo) {
+        // Add a gentle encouragement banner for old analysis
+        const mainContent = document.getElementById('main-content');
+        const existingBanner = document.getElementById('refresh-encouragement-banner');
+        
+        // Remove existing banner if present
+        if (existingBanner) {
+            existingBanner.remove();
+        }
+        
+        const encouragementBanner = document.createElement('div');
+        encouragementBanner.id = 'refresh-encouragement-banner';
+        encouragementBanner.className = 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4 mb-6';
+        encouragementBanner.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-blue-900">Your Analysis is Ready for an Update</h3>
+                    <p class="text-blue-700 text-sm">Your last analysis was ${daysAgo} days ago. Continue logging food, water, and mood entries to get fresh insights every Monday, or click refresh for an updated analysis now.</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-blue-400 hover:text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        // Insert before the analysis grid
+        const analysisGrid = mainContent.querySelector('.grid');
+        if (analysisGrid) {
+            mainContent.insertBefore(encouragementBanner, analysisGrid);
         }
     }
 
@@ -463,9 +507,10 @@ class AICoachManager {
         }
         this.analysis = {
             patterns: [
-                {"title": "Getting Started", "description": "Welcome to your AI Health Coach! Start logging your food, water, and mood to get personalized insights."}
+                {"title": "Weekly Analysis", "description": "Welcome to your AI Health Coach! Keep logging your food, water, and mood consistently to get personalized insights every Monday."}
             ],
             suggestions: [
+                {"title": "Build Weekly Habits", "description": "Try to log at least one meal and your mood daily this week to establish patterns for your next analysis."},
                 {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
             ]
         };
@@ -512,7 +557,7 @@ class AICoachManager {
                     </svg>
                 </div>
                 <h4 class="text-lg font-semibold text-gray-900">Start your wellness journey</h4>
-                <p class="text-sm text-gray-600 mt-1">Log your first food, water, or mood entry to unlock personalized insights.</p>
+                <p class="text-sm text-gray-600 mt-1">Log your food, water, and mood entries to get personalized weekly insights every Monday.</p>
                 <a href="/dashboard" class="inline-block mt-4 px-4 py-2 bg-ki-green-600 text-white text-sm font-medium rounded-lg hover:bg-ki-green-700 transition-colors">Go to Dashboard</a>
             </div>
         `;

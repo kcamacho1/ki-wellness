@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Scheduled Analysis Generator for Ki Wellness
-Runs every Monday at midnight to pre-generate AI analysis for all users
+Weekly Analysis Generator for Ki Wellness
+Runs every Monday to generate AI analysis for all users based on the past 7 days
 """
 
 import os
@@ -108,38 +108,45 @@ def generate_analysis(user_data):
     water_summary = f"Total water entries: {len(user_data.get('water_logs', []))}"
     mood_summary = f"Total mood entries: {len(user_data.get('mood_logs', []))}"
     
-    analysis_prompt = f"""
-    Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
-
-    User: {user_data.get('profile', {}).get('name', 'User')}
-    Goals: {user_data.get('profile', {}).get('health_goals', 'Not specified')}
-    Health Concerns: {user_data.get('profile', {}).get('ailments_concerns', 'Not specified')}
+    # Prepare user info to avoid f-string nesting issues
+    user_name = user_data.get('profile', {}).get('name', 'User')
+    user_goals = user_data.get('profile', {}).get('health_goals', 'Not specified')
+    user_concerns = user_data.get('profile', {}).get('ailments_concerns', 'Not specified')
     
-    Data Summary:
+    analysis_prompt = f"""
+    Weekly Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
+
+    User: {user_name}
+    Goals: {user_goals}
+    Health Concerns: {user_concerns}
+    
+    Data Summary (past 7 days):
     - {food_summary}
     - {water_summary}
     - {mood_summary}
 
     Task:
-    - Find specific, data-backed patterns connecting mood & notes to food & water intake.
-    - Provide short reasons for how the user may be feeling based on these links.
-    - Create 2-3 actionable, personalized suggestions to try this week with brief source citations.
+    - Find specific, data-backed patterns from the past 7 days connecting mood & notes to food & water intake.
+    - Provide short reasons for how the user may be feeling based on these weekly patterns.
+    - Create 2-3 actionable, personalized suggestions to try this upcoming week with brief source citations when helpful.
+
+    If the user has little or no data for the past 7 days, provide encouragement to continue logging and basic wellness tips.
 
     OUTPUT STRICT JSON ONLY:
-    {
+    {{
       "patterns": [
-        {"title": "Pattern Title", "description": "Brief explanation of correlation (mood vs notes, food, water)."}
+        {{"title": "Pattern Title", "description": "Brief explanation of weekly correlation (mood vs notes, food, water)."}}
       ],
       "suggestions": [
-        {
+        {{
           "title": "Suggestion Title",
-          "description": "Brief, actionable advice.",
+          "description": "Brief, actionable advice for the upcoming week.",
           "sources": [
-            {"title": "Short Source Name", "url": "https://example.com"}
+            {{"title": "Short Source Name", "url": "https://example.com"}}
           ]
-        }
+        }}
       ]
-    }
+    }}
     """
     
     try:
@@ -158,9 +165,10 @@ def generate_analysis(user_data):
             # Fallback analysis
             return {
                 "patterns": [
-                    {"title": "Getting Started", "description": "Welcome to your AI Health Coach! Start logging your food, water, and mood to get personalized insights."}
+                    {"title": "Weekly Check-in", "description": "Welcome to your weekly AI Health Coach analysis! Continue logging your food, water, and mood this week to get personalized insights."}
                 ],
                 "suggestions": [
+                    {"title": "Build Consistency", "description": "Try to log at least one meal and your mood daily this week to establish patterns."},
                     {"title": "Complete Your Profile", "description": "Add your health goals to your profile to get personalized suggestions."}
                 ]
             }
@@ -258,11 +266,11 @@ def main():
         # Get all users
         users = session.execute(text('SELECT "id" FROM "user"')).fetchall()
         
-        # Calculate date range (last 30 days)
+        # Calculate date range (last 7 days for weekly analysis)
         end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=30)
+        start_date = end_date - timedelta(days=7)
         
-        print(f"Generating analysis for {len(users)} users...")
+        print(f"Generating weekly analysis for {len(users)} users (last 7 days: {start_date} to {end_date})...")
         
         for user_row in users:
             user_id = user_row[0]

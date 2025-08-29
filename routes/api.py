@@ -397,13 +397,25 @@ def get_stored_analysis():
         ).order_by(AIAnalysis.created_at.desc()).first()
         
         if analysis:
+            # Parse the JSON analysis data
+            try:
+                analysis_data = json.loads(analysis.analysis_data) if isinstance(analysis.analysis_data, str) else analysis.analysis_data
+            except json.JSONDecodeError:
+                # If JSON parsing fails, return a fallback analysis
+                analysis_data = {
+                    "patterns": [
+                        {"title": "Analysis Update Required", "description": "Your analysis data needs to be updated. Please refresh your analysis to get new insights."}
+                    ],
+                    "suggestions": [
+                        {"title": "Refresh Analysis", "description": "Click the refresh button to generate updated insights based on your recent wellness data."}
+                    ]
+                }
+            
             return jsonify({
                 'success': True,
-                'analysis': {
-                    'content': analysis.analysis_data,
-                    'created_at': analysis.created_at.isoformat(),
-                    'updated_at': analysis.updated_at.isoformat() if analysis.updated_at else None
-                }
+                'analysis': analysis_data,
+                'created_at': analysis.created_at.isoformat(),
+                'updated_at': analysis.updated_at.isoformat() if analysis.updated_at else None
             })
         else:
             return jsonify({'success': True, 'analysis': None})

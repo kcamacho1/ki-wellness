@@ -34,9 +34,9 @@ def generate_ai_analysis():
             'ailments_concerns': current_user.ailments_concerns
         }
         
-        # Get last 30 days of data
+        # Get last 7 days of data for weekly analysis
         end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=30)
+        start_date = end_date - timedelta(days=7)
         
         # Get food logs
         food_logs = FoodLog.query.filter(
@@ -120,11 +120,11 @@ def generate_ai_analysis():
 
         analysis_template = (
             """
-        Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
+        Weekly Health Coach Analysis - concise, evidence-based, grounded in local knowledge.
 
         USER: {user_name} | Age: {user_age} | Goals: {user_goals} | Health Concerns: {user_ailments}
 
-        DATA SUMMARY (last 30 days):
+        DATA SUMMARY (past 7 days):
         - Food: {food_count} entries, ~{avg_cal:.0f} kcal/day
         - Water: {water_count} entries, ~{avg_water:.1f} cups/day
         - Mood: {mood_count} entries, ~{avg_mood:.1f}/5
@@ -136,20 +136,20 @@ def generate_ai_analysis():
         - Notes (snippets): {recent_notes}
 
         TASK:
-        - Find specific, data-backed patterns connecting mood & notes to food & water intake (e.g., low water -> lower mood next day, high sugar late at night -> poorer mood).
-        - Provide short explanations for likely reasons behind how the user is feeling based on these links.
-        - Create 2-3 actionable, personalized suggestions to try this week.
-        - Ground suggestions in resources the model was trained on (nutrition, hydration, behavior change). Include brief source citations.
+        - Analyze patterns from the past 7 days connecting mood & notes to food & water intake (e.g., low water -> lower mood next day, high sugar late at night -> poorer mood).
+        - Provide short explanations for likely reasons behind how the user is feeling based on these weekly patterns.
+        - Create 2-3 actionable, personalized suggestions to try this upcoming week.
+        - Ground suggestions in nutrition science and behavior change research. Include brief source citations when helpful.
 
         OUTPUT STRICT JSON ONLY:
         {{
           "patterns": [
-            {{"title": "Pattern Title", "description": "Brief description of the data-backed link (mood vs. notes, food, water)."}}
+            {{"title": "Pattern Title", "description": "Brief description of the weekly data-backed pattern (mood vs. notes, food, water)."}}
           ],
           "suggestions": [
             {{
               "title": "Suggestion Title",
-              "description": "Brief, actionable advice tailored to the user's situation.",
+              "description": "Brief, actionable advice for the upcoming week based on patterns.",
               "sources": [
                 {{"title": "Short Source Name", "url": "https://example.com"}}
               ]

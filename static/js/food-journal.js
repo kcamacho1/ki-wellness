@@ -1019,6 +1019,11 @@ class FoodJournal {
                 this.showToast('Food added to log successfully!', 'success');
                 this.refreshFoodLog();
                 
+                // Refresh dashboard if available
+                if (window.dashboardManager && window.dashboardManager.loadDashboardDataOptimized) {
+                    window.dashboardManager.loadDashboardDataOptimized();
+                }
+                
                 // Clear search fields before closing modal
                 this.clearSearchFields();
                 this.closeModal();

@@ -252,8 +252,19 @@
                 
                 <!-- Password Change Section -->
                 <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
-                    <div class="space-y-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Security Settings</h3>
+                        <button type="button" id="toggle-password-change-btn"
+                                class="bg-amber-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            Change Password
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden Password Change Form -->
+                    <div id="password-change-form" class="hidden space-y-4">
                         <!-- Password Requirements -->
                         <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <h4 class="text-sm font-medium text-blue-800 mb-2">Password Requirements:</h4>
@@ -294,11 +305,15 @@
                             <div id="password-match" class="mt-2 text-sm"></div>
                         </div>
                         
-                        <!-- Change Password Button -->
-                        <div class="flex justify-end">
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-password-change-btn"
+                                    class="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                Cancel
+                            </button>
                             <button type="button" id="change-password-btn"
                                     class="bg-amber-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
-                                Change Password
+                                Update Password
                             </button>
                         </div>
                     </div>
@@ -584,19 +599,32 @@
             tierElement.className = 'text-purple-800 font-medium';
             
             const subscription = data.subscription;
-            const endDate = new Date(subscription.current_period_end);
-            const formattedDate = endDate.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
+            let detailsText = 'Premium access active';
             
-            detailsElement.textContent = `Active until ${formattedDate}`;
+            // Check if we have a subscription with current_period_end
+            if (subscription && subscription.current_period_end) {
+                const endDate = new Date(subscription.current_period_end);
+                const formattedDate = endDate.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                detailsText = `Active until ${formattedDate}`;
+            }
+            
+            detailsElement.textContent = detailsText;
             detailsElement.className = 'text-purple-700 text-sm mt-1';
             
-            // Show manage subscription button
-            upgradeBtn.classList.add('hidden');
-            manageBtn.classList.remove('hidden');
+            // Show appropriate buttons based on subscription type
+            if (subscription && subscription.stripe_subscription_id) {
+                // User has a paid subscription - show manage button
+                upgradeBtn.classList.add('hidden');
+                manageBtn.classList.remove('hidden');
+            } else {
+                // User has premium access but no paid subscription (admin/ff user) - hide both buttons
+                upgradeBtn.classList.add('hidden');
+                manageBtn.classList.add('hidden');
+            }
             actionsElement.classList.remove('hidden');
             
             // Update subscription status styling
@@ -687,6 +715,33 @@
         const passwordStrength = document.getElementById('password-strength');
         const passwordMatch = document.getElementById('password-match');
         const changePasswordBtn = document.getElementById('change-password-btn');
+        const togglePasswordChangeBtn = document.getElementById('toggle-password-change-btn');
+        const cancelPasswordChangeBtn = document.getElementById('cancel-password-change-btn');
+        const passwordChangeForm = document.getElementById('password-change-form');
+        
+        // Toggle password change form visibility
+        if (togglePasswordChangeBtn) {
+            togglePasswordChangeBtn.addEventListener('click', function() {
+                passwordChangeForm.classList.remove('hidden');
+                togglePasswordChangeBtn.classList.add('hidden');
+            });
+        }
+        
+        // Cancel password change
+        if (cancelPasswordChangeBtn) {
+            cancelPasswordChangeBtn.addEventListener('click', function() {
+                // Clear form fields
+                if (currentPasswordInput) currentPasswordInput.value = '';
+                if (newPasswordInput) newPasswordInput.value = '';
+                if (confirmPasswordInput) confirmPasswordInput.value = '';
+                if (passwordStrength) passwordStrength.textContent = '';
+                if (passwordMatch) passwordMatch.textContent = '';
+                
+                // Hide form and show toggle button
+                passwordChangeForm.classList.add('hidden');
+                togglePasswordChangeBtn.classList.remove('hidden');
+            });
+        }
         
         // Password validation function
         function validatePasswordStrength(password) {
@@ -829,6 +884,10 @@
                         confirmPasswordInput.value = '';
                         passwordStrength.textContent = '';
                         passwordMatch.textContent = '';
+                        
+                        // Hide form and show toggle button
+                        passwordChangeForm.classList.add('hidden');
+                        togglePasswordChangeBtn.classList.remove('hidden');
                     } else {
                         showToast(data.message || 'Failed to change password', 'error');
                     }

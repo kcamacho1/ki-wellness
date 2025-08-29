@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Setup weekly cron job for Ki Wellness AI analysis
-# This script sets up a cron job to run every Monday at midnight
+# This script sets up a cron job to run every Monday at midnight (00:00)
+# The analysis will look at the past 7 days of user data and generate fresh insights
 
 # Get the current directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -21,8 +22,9 @@ fi
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
-echo "✅ Cron job set up successfully!"
-echo "📅 Analysis will run every Monday at midnight"
+echo "✅ Weekly analysis cron job set up successfully!"
+echo "📅 Analysis will run every Monday at midnight (00:00)"
+echo "🔄 Each analysis covers the past 7 days of user data"
 echo "📁 Logs will be saved to: $SCRIPT_DIR/logs/scheduled_analysis.log"
 echo ""
 echo "To view current cron jobs: crontab -l"

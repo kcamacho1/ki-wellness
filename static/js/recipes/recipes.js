@@ -736,6 +736,11 @@ if (typeof window.RecipeManager === 'undefined') {
                 
                 if (data.success) {
                     this.showToast(data.message, 'success');
+                    
+                    // Refresh dashboard if available
+                    if (window.dashboardManager && window.dashboardManager.loadDashboardDataOptimized) {
+                        window.dashboardManager.loadDashboardDataOptimized();
+                    }
                 } else {
                     this.showToast(data.error || 'Failed to add recipe to log', 'error');
                 }

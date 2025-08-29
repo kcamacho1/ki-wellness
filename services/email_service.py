@@ -38,7 +38,7 @@ class EmailService:
             logger.error(f"Error sending password reset email: {str(e)}")
             return False
     
-    def _send_sendgrid_email(self, to_email, subject, html_content, text_content=None):
+    def _send_sendgrid_email(self, to_email, subject, html_content, text_content=None, cc_email=None):
         """Send email via SendGrid"""
         try:
             from_email = Email(self.from_email, self.from_name)
@@ -51,6 +51,10 @@ class EmailService:
                 html_content=html_content
             )
             
+            # Add CC if provided
+            if cc_email:
+                mail.add_cc(Email(cc_email))
+            
             # Add plain text content if provided
             if text_content:
                 mail.add_content(Content("text/plain", text_content))
@@ -58,7 +62,7 @@ class EmailService:
             response = self.sendgrid_client.send(mail)
             
             if response.status_code in [200, 201, 202]:
-                logger.info(f"Email sent successfully via SendGrid to {to_email}")
+                logger.info(f"Email sent successfully via SendGrid to {to_email}" + (f" with CC to {cc_email}" if cc_email else ""))
                 return True
             else:
                 logger.error(f"Failed to send email via SendGrid. Status: {response.status_code}, Body: {response.body}")
