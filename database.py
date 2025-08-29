@@ -22,7 +22,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     role = db.Column(db.String(20), default='user')  # 'admin', 'user', 'ff'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime, nullable=True)  # Track user login activity
+    # last_login = db.Column(db.DateTime, nullable=True)  # Track user login activity - TEMPORARILY DISABLED
     
     # Agreement tracking
     agreed_to_terms = db.Column(db.Boolean, default=False)
