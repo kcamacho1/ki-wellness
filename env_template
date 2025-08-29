@@ -12,6 +12,8 @@ FROM_EMAIL=your-email@example.com
 FROM_NAME=Ki Wellness
 
 # Application Settings
+# APP_URL is auto-detected in production (uses https://kiwellness.org)
+# Only set this if you need to override the auto-detection
 APP_URL=http://localhost:5000
 SECRET_KEY=your-secret-key-here
 

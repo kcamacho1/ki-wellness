@@ -61,6 +61,49 @@
                 </div>
             </form>
             
+            <!-- Email Verification Notice -->
+            <div id="verification-notice" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg" style="display: none;">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Email Not Verified</h3>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            Please check your email and click the verification link. 
+                            <button onclick="showResendForm()" class="underline hover:no-underline font-medium">
+                                Didn't receive the email?
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resend Verification Form -->
+            <div id="resend-form" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;">
+                <h3 class="text-sm font-medium text-blue-800 mb-2">Resend Verification Email</h3>
+                <form method="POST" action="{{ url_for('resend_verification') }}" class="space-y-3">
+                    <div>
+                        <label for="resend-email" class="block text-sm font-medium text-blue-700">Email Address</label>
+                        <input type="email" id="resend-email" name="email" required
+                               class="mt-1 w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="Enter your email address">
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="submit" 
+                                class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 transition-colors">
+                            Resend Email
+                        </button>
+                        <button type="button" onclick="hideResendForm()"
+                                class="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
             <!-- Sign Up Link -->
             <div class="mt-6 text-center">
                 <p class="text-gray-600">
@@ -78,6 +121,29 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Form submission is clean - Cloudflare handles bot protection
         console.log('Login form ready - Protected by Cloudflare');
+        
+        // Check if there's a flash message about email verification
+        const flashMessages = document.querySelectorAll('.flash-message, .alert');
+        flashMessages.forEach(message => {
+            if (message.textContent.includes('verify your email') || 
+                message.textContent.includes('email address before logging')) {
+                showVerificationNotice();
+            }
+        });
     });
+    
+    function showVerificationNotice() {
+        document.getElementById('verification-notice').style.display = 'block';
+    }
+    
+    function showResendForm() {
+        document.getElementById('resend-form').style.display = 'block';
+        document.getElementById('verification-notice').style.display = 'none';
+    }
+    
+    function hideResendForm() {
+        document.getElementById('resend-form').style.display = 'none';
+        document.getElementById('verification-notice').style.display = 'block';
+    }
 </script>
 {% endblock %}

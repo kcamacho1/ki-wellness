@@ -16,17 +16,54 @@ class EmailConfig:
     FROM_EMAIL = os.getenv('FROM_EMAIL')
     FROM_NAME = os.getenv('FROM_NAME', 'Ki Wellness')
     
-    # Application settings
-    APP_URL = os.getenv('APP_URL', 'http://localhost:5000')
+    # Application settings with auto-detection
+    @staticmethod
+    def _get_app_url():
+        """Auto-detect application URL based on environment"""
+        # First try explicit environment variable
+        app_url = os.getenv('APP_URL')
+        if app_url:
+            return app_url
+        
+        # Auto-detect based on common environment indicators
+        # Check for Render.com environment
+        render_service = os.getenv('RENDER_SERVICE_NAME')
+        if render_service:
+            return 'https://kiwellness.org'
+        
+        # Check for production indicators
+        environment = os.getenv('ENVIRONMENT', '').lower()
+        if environment in ['production', 'prod']:
+            return 'https://kiwellness.org'
+        
+        # Check if we're using PostgreSQL (production indicator)
+        database_url = os.getenv('DATABASE_URL', '')
+        if database_url.startswith('postgresql://') or database_url.startswith('postgres://'):
+            return 'https://kiwellness.org'
+        
+        # Default to localhost for development
+        return 'http://localhost:5000'
+    
+    APP_URL = _get_app_url()
     
     # Password reset email configuration
     PASSWORD_RESET_SUBJECT = 'Reset Your Ki Wellness Password'
+    
+    # Email verification configuration
+    EMAIL_VERIFICATION_SUBJECT = 'Verify Your Ki Wellness Email Address'
     PASSWORD_RESET_TOKEN_EXPIRY_HOURS = 24
     
     @classmethod
     def get_reset_link(cls, token):
         """Generate password reset link"""
-        return urljoin(cls.APP_URL, f'/reset-password/{token}')
+        app_url = cls._get_app_url()
+        return urljoin(app_url, f'/reset-password/{token}')
+    
+    @classmethod
+    def get_verification_link(cls, token):
+        """Generate email verification link"""
+        app_url = cls._get_app_url()
+        return urljoin(app_url, f'/verify-email/{token}')
     
     @classmethod
     def is_sendgrid_configured(cls):

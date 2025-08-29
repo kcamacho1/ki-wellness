@@ -36,6 +36,12 @@ class User(UserMixin, db.Model):
     reset_token = db.Column(db.String(255), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
     
+    # Email verification fields
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verification_token = db.Column(db.String(255), nullable=True)
+    email_verification_expires = db.Column(db.DateTime, nullable=True)
+    email_verification_sent_at = db.Column(db.DateTime, nullable=True)
+    
     # Relationships
     food_logs = db.relationship('FoodLog', backref='user', lazy=True)
     water_logs = db.relationship('WaterLog', backref='user', lazy=True)
