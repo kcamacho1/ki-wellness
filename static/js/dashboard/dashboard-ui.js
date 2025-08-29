@@ -68,13 +68,9 @@ class DashboardUI {
         const notesInput = document.getElementById('daily-notes');
         if (!notesInput) return;
         
-        if (notes && notes.length > 0) {
-            // Display the most recent note for the day
-            const latestNote = notes[notes.length - 1];
-            notesInput.value = latestNote.content || '';
-        } else {
-            notesInput.value = '';
-        }
+        // Always keep the input field clear for new notes
+        // Old notes should only appear in the history section
+        notesInput.value = '';
         
         // Update notes history
         this.displayNotesHistory(notes);
