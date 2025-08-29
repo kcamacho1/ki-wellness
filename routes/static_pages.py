@@ -163,7 +163,13 @@ def send_support_email(email_service, subject, body, user_email):
                     <p style="margin: 5px 0 0 0;">Support Ticket Submission</p>
                 </div>
                 
+                <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #059669;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #059669;">From: {user_email}</p>
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #059669;">Subject: {subject}</p>
+                </div>
+                
                 <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; color: #333;">Message:</h3>
                     <pre style="white-space: pre-wrap; font-family: Arial, sans-serif; margin: 0;">{body}</pre>
                 </div>
                 
@@ -175,9 +181,12 @@ def send_support_email(email_service, subject, body, user_email):
         </html>
         """
         
-        # Send to support email with user CC
-        return email_service._send_sendgrid_email(
+        # Send from support@kiwellness.org to support@kiwellness.org with user CC
+        # Use the support email specific method with explicit from address
+        return send_support_email_with_fallback(
+            email_service=email_service,
             to_email="support@kiwellness.org",
+            from_email="support@kiwellness.org", 
             subject=subject,
             html_content=html_content,
             cc_email=user_email
@@ -185,6 +194,42 @@ def send_support_email(email_service, subject, body, user_email):
         
     except Exception as e:
         current_app.logger.error(f"Error sending support email: {str(e)}")
+        return False
+
+
+def send_support_email_with_fallback(email_service, to_email, from_email, subject, html_content, cc_email=None):
+    """Send support email with explicit from address override"""
+    try:
+        # Temporarily override the email service's from_email for this specific call
+        original_from_email = email_service.from_email
+        original_from_name = email_service.from_name
+        
+        # Set support-specific from address
+        email_service.from_email = from_email
+        email_service.from_name = "Ki Wellness Support"
+        
+        # Send the email
+        result = email_service._send_sendgrid_email(
+            to_email=to_email,
+            subject=subject,
+            html_content=html_content,
+            cc_email=cc_email
+        )
+        
+        # Restore original settings
+        email_service.from_email = original_from_email
+        email_service.from_name = original_from_name
+        
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in send_support_email_with_fallback: {str(e)}")
+        # Restore original settings in case of error
+        try:
+            email_service.from_email = original_from_email
+            email_service.from_name = original_from_name
+        except:
+            pass
         return False
 
 
