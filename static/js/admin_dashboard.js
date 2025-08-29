@@ -10,55 +10,96 @@ class AdminDashboardManager {
 
     setupEventListeners() {
         // Toggle switches
-        document.getElementById('new-accounts-toggle').addEventListener('change', (e) => {
-            this.updateSetting('new_accounts_enabled', e.target.checked);
-        });
+        const newAccountsToggle = document.getElementById('new-accounts-toggle');
+        if (newAccountsToggle) {
+            newAccountsToggle.addEventListener('change', (e) => {
+                this.updateSetting('new_accounts_enabled', e.target.checked);
+            });
+        }
 
-        document.getElementById('maintenance-toggle').addEventListener('change', (e) => {
-            this.updateSetting('maintenance_mode', e.target.checked);
-        });
+        const maintenanceToggle = document.getElementById('maintenance-toggle');
+        if (maintenanceToggle) {
+            maintenanceToggle.addEventListener('change', (e) => {
+                this.updateSetting('maintenance_mode', e.target.checked);
+            });
+        }
 
         // Max users input
-        document.getElementById('update-max-users').addEventListener('click', () => {
-            const maxUsers = document.getElementById('max-users-input').value;
-            this.updateSetting('max_users', maxUsers);
-        });
+        const updateMaxUsersBtn = document.getElementById('update-max-users');
+        if (updateMaxUsersBtn) {
+            updateMaxUsersBtn.addEventListener('click', () => {
+                const maxUsersInput = document.getElementById('max-users-input');
+                if (maxUsersInput) {
+                    this.updateSetting('max_users', maxUsersInput.value);
+                }
+            });
+        }
 
         // Allowed emails
-        document.getElementById('update-allowed-emails').addEventListener('click', () => {
-            const allowedEmails = document.getElementById('allowed-emails-input').value;
-            this.updateSetting('allowed_emails', allowedEmails);
-        });
+        const updateAllowedEmailsBtn = document.getElementById('update-allowed-emails');
+        if (updateAllowedEmailsBtn) {
+            updateAllowedEmailsBtn.addEventListener('click', () => {
+                const allowedEmailsInput = document.getElementById('allowed-emails-input');
+                if (allowedEmailsInput) {
+                    this.updateSetting('allowed_emails', allowedEmailsInput.value);
+                }
+            });
+        }
 
-        document.getElementById('clear-allowed-emails').addEventListener('click', () => {
-            document.getElementById('allowed-emails-input').value = '';
-            this.updateSetting('allowed_emails', '');
-        });
+        const clearAllowedEmailsBtn = document.getElementById('clear-allowed-emails');
+        if (clearAllowedEmailsBtn) {
+            clearAllowedEmailsBtn.addEventListener('click', () => {
+                const allowedEmailsInput = document.getElementById('allowed-emails-input');
+                if (allowedEmailsInput) {
+                    allowedEmailsInput.value = '';
+                    this.updateSetting('allowed_emails', '');
+                }
+            });
+        }
 
-        document.getElementById('assign-ff-roles').addEventListener('click', () => {
-            this.assignFFRoles();
-        });
+        const assignFFRolesBtn = document.getElementById('assign-ff-roles');
+        if (assignFFRolesBtn) {
+            assignFFRolesBtn.addEventListener('click', () => {
+                this.assignFFRoles();
+            });
+        }
 
         // Payment type settings
-        document.getElementById('update-payment-type').addEventListener('click', () => {
-            const selectedPaymentType = document.querySelector('input[name="payment-type"]:checked').value;
-            this.updateSetting('human_help_payment_type', selectedPaymentType);
-        });
+        const updatePaymentTypeBtn = document.getElementById('update-payment-type');
+        if (updatePaymentTypeBtn) {
+            updatePaymentTypeBtn.addEventListener('click', () => {
+                const selectedPaymentType = document.querySelector('input[name="payment-type"]:checked');
+                if (selectedPaymentType) {
+                    this.updateSetting('human_help_payment_type', selectedPaymentType.value);
+                }
+            });
+        }
 
         // Calendly link
-        document.getElementById('update-calendly-link').addEventListener('click', () => {
-            const calendlyLink = document.getElementById('calendly-link-input').value;
-            this.updateSetting('calendly_link', calendlyLink);
-        });
+        const updateCalendlyLinkBtn = document.getElementById('update-calendly-link');
+        if (updateCalendlyLinkBtn) {
+            updateCalendlyLinkBtn.addEventListener('click', () => {
+                const calendlyLinkInput = document.getElementById('calendly-link-input');
+                if (calendlyLinkInput) {
+                    this.updateSetting('calendly_link', calendlyLinkInput.value);
+                }
+            });
+        }
 
         // Quick actions
-        document.getElementById('refresh-stats').addEventListener('click', () => {
-            this.refreshStatistics();
-        });
+        const refreshStatsBtn = document.getElementById('refresh-stats');
+        if (refreshStatsBtn) {
+            refreshStatsBtn.addEventListener('click', () => {
+                this.refreshStatistics();
+            });
+        }
 
-        document.getElementById('export-data').addEventListener('click', () => {
-            this.exportData();
-        });
+        const exportDataBtn = document.getElementById('export-data');
+        if (exportDataBtn) {
+            exportDataBtn.addEventListener('click', () => {
+                this.exportData();
+            });
+        }
     }
 
     async updateSetting(key, value) {
@@ -104,6 +145,8 @@ class AdminDashboardManager {
         try {
             // Show loading state
             const button = document.getElementById('refresh-stats');
+            if (!button) return;
+            
             const originalText = button.textContent;
             button.textContent = '🔄 Refreshing...';
             button.disabled = true;
@@ -119,8 +162,10 @@ class AdminDashboardManager {
             
             // Reset button
             const button = document.getElementById('refresh-stats');
-            button.textContent = '🔄 Refresh Statistics';
-            button.disabled = false;
+            if (button) {
+                button.textContent = '🔄 Refresh Statistics';
+                button.disabled = false;
+            }
         }
     }
 
@@ -138,6 +183,8 @@ class AdminDashboardManager {
         try {
             // Show loading state
             const button = document.getElementById('assign-ff-roles');
+            if (!button) return;
+            
             const originalText = button.textContent;
             button.textContent = '🔄 Assigning...';
             button.disabled = true;
@@ -163,8 +210,10 @@ class AdminDashboardManager {
         } finally {
             // Reset button
             const button = document.getElementById('assign-ff-roles');
-            button.textContent = 'Assign FF Roles';
-            button.disabled = false;
+            if (button) {
+                button.textContent = 'Assign FF Roles';
+                button.disabled = false;
+            }
         }
     }
 
@@ -172,7 +221,10 @@ class AdminDashboardManager {
         const now = new Date();
         const timeString = now.toLocaleTimeString();
         const dateString = now.toLocaleDateString();
-        document.getElementById('last-updated-time').textContent = `${dateString} at ${timeString}`;
+        const lastUpdatedElement = document.getElementById('last-updated-time');
+        if (lastUpdatedElement) {
+            lastUpdatedElement.textContent = `${dateString} at ${timeString}`;
+        }
     }
 
     showNotification(message, type = 'info') {

@@ -61,12 +61,12 @@
             
             <!-- Call to Action -->
             <div class="space-y-4">
-                <a href="{{ url_for('register') }}" class="inline-block bg-ki-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ki-green-700 transition-colors shadow-lg">
+                <a href="{{ url_for('auth.register') }}" class="inline-block bg-ki-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-ki-green-700 transition-colors shadow-lg">
                     Start Your Wellness Journey
                 </a>
                 <p class="text-gray-600">
                     Already have an account? 
-                    <a href="{{ url_for('login') }}" class="text-ki-green-600 hover:text-ki-green-700 font-medium">Sign in here</a>
+                    <a href="{{ url_for('auth.login') }}" class="text-ki-green-600 hover:text-ki-green-700 font-medium">Sign in here</a>
                 </p>
             </div>
         </div>

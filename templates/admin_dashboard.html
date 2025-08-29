@@ -20,7 +20,7 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="{{ url_for('dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
+                    <a href="{{ url_for('dashboard.dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
                         ← Back to Dashboard
                     </a>
                 </div>
@@ -95,7 +95,7 @@
         <!-- Admin Navigation Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- User Management -->
-            <a href="{{ url_for('admin_users') }}" class="group">
+            <a href="{{ url_for('admin.admin_users') }}" class="group">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
                     <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
@@ -122,7 +122,7 @@
             </a>
 
             <!-- Analytics & Revenue -->
-            <a href="{{ url_for('admin_analytics') }}" class="group">
+            <a href="{{ url_for('admin.admin_analytics') }}" class="group">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
                     <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
@@ -149,7 +149,7 @@
             </a>
 
             <!-- System Settings -->
-            <a href="{{ url_for('admin_settings') }}" class="group">
+            <a href="{{ url_for('admin.admin_settings') }}" class="group">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
                     <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
@@ -181,7 +181,7 @@
             </a>
 
             <!-- Payment & Services -->
-            <a href="{{ url_for('admin_payments') }}" class="group">
+            <a href="{{ url_for('admin.admin_payments') }}" class="group">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
                     <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -208,7 +208,7 @@
             </a>
 
             <!-- System Information -->
-            <a href="{{ url_for('admin_system') }}" class="group">
+            <a href="{{ url_for('admin.admin_system') }}" class="group">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-6 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
                     <div class="flex items-center space-x-4 mb-4">
                         <div class="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center">
@@ -382,6 +382,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
-{% endblock %}
+<!-- Admin dashboard overview has its own inline JavaScript above -->

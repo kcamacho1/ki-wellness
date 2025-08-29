@@ -384,3 +384,43 @@ class RevenueLog(db.Model):
     def is_premium(self):
         """Check if user has premium access"""
         return self.is_active and self.plan_type == 'premium'
+
+
+class AppSettings(db.Model):
+    """Application settings model"""
+    __tablename__ = 'app_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(200))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class PaymentSession(db.Model):
+    """Payment session model for tracking human help payments"""
+    __tablename__ = 'payment_session'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(255), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Can be null for non-logged in users
+    email = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    payment_type = db.Column(db.String(50), nullable=False)  # '30min_session' or 'donation'
+    stripe_payment_intent_id = db.Column(db.String(255), nullable=True)
+    amount = db.Column(db.Integer, nullable=False)  # Amount in cents
+    status = db.Column(db.String(50), default='pending')  # pending, completed, failed, cancelled
+    calendly_link_sent = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AIAnalysis(db.Model):
+    """AI analysis results for users"""
+    __tablename__ = 'ai_analysis'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    analysis_data = db.Column(db.Text, nullable=False)  # JSON string of analysis
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

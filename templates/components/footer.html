@@ -20,11 +20,11 @@
                 <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
                 <ul class="space-y-2">
                     {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('dashboard') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Dashboard</a></li>
-                        <li><a href="{{ url_for('profile') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Profile</a></li>
+                        <li><a href="{{ url_for('dashboard.dashboard') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Dashboard</a></li>
+                        <li><a href="{{ url_for('dashboard.profile') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Profile</a></li>
                     {% else %}
-                        <li><a href="{{ url_for('login') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Login</a></li>
-                        <li><a href="{{ url_for('register') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Sign Up</a></li>
+                        <li><a href="{{ url_for('auth.login') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Sign Up</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -33,9 +33,9 @@
             <div>
                 <h3 class="text-lg font-semibold mb-4">Legal</h3>
                 <ul class="space-y-2">
-                    <li><a href="{{ url_for('privacy') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Privacy Policy</a></li>
-                    <li><a href="{{ url_for('terms') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Terms of Service</a></li>
-                    <li><a href="{{ url_for('disclaimer') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Disclaimer</a></li>
+                    <li><a href="{{ url_for('static_pages.privacy') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('static_pages.terms') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Terms of Service</a></li>
+                    <li><a href="{{ url_for('static_pages.disclaimer') }}" class="text-gray-300 hover:text-ki-green-400 transition-colors">Disclaimer</a></li>
                 </ul>
             </div>
         </div>

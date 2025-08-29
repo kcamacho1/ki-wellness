@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <div class="hidden md:flex items-center space-x-3">
-                    <a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}" 
+                    <a href="{{ url_for('dashboard.dashboard') if current_user.is_authenticated else url_for('static_pages.index') }}" 
                        class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors">
                         ← Back to {{ 'Dashboard' if current_user.is_authenticated else 'Home' }}
                     </a>

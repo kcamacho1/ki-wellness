@@ -58,14 +58,13 @@ This document outlines the organized structure of the Ki Wellness application.
 #### `/migrations/` - Database Migrations
 - `migrate_*.py` - All database migration scripts
 
-#### `/ai/` - AI Training & Management
-- `ai_training_system.py` - Main AI training system
-- `simple_ai_training.py` - Simplified training
-- `smart_training.py` - Advanced training
-- `fast_training.py` - Quick training
-- `train_with_pdfs.py` - PDF-based training
-- `manage_training.py` - Training management
-- `split_pdfs.py` - PDF processing
+#### `/routes/` - Blueprint Route Organization
+- `static_pages.py` - Static pages (home, privacy, terms)
+- `auth.py` - Authentication routes
+- `admin.py` - Admin dashboard and management
+- `dashboard.py` - Main app pages (dashboard, profile, AI coach)
+- `api.py` - API endpoints for app functionality
+- `payments.py` - Stripe payment and subscription routes
 
 #### `/config/` - Configuration Files
 - `render.yaml` - Render deployment configuration
@@ -79,22 +78,19 @@ This document outlines the organized structure of the Ki Wellness application.
 - `DEPLOYMENT_CHECKLIST.md` - Deployment checklist
 - `HUMAN_HELP_SETUP.md` - Human help integration guide
 - `STRIPE_WEBHOOK_SETUP.md` - Stripe webhook configuration
-- `AI_TRAINING_README.md` - AI training documentation
-- `PDF_TRAINING_GUIDE.md` - PDF training guide
+- `PROJECT_STRUCTURE.md` - This file
+- `DATABASE_SETUP.md` - Database configuration guide
 
 ### Data & Logs
 
-#### `/training_files/` - AI Training Data
-- PDF files and other training materials
-
-#### `/training_data/` - Processed Training Data
-- Processed and structured training data
+#### `/static/` - Static Web Assets
+- CSS, JavaScript, images, and other static files
 
 #### `/logs/` - Application Logs
 - `scheduled_analysis.log` - Scheduled task logs
 
 ### Database Files
-- `embeddings.db` - AI embeddings database
+- `instance/ki_wellness.db` - Local SQLite database (development)
 
 ## Import Structure
 
@@ -136,7 +132,7 @@ from database import db, User, FoodLog, etc.
 - **Tests**: `test_*.py`
 - **Migrations**: `migrate_*.py`
 - **Scripts**: Descriptive names like `create_test_user.py`
-- **AI Training**: Descriptive names like `ai_training_system.py`
+- **Routes**: Blueprint names like `auth.py`, `admin.py`
 - **Configuration**: Standard names like `render.yaml`, `build.sh`
 
 This structure makes the codebase more professional, maintainable, and easier to navigate for developers.

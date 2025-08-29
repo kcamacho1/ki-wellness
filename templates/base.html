@@ -213,7 +213,7 @@
                 
                 // Set session timeout (1 hour)
                 sessionTimer = setTimeout(() => {
-                    window.location.href = '{{ url_for("logout") }}';
+                    window.location.href = '{{ url_for("auth.logout") }}';
                 }, SESSION_TIMEOUT);
             }
             
@@ -235,7 +235,7 @@
                 // Add click handler to extend session
                 warningDiv.addEventListener('click', () => {
                     // Make an AJAX request to extend session
-                    fetch('{{ url_for("extend_session") }}', { method: 'GET' })
+                    fetch('{{ url_for("auth.extend_session") }}', { method: 'GET' })
                         .then(() => {
                             warningDiv.remove();
                             resetTimers();

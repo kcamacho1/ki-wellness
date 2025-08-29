@@ -215,7 +215,7 @@
                                 </svg>
                                 <span class="text-gray-700">Terms of Service</span>
                             </div>
-                            <a href="{{ url_for('terms') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                            <a href="{{ url_for('static_pages.terms') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
                                 View Terms
                             </a>
                         </div>
@@ -226,7 +226,7 @@
                                 </svg>
                                 <span class="text-gray-700">Privacy Policy</span>
                             </div>
-                            <a href="{{ url_for('privacy') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                            <a href="{{ url_for('static_pages.privacy') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
                                 View Policy
                             </a>
                         </div>
@@ -237,7 +237,7 @@
                                 </svg>
                                 <span class="text-gray-700">Medical Disclaimer</span>
                             </div>
-                            <a href="{{ url_for('disclaimer') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
+                            <a href="{{ url_for('static_pages.disclaimer') }}" target="_blank" class="text-ki-green-600 hover:text-ki-green-700 font-medium underline">
                                 View Disclaimer
                             </a>
                         </div>
@@ -316,7 +316,7 @@
         
         <!-- Back to Dashboard -->
         <div class="mt-8 text-center">
-            <a href="{{ url_for('dashboard') }}" 
+            <a href="{{ url_for('dashboard.dashboard') }}" 
                class="inline-flex items-center text-ki-green-600 hover:text-ki-green-700 font-medium">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

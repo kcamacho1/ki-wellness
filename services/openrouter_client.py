@@ -18,13 +18,13 @@ class OpenRouterClient:
     def __init__(self):
         self.api_key = os.getenv('OPENROUTER_API_KEY')
         self.base_url = "https://openrouter.ai/api/v1"
-        # Use custom preset as primary model
-        self.primary_model = "@preset/ki-wellness"
+        # Use Ki Wellness OpenRouter preset as primary model
+        self.primary_model = "@preset/ki-wellness"  # Custom preset: max $0.20/M input, $0.80/M output
         
         # Cost-effective fallback models (max $0.20/M input, $0.80/M output)
         self.fallback_models = [
+            '@preset/ki-wellness',       # Primary preset
             'openai/gpt-4o-mini',        # ~$0.15/M input, $0.60/M output
-            'anthropic/claude-3-haiku',   # ~$0.25/M input, $1.25/M output (slightly over but good quality)
             'meta-llama/llama-3.1-8b-instruct', # ~$0.20/M input, $0.80/M output
             'google/gemini-flash-1.5',   # ~$0.075/M input, $0.30/M output
             'mistralai/mistral-7b-instruct', # ~$0.14/M input, $0.42/M output
@@ -221,6 +221,14 @@ class OpenRouterClient:
     def get_model_pricing(self, model: str) -> Dict[str, float]:
         """Get pricing information for a model"""
         try:
+            # Handle Ki Wellness preset with known pricing
+            if model == "@preset/ki-wellness":
+                return {
+                    "input": 0.20,  # Max input cost as per user preference
+                    "output": 0.80, # Max output cost as per user preference
+                    "model": model
+                }
+            
             model_info = self.get_model_info(model)
             if not model_info:
                 # Return safe default values instead of infinity

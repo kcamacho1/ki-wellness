@@ -1,6 +1,7 @@
 /**
  * FoodJournal - A modular class for managing food journal functionality
  * Handles food search, barcode scanning, manual entry, and logging
+ * Version: 2.0.2 - Fixed null reference errors and enhanced Quagga error handling
  */
 class FoodJournal {
     constructor() {
@@ -114,13 +115,15 @@ class FoodJournal {
     closeModal() {
         if (!this.modal) return;
         
+        // Stop barcode scanner immediately to prevent any lingering processes
+        this.stopBarcodeScanner();
+        
         this.modal.classList.add('hide');
         
         setTimeout(() => {
             this.modal.classList.add('hidden');
             this.modal.classList.remove('show', 'hide');
             document.body.style.overflow = '';
-            this.stopBarcodeScanner();
             
             // Clear search fields when modal closes
             this.clearSearchFields();
@@ -434,49 +437,53 @@ class FoodJournal {
      * Update nutrition display in food selection modal based on serving size
      */
     updateFoodSelectionNutrition() {
-        if (!this.selectedFood) {
-            console.warn('updateFoodSelectionNutrition called but no selectedFood available');
-            return;
+        try {
+            if (!this.selectedFood) {
+                console.warn('updateFoodSelectionNutrition called but no selectedFood available');
+                return;
+            }
+            
+            const amountInput = document.getElementById('food-selection-amount');
+            const unitSelect = document.getElementById('food-selection-unit');
+            
+            if (!amountInput || !unitSelect) {
+                console.warn('updateFoodSelectionNutrition called but input elements not found');
+                return;
+            }
+            
+            const amount = parseFloat(amountInput.value) || 1;
+            const unit = unitSelect.value || 'serving';
+            
+            // Validate selectedFood has required properties
+            if (typeof this.selectedFood !== 'object' || this.selectedFood === null) {
+                console.error('selectedFood is not a valid object:', this.selectedFood);
+                return;
+            }
+            
+            // Calculate nutrition based on the same logic as confirmFoodSelection
+            const baseServingSize = this.selectedFood.serving_size || 100;
+            const actualAmount = unit === 'g' ? amount : amount * baseServingSize;
+            const multiplier = actualAmount / baseServingSize;
+            
+            // Calculate scaled nutrition values
+            const scaledCalories = Math.round((this.selectedFood.calories || 0) * multiplier);
+            const scaledProtein = Math.round((this.selectedFood.protein || 0) * multiplier * 10) / 10;
+            const scaledCarbs = Math.round((this.selectedFood.carbs || 0) * multiplier * 10) / 10;
+            const scaledFat = Math.round((this.selectedFood.fat || 0) * multiplier * 10) / 10;
+            
+            // Update the displayed nutrition values
+            const caloriesEl = document.getElementById('selected-food-calories');
+            const proteinEl = document.getElementById('selected-food-protein');
+            const carbsEl = document.getElementById('selected-food-carbs');
+            const fatEl = document.getElementById('selected-food-fat');
+            
+            if (caloriesEl) caloriesEl.textContent = scaledCalories;
+            if (proteinEl) proteinEl.textContent = scaledProtein + 'g';
+            if (carbsEl) carbsEl.textContent = scaledCarbs + 'g';
+            if (fatEl) fatEl.textContent = scaledFat + 'g';
+        } catch (error) {
+            console.error('Error updating food selection nutrition:', error);
         }
-        
-        const amountInput = document.getElementById('food-selection-amount');
-        const unitSelect = document.getElementById('food-selection-unit');
-        
-        if (!amountInput || !unitSelect) {
-            console.warn('updateFoodSelectionNutrition called but input elements not found');
-            return;
-        }
-        
-        const amount = parseFloat(amountInput.value) || 1;
-        const unit = unitSelect.value || 'serving';
-        
-        // Validate selectedFood has required properties
-        if (typeof this.selectedFood !== 'object') {
-            console.error('selectedFood is not an object:', this.selectedFood);
-            return;
-        }
-        
-        // Calculate nutrition based on the same logic as confirmFoodSelection
-        const baseServingSize = this.selectedFood.serving_size || 100;
-        const actualAmount = unit === 'g' ? amount : amount * baseServingSize;
-        const multiplier = actualAmount / baseServingSize;
-        
-        // Calculate scaled nutrition values
-        const scaledCalories = Math.round((this.selectedFood.calories || 0) * multiplier);
-        const scaledProtein = Math.round((this.selectedFood.protein || 0) * multiplier * 10) / 10;
-        const scaledCarbs = Math.round((this.selectedFood.carbs || 0) * multiplier * 10) / 10;
-        const scaledFat = Math.round((this.selectedFood.fat || 0) * multiplier * 10) / 10;
-        
-        // Update the displayed nutrition values
-        const caloriesEl = document.getElementById('selected-food-calories');
-        const proteinEl = document.getElementById('selected-food-protein');
-        const carbsEl = document.getElementById('selected-food-carbs');
-        const fatEl = document.getElementById('selected-food-fat');
-        
-        if (caloriesEl) caloriesEl.textContent = scaledCalories;
-        if (proteinEl) proteinEl.textContent = scaledProtein + 'g';
-        if (carbsEl) carbsEl.textContent = scaledCarbs + 'g';
-        if (fatEl) fatEl.textContent = scaledFat + 'g';
     }
 
     /**
@@ -492,6 +499,9 @@ class FoodJournal {
         // Remove event listeners
         this.removeFoodSelectionModalEvents();
         
+        // Clear selected food reference to prevent memory leaks and null reference errors
+        this.selectedFood = null;
+        
         this.logActivity('Food selection modal closed');
     }
     
@@ -499,15 +509,24 @@ class FoodJournal {
      * Confirm food selection and add to log
      */
     async confirmFoodSelection() {
+        console.log('🔧 confirmFoodSelection called, selectedFood:', this.selectedFood);
+        
         if (!this.selectedFood) {
+            console.error('❌ No selectedFood available in confirmFoodSelection');
             this.showToast('No food item selected', 'error');
             return;
         }
         
+        // Store reference to selected food before operations
+        const selectedFood = this.selectedFood;
+        const foodName = selectedFood?.name || 'Unknown Food';
+        
+        console.log('✅ Using selectedFood:', selectedFood, 'foodName:', foodName);
+        
         // Get form values
-        const amount = parseFloat(document.getElementById('food-selection-amount').value) || 1;
-        const unit = document.getElementById('food-selection-unit').value || 'serving';
-        const mealType = document.getElementById('food-selection-meal-type').value || 'snack';
+        const amount = parseFloat(document.getElementById('food-selection-amount')?.value) || 1;
+        const unit = document.getElementById('food-selection-unit')?.value || 'serving';
+        const mealType = document.getElementById('food-selection-meal-type')?.value || 'snack';
         
         // Validate inputs
         if (amount <= 0) {
@@ -517,18 +536,18 @@ class FoodJournal {
         
         // Calculate nutrition values based on serving size
         // Base nutrition values are typically per 100g, so we need to scale properly
-        const baseServingSize = this.selectedFood.serving_size || 100; // Default to 100g if not specified
+        const baseServingSize = selectedFood.serving_size || 100; // Default to 100g if not specified
         const actualAmount = unit === 'g' ? amount : amount * baseServingSize; // Convert to grams if needed
         const multiplier = actualAmount / baseServingSize; // Calculate the proper ratio
         
 
         
         const adjustedFoodItem = {
-            ...this.selectedFood,
-            calories: Math.round((this.selectedFood.calories || 0) * multiplier),
-            protein: Math.round((this.selectedFood.protein || 0) * multiplier * 10) / 10, // 1 decimal place
-            carbs: Math.round((this.selectedFood.carbs || 0) * multiplier * 10) / 10,
-            fat: Math.round((this.selectedFood.fat || 0) * multiplier * 10) / 10,
+            ...selectedFood,
+            calories: Math.round((selectedFood.calories || 0) * multiplier),
+            protein: Math.round((selectedFood.protein || 0) * multiplier * 10) / 10, // 1 decimal place
+            carbs: Math.round((selectedFood.carbs || 0) * multiplier * 10) / 10,
+            fat: Math.round((selectedFood.fat || 0) * multiplier * 10) / 10,
             serving_size: actualAmount,
             serving_unit: 'g'
         };
@@ -538,10 +557,11 @@ class FoodJournal {
         // Add to log with selected parameters
         await this.addFoodToLog(adjustedFoodItem, mealType);
         
-        // Close the food selection modal
-        this.closeFoodSelectionModal();
+        // Log before closing modal (while selectedFood is still available)
+        this.logActivity(`Food confirmed and added: ${foodName} (${amount} ${unit}, ${mealType})`);
         
-        this.logActivity(`Food confirmed and added: ${this.selectedFood.name} (${amount} ${unit}, ${mealType})`);
+        // Close the food selection modal (this clears selectedFood)
+        this.closeFoodSelectionModal();
     }
     
     /**
@@ -637,91 +657,131 @@ class FoodJournal {
             return;
         }
         
-        // Configure QuaggaJS with mobile-optimized settings
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: video,
-                constraints: {
-                    width: { min: 640, ideal: 1280 },
-                    height: { min: 480, ideal: 720 },
-                    facingMode: "environment", // Use rear camera
-                    aspectRatio: { min: 1, max: 2 }
+        // Configure QuaggaJS with mobile-optimized settings and error protection
+        try {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: video,
+                    constraints: {
+                        width: { min: 640, ideal: 1280 },
+                        height: { min: 480, ideal: 720 },
+                        facingMode: "environment", // Use rear camera
+                        aspectRatio: { min: 1, max: 2 }
+                    },
                 },
-            },
-            locator: {
-                patchSize: "medium",
-                halfSample: true
-            },
-            numOfWorkers: navigator.hardwareConcurrency || 2, // Use available CPU cores
-            frequency: 10,
-            decoder: {
-                readers: [
-                    "ean_reader",        // Most common for food products
-                    "ean_8_reader",      // Shorter EAN codes
-                    "upc_reader",        // Universal Product Code
-                    "upc_e_reader",      // UPC-E format
-                    "code_128_reader",   // Code 128
-                    "code_39_reader",    // Code 39
-                    "code_39_vin_reader", // Code 39 VIN
-                    "codabar_reader",    // Codabar
-                    "i2of5_reader"       // Interleaved 2 of 5
-                ]
-            },
-            locate: true
-        }, (err) => {
-            if (err) {
-                console.error('Quagga initialization failed:', err);
-                this.showToast('Failed to initialize barcode scanner', 'error');
-                return;
-            }
-            
-            console.log('Quagga initialized successfully');
-            Quagga.start();
-            
-            // Add visual scanning indicator
-            this.updateScanningIndicator();
-        });
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                },
+                numOfWorkers: Math.min(navigator.hardwareConcurrency || 2, 4), // Limit workers to prevent issues
+                frequency: 10,
+                decoder: {
+                    readers: [
+                        "ean_reader",        // Most common for food products
+                        "ean_8_reader",      // Shorter EAN codes
+                        "upc_reader",        // Universal Product Code
+                        "upc_e_reader",      // UPC-E format
+                        "code_128_reader",   // Code 128
+                        "code_39_reader",    // Code 39
+                        "code_39_vin_reader", // Code 39 VIN
+                        "codabar_reader",    // Codabar
+                        "i2of5_reader"       // Interleaved 2 of 5
+                    ]
+                },
+                locate: true,
+                // Add debug settings to help isolate issues
+                debug: {
+                    drawBoundingBox: false,
+                    showFrequency: false,
+                    drawScanline: false,
+                    showPattern: false
+                }
+            }, (err) => {
+                if (err) {
+                    console.error('Quagga initialization failed:', err);
+                    this.showToast('Failed to initialize barcode scanner', 'error');
+                    return;
+                }
+                
+                console.log('Quagga initialized successfully');
+                
+                try {
+                    Quagga.start();
+                    // Add visual scanning indicator
+                    this.updateScanningIndicator();
+                } catch (startError) {
+                    console.error('Quagga start failed:', startError);
+                    this.showToast('Failed to start barcode scanner', 'error');
+                }
+            });
+        } catch (initError) {
+            console.error('Quagga init setup failed:', initError);
+            this.showToast('Barcode scanner initialization error', 'error');
+        }
         
         // Listen for barcode detection with improved error handling
         Quagga.onDetected((result) => {
-            const code = result.codeResult.code;
-            const format = result.codeResult.format;
-            console.log('Barcode detected:', code, 'Format:', format);
-            
-            // Validate barcode format and length
-            if (this.isValidBarcode(code, format)) {
-                // Stop scanning and search for the product
-                this.stopBarcodeScanner();
-                this.searchBarcodeByCode(code);
-            } else {
-                console.log('Invalid barcode format, continuing scan...');
+            try {
+                // Validate result structure
+                if (!result || !result.codeResult) {
+                    console.warn('Invalid detection result structure:', result);
+                    return;
+                }
+                
+                const code = result.codeResult.code;
+                const format = result.codeResult.format || 'unknown';
+                
+                if (!code) {
+                    console.warn('No barcode code detected in result');
+                    return;
+                }
+                
+                console.log('Barcode detected:', code, 'Format:', format);
+                
+                // Validate barcode format and length
+                if (this.isValidBarcode(code, format)) {
+                    // Stop scanning and search for the product
+                    this.stopBarcodeScanner();
+                    this.searchBarcodeByCode(code);
+                } else {
+                    console.log('Invalid barcode format, continuing scan...');
+                }
+            } catch (error) {
+                console.error('Error processing barcode detection:', error);
             }
         });
         
         // Listen for processing with improved visual feedback
         Quagga.onProcessed((result) => {
-            const drawingCanvas = Quagga.canvas.dom.overlay;
-            if (!drawingCanvas) return;
-            
-            const drawingCtx = drawingCanvas.getContext('2d');
-            
-            if (result) {
-                if (result.boxes) {
-                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                    result.boxes.filter((box) => box !== result.box).forEach((box) => {
-                        Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
-                    });
-                }
+            try {
+                const drawingCanvas = Quagga.canvas?.dom?.overlay;
+                if (!drawingCanvas) return;
                 
-                if (result.box) {
-                    Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
-                }
+                const drawingCtx = drawingCanvas.getContext('2d');
+                if (!drawingCtx) return;
                 
-                if (result.codeResult && result.codeResult.code) {
-                    Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                if (result && typeof result === 'object') {
+                    if (result.boxes && Array.isArray(result.boxes)) {
+                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                        result.boxes.filter((box) => box && box !== result.box).forEach((box) => {
+                            if (box && typeof box === 'object') {
+                                Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                            }
+                        });
+                    }
+                    
+                    if (result.box && typeof result.box === 'object') {
+                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "blue", lineWidth: 2 });
+                    }
+                    
+                    if (result.codeResult && result.codeResult.code && result.line && typeof result.line === 'object') {
+                        Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                    }
                 }
+            } catch (error) {
+                console.warn('Error in Quagga onProcessed callback:', error);
             }
         });
     }
@@ -808,15 +868,34 @@ class FoodJournal {
      * Stop barcode scanner
      */
     stopBarcodeScanner() {
-        // Stop QuaggaJS
-        if (typeof Quagga !== 'undefined') {
-            Quagga.stop();
+        try {
+            // Stop QuaggaJS safely
+            if (typeof Quagga !== 'undefined') {
+                console.log('🛑 Stopping Quagga scanner');
+                Quagga.stop();
+                
+                // Clear any remaining event listeners
+                Quagga.offDetected();
+                Quagga.offProcessed();
+            }
+        } catch (quaggaError) {
+            console.warn('Error stopping Quagga:', quaggaError);
         }
         
-        // Stop camera stream
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-            this.stream = null;
+        try {
+            // Stop camera stream
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => {
+                    try {
+                        track.stop();
+                    } catch (trackError) {
+                        console.warn('Error stopping camera track:', trackError);
+                    }
+                });
+                this.stream = null;
+            }
+        } catch (streamError) {
+            console.warn('Error stopping camera stream:', streamError);
         }
         
         // Reset video styling
