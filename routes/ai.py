@@ -18,6 +18,48 @@ from utils.helpers import (
 # Create blueprint
 ai_bp = Blueprint('ai', __name__)
 
+@ai_bp.route('/api/get-stored-analysis')
+@login_required
+def get_stored_analysis():
+    """Get stored AI analysis for all users (7-day data view)"""
+    try:
+        # Get existing analysis from database
+        analysis_record = AIAnalysis.query.filter_by(user_id=current_user.id).first()
+        
+        if analysis_record:
+            analysis_data = json.loads(analysis_record.analysis_data)
+            return jsonify({
+                'success': True,
+                'analysis': analysis_data,
+                'updated_at': analysis_record.updated_at.isoformat() if analysis_record.updated_at else None
+            })
+        else:
+            # Return empty state for users without analysis
+            return jsonify({
+                'success': True,
+                'analysis': None,
+                'updated_at': None
+            })
+            
+    except Exception as e:
+        print(f"Error getting stored analysis: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@ai_bp.route('/api/check-premium-access')
+@login_required
+def check_premium_access():
+    """Check if user has premium access"""
+    try:
+        has_premium = current_user.has_premium_access()
+        return jsonify({
+            'success': True,
+            'has_premium_access': has_premium,
+            'user_role': current_user.role
+        })
+    except Exception as e:
+        print(f"Error checking premium access: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @ai_bp.route('/api/generate-ai-analysis', methods=['POST'])
 @login_required
 @premium_required

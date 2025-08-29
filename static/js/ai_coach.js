@@ -907,11 +907,12 @@ class AICoachManager {
 
     async checkPremiumStatus() {
         try {
-            const response = await fetch('/api/subscription-status');
+            const response = await fetch('/api/check-premium-access');
             const data = await response.json();
             
             if (data.success) {
-                this.isPremium = data.is_premium;
+                this.isPremium = data.has_premium_access;
+                this.userRole = data.user_role;
                 this.updateUIForPremiumStatus();
             } else {
                 console.error('Failed to check premium status:', data.error);
@@ -926,33 +927,47 @@ class AICoachManager {
     }
 
     updateUIForPremiumStatus() {
-        const premiumPrompt = document.getElementById('premium-upgrade-prompt');
+        const premiumFeatureNotice = document.getElementById('premium-feature-notice');
         const aiFeatures = document.getElementById('ai-features');
         const chatButton = document.getElementById('chat-button');
+        const chatButtonHero = document.getElementById('chat-button-hero');
+        const refreshButton = document.getElementById('refresh-analysis');
         const refreshPremiumBadge = document.getElementById('refresh-premium-badge');
         const chatPremiumBadge = document.getElementById('chat-premium-badge');
         const chatTooltipText = document.getElementById('chat-tooltip-text');
         const heroPremiumBadge = document.getElementById('hero-premium-badge');
         
         if (this.isPremium) {
-            // Premium user - show AI features and enable chat
-            if (premiumPrompt) premiumPrompt.classList.add('hidden');
+            // Premium user - enable all features
+            if (premiumFeatureNotice) premiumFeatureNotice.classList.add('hidden');
             if (aiFeatures) aiFeatures.classList.remove('hidden');
             if (chatButton) {
                 chatButton.classList.remove('hidden');
                 chatButton.classList.remove('premium-locked');
+            }
+            if (chatButtonHero) {
+                chatButtonHero.disabled = false;
+            }
+            if (refreshButton) {
+                refreshButton.disabled = false;
             }
             if (refreshPremiumBadge) refreshPremiumBadge.classList.add('hidden');
             if (chatPremiumBadge) chatPremiumBadge.classList.add('hidden');
             if (heroPremiumBadge) heroPremiumBadge.classList.add('hidden');
             if (chatTooltipText) chatTooltipText.textContent = 'Chat with AI Coach';
         } else {
-            // Free user - show upgrade prompt, but keep chat button visible with premium indicator
-            if (premiumPrompt) premiumPrompt.classList.remove('hidden');
-            if (aiFeatures) aiFeatures.classList.add('hidden');
+            // Non-premium user - show analytics but disable premium features
+            if (premiumFeatureNotice) premiumFeatureNotice.classList.remove('hidden');
+            if (aiFeatures) aiFeatures.classList.remove('hidden'); // Still show for analytics viewing
             if (chatButton) {
                 chatButton.classList.remove('hidden');
                 chatButton.classList.add('premium-locked');
+            }
+            if (chatButtonHero) {
+                chatButtonHero.disabled = true;
+            }
+            if (refreshButton) {
+                refreshButton.disabled = true;
             }
             if (refreshPremiumBadge) refreshPremiumBadge.classList.remove('hidden');
             if (chatPremiumBadge) chatPremiumBadge.classList.remove('hidden');
