@@ -1,0 +1,25 @@
+# Ki Wellness Environment Configuration
+# Copy this file to .env and fill in your actual values
+
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/ki_wellness
+
+# SendGrid Email Configuration
+SENDGRID_API_KEY=your-sendgrid-api-key-here
+
+# Email Settings
+FROM_EMAIL=your-email@example.com
+FROM_NAME=Ki Wellness
+
+# Application Settings
+APP_URL=http://localhost:5000
+SECRET_KEY=your-secret-key-here
+
+# Security Settings
+RECAPTCHA_SITE_KEY=your-recaptcha-site-key
+RECAPTCHA_SECRET_KEY=your-recaptcha-secret-key
+
+# Stripe Configuration (if using payments)
+STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
