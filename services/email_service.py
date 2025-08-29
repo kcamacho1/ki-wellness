@@ -1,8 +1,8 @@
 import logging
+import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content, HtmlContent
 from config.email_config import EmailConfig
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class EmailService:
             logger.error(f"Error sending password reset email: {str(e)}")
             return False
     
-    def _send_sendgrid_email(self, to_email, subject, html_content):
+    def _send_sendgrid_email(self, to_email, subject, html_content, text_content=None):
         """Send email via SendGrid"""
         try:
             from_email = Email(self.from_email, self.from_name)
@@ -51,10 +51,14 @@ class EmailService:
                 html_content=html_content
             )
             
+            # Add plain text content if provided
+            if text_content:
+                mail.add_content(Content("text/plain", text_content))
+            
             response = self.sendgrid_client.send(mail)
             
             if response.status_code in [200, 201, 202]:
-                logger.info(f"Password reset email sent successfully via SendGrid to {to_email}")
+                logger.info(f"Email sent successfully via SendGrid to {to_email}")
                 return True
             else:
                 logger.error(f"Failed to send email via SendGrid. Status: {response.status_code}, Body: {response.body}")
@@ -63,6 +67,53 @@ class EmailService:
         except Exception as e:
             logger.error(f"Failed to send SendGrid email: {str(e)}")
             return False
+    
+    def _render_email_template(self, template_path, context):
+        """Render an email template from the templates directory."""
+        try:
+            # This requires Flask's render_template or a similar templating engine.
+            # For simplicity, we'll read the file and use basic string replacement.
+            template_full_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates', template_path)
+            with open(template_full_path, 'r') as f:
+                template_content = f.read()
+            
+            # Basic template variable replacement
+            rendered_html = template_content
+            for key, value in context.items():
+                rendered_html = rendered_html.replace(f'{{{{ {key} }}}}', str(value))
+            return rendered_html
+        except Exception as e:
+            logger.error(f"Error rendering email template {template_path}: {e}")
+            # Fallback to a simple HTML if template rendering fails
+            return self._get_email_verification_html_fallback(context.get('verification_link'), context.get('username'))
+    
+    def _get_email_verification_html_fallback(self, verification_link, username):
+        """Generate fallback HTML content for email verification email"""
+        username_display = username or "there"
+        
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Verify Your Ki Wellness Email</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #059669;">Welcome to Ki Wellness!</h1>
+                <p>Hello {username_display},</p>
+                <p>Thank you for creating your account. Please verify your email address by clicking the link below:</p>
+                <p style="text-align: center; margin: 30px 0;">
+                    <a href="{verification_link}" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Verify Email Address</a>
+                </p>
+                <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">{verification_link}</p>
+                <p>This link will expire in 24 hours for security reasons.</p>
+                <p>Best regards,<br>The Ki Wellness Team</p>
+            </div>
+        </body>
+        </html>
+        """
     
     def _get_password_reset_html(self, reset_link, username):
         """Generate beautiful HTML content for password reset email using template"""
@@ -150,6 +201,61 @@ class EmailService:
         If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
 
         Best regards,
+        The Ki Wellness Team
+
+                        ---
+                This is an automated message. Please do not reply to this email.
+                If you need assistance, please contact our support team.
+                """
+    
+    def send_email_verification(self, to_email, verification_token, username=None):
+        """Send email verification email"""
+        if not self.sendgrid_client:
+            logger.error("Cannot send email: SendGrid not configured")
+            return False
+        
+        try:
+            verification_link = EmailConfig.get_verification_link(verification_token)
+            subject = EmailConfig.EMAIL_VERIFICATION_SUBJECT
+            
+            # Render HTML content from template
+            html_content = self._render_email_template('emails/email_verification.html', {
+                'username': username or 'there',
+                'verification_link': verification_link,
+                'app_url': EmailConfig.APP_URL
+            })
+            
+            # Fallback to plain text
+            text_content = self._get_email_verification_text(verification_link, username)
+            
+            return self._send_sendgrid_email(to_email, subject, html_content, text_content)
+                
+        except Exception as e:
+            logger.error(f"Error sending email verification email: {str(e)}")
+            return False
+    
+    def _get_email_verification_text(self, verification_link, username):
+        """Generate plain text content for email verification email"""
+        username_display = username or "there"
+        
+        return f"""
+        Welcome to Ki Wellness, {username_display}!
+
+        Thank you for creating your account. To get started, please verify your email address by visiting this link:
+        {verification_link}
+
+        This link will expire in 24 hours for security reasons.
+
+        Once verified, you'll be able to access all Ki Wellness features including:
+        - Comprehensive nutrition tracking
+        - Smart water monitoring  
+        - Mood logging and analytics
+        - Personalized recipe recommendations
+        - Detailed health insights
+
+        If you didn't create this account, you can safely ignore this email.
+
+        Welcome to your wellness journey!
         The Ki Wellness Team
 
         ---

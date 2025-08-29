@@ -3,6 +3,7 @@ import requests
 import json
 import uuid
 import re
+import secrets
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
 import mimetypes
@@ -585,6 +586,11 @@ def login():
         
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
+            # Check if email is verified
+            if not user.email_verified:
+                flash('Please verify your email address before logging in. Check your inbox for the verification link.', 'warning')
+                return render_template('login.html')
+            
             login_user(user, remember=True)  # Enable remember me functionality
             session.permanent = True  # Make session permanent for timeout tracking
             return redirect(url_for('dashboard'))
@@ -674,7 +680,11 @@ def register():
             flash('Email already registered', 'error')
             return render_template('register.html', registration_disabled=registration_disabled, allowed_emails=allowed_emails)
         
-        # Create new user
+        # Generate email verification token
+        verification_token = secrets.token_urlsafe(32)
+        verification_expires = datetime.utcnow() + timedelta(hours=24)
+        
+        # Create new user with email verification required
         user = User(
             username=username,
             email=email,
@@ -683,12 +693,34 @@ def register():
             agreed_to_terms=True,
             agreed_to_privacy=True,
             agreed_to_disclaimer=True,
-            agreements_date=datetime.utcnow()
+            agreements_date=datetime.utcnow(),
+            email_verified=False,
+            email_verification_token=verification_token,
+            email_verification_expires=verification_expires,
+            email_verification_sent_at=datetime.utcnow()
         )
         db.session.add(user)
         db.session.commit()
         
-        flash('Registration successful! Please log in.', 'success')
+        # Send verification email
+        try:
+            from services.email_service import EmailService
+            email_service = EmailService()
+            email_sent = email_service.send_email_verification(
+                to_email=email,
+                verification_token=verification_token,
+                username=name
+            )
+            
+            if email_sent:
+                flash('Registration successful! Please check your email and click the verification link before logging in.', 'success')
+            else:
+                flash('Registration successful, but we couldn\'t send the verification email. Please contact support.', 'warning')
+                
+        except Exception as e:
+            logger.error(f"Failed to send verification email: {str(e)}")
+            flash('Registration successful, but we couldn\'t send the verification email. Please contact support.', 'warning')
+        
         return redirect(url_for('login'))
     
     return render_template('register.html', 
@@ -798,6 +830,98 @@ def reset_password(token):
             flash('There was an error resetting your password. Please try again.', 'error')
     
     return render_template('reset_password.html')
+
+# Email Verification Route
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    """Handle email verification with token"""
+    # Find user by verification token
+    user = User.query.filter_by(email_verification_token=token).first()
+    
+    if not user:
+        flash('Invalid verification link. Please contact support if you continue to have issues.', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if token has expired
+    if user.email_verification_expires and user.email_verification_expires < datetime.utcnow():
+        flash('Verification link has expired. Please contact support to resend a new verification email.', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if already verified
+    if user.email_verified:
+        flash('Your email is already verified! You can log in now.', 'info')
+        return redirect(url_for('login'))
+    
+    # Verify the email
+    try:
+        user.email_verified = True
+        user.email_verification_token = None
+        user.email_verification_expires = None
+        db.session.commit()
+        
+        flash('🎉 Email verified successfully! You can now log in to your account.', 'success')
+        logger.info(f"Email verified for user: {user.username}")
+        
+    except Exception as e:
+        logger.error(f"Error verifying email for user {user.username}: {str(e)}")
+        db.session.rollback()
+        flash('There was an error verifying your email. Please try again or contact support.', 'error')
+    
+    return redirect(url_for('login'))
+
+# Resend verification email route
+@app.route('/resend-verification', methods=['POST'])
+@rate_limit(max_requests=3, window=300)  # Limit resend attempts
+def resend_verification():
+    """Resend email verification"""
+    email = request.form.get('email', '').strip().lower()
+    
+    if not email:
+        flash('Please provide your email address.', 'error')
+        return redirect(url_for('login'))
+    
+    user = User.query.filter_by(email=email).first()
+    
+    if not user:
+        # Don't reveal if email exists for security
+        flash('If an account with that email exists and is unverified, a new verification email has been sent.', 'info')
+        return redirect(url_for('login'))
+    
+    if user.email_verified:
+        flash('Your email is already verified! You can log in now.', 'info')
+        return redirect(url_for('login'))
+    
+    # Generate new verification token
+    verification_token = secrets.token_urlsafe(32)
+    verification_expires = datetime.utcnow() + timedelta(hours=24)
+    
+    try:
+        # Update user with new token
+        user.email_verification_token = verification_token
+        user.email_verification_expires = verification_expires
+        user.email_verification_sent_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Send verification email
+        from services.email_service import EmailService
+        email_service = EmailService()
+        email_sent = email_service.send_email_verification(
+            to_email=email,
+            verification_token=verification_token,
+            username=user.name
+        )
+        
+        if email_sent:
+            flash('A new verification email has been sent. Please check your inbox.', 'success')
+        else:
+            flash('There was an error sending the verification email. Please try again later.', 'error')
+            
+    except Exception as e:
+        logger.error(f"Failed to resend verification email to {email}: {str(e)}")
+        db.session.rollback()
+        flash('There was an error sending the verification email. Please try again later.', 'error')
+    
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
