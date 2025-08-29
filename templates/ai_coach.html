@@ -34,35 +34,7 @@
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <!-- AI Usage Display -->
-        <div id="ai-usage-display" class="mb-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50 p-4">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Your AI Usage Today</h3>
-                    <p class="text-xs text-gray-500">Shows your personal usage and limits</p>
-                </div>
-                <button id="refresh-usage" class="text-sm text-blue-600 hover:text-blue-700 transition-colors">
-                    🔄 Refresh
-                </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div class="text-center p-3 bg-gray-50 rounded-xl">
-                    <div class="font-semibold text-blue-600" id="usage-tokens">--</div>
-                    <div class="text-gray-600">Tokens Used</div>
-                    <div class="text-xs text-gray-500" id="token-limit">--</div>
-                </div>
-                <div class="text-center p-3 bg-gray-50 rounded-xl">
-                    <div class="font-semibold text-green-600" id="usage-calls">--</div>
-                    <div class="text-gray-600">Calls Made</div>
-                    <div class="text-xs text-gray-500" id="call-limit">--</div>
-                </div>
-                <div class="text-center p-3 bg-gray-50 rounded-xl">
-                    <div class="font-semibold text-purple-600" id="usage-cost">$--</div>
-                    <div class="text-gray-600">Cost Today</div>
-                    <div class="text-xs text-gray-500" id="cost-limit">--</div>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Loading State -->
         <div id="loading-state" class="text-center py-12">
@@ -100,22 +72,70 @@
                     </div>
                 </div>
             </div>
-            <!-- Hero Section with Chat CTA -->
+            <!-- Hero Section with Chat CTA and AI Usage -->
             <div id="ai-features" class="bg-gradient-to-r from-ki-green-500 to-blue-600 rounded-3xl p-4 sm:p-6 mb-8 text-white relative overflow-hidden">
                 <div class="absolute inset-0 bg-black/10"></div>
                 <div class="relative z-10">
-                    <div class="flex items-center space-x-4 mb-3">
-                        <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
+                    <!-- Top Row: Ready to Chat + Usage Stats -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                        <div class="flex items-center space-x-4 mb-3 sm:mb-0">
+                            <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl sm:text-2xl font-bold">Ready to Chat?</h2>
+                                <p class="text-sm text-ki-green-100">Ask me anything about your wellness journey</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 class="text-xl sm:text-2xl font-bold">Ready to Chat?</h2>
-                            <p class="text-sm text-ki-green-100">Ask me anything about your wellness journey</p>
+                        
+                        <!-- AI Usage Stats - Right Side -->
+                        <div id="ai-usage-display" class="flex items-center space-x-3">
+                            <div class="text-center p-4 bg-white/95 backdrop-blur-sm rounded-xl border border-white/50 shadow-lg">
+                                <div class="font-bold text-gray-800 text-xl" id="usage-calls">--</div>
+                                <div class="text-gray-600 text-sm font-medium">Calls Today</div>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button id="toggle-usage-details" class="flex items-center space-x-2 text-sm text-white bg-white/20 hover:bg-white/30 transition-colors px-3 py-2 rounded-lg border border-white/30">
+                                    <span class="font-medium">Details</span>
+                                    <svg id="usage-chevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <button id="refresh-usage" class="text-sm text-white/90 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/10 font-medium">
+                                    🔄 Refresh
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-3">
+                    
+                    <!-- Detailed Usage Dropdown - Full Width Below -->
+                    <div id="usage-details" class="hidden mb-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                            <div class="text-center p-4 bg-white/90 backdrop-blur-sm rounded-xl border border-white/40 shadow-md">
+                                <div class="font-bold text-blue-700 text-lg" id="usage-tokens">--</div>
+                                <div class="text-gray-700 text-sm font-medium">Tokens Used</div>
+                                <div class="text-xs text-gray-600 mt-1" id="token-limit">--</div>
+                            </div>
+                            <div class="text-center p-4 bg-white/90 backdrop-blur-sm rounded-xl border border-white/40 shadow-md">
+                                <div class="font-bold text-green-700 text-lg" id="usage-calls-detailed">--</div>
+                                <div class="text-gray-700 text-sm font-medium">Calls Made</div>
+                                <div class="text-xs text-gray-600 mt-1" id="call-limit">--</div>
+                            </div>
+                            <div class="text-center p-4 bg-white/90 backdrop-blur-sm rounded-xl border border-white/40 shadow-md">
+                                <div class="font-bold text-purple-700 text-lg" id="usage-cost">$--</div>
+                                <div class="text-gray-700 text-sm font-medium">Cost Today</div>
+                                <div class="text-xs text-gray-600 mt-1" id="cost-limit">--</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm text-white/90 text-center bg-white/20 rounded-lg py-2 px-4">
+                            📊 Your personal usage and limits
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Action Button -->
+                    <div class="flex flex-wrap gap-3 mb-4">
                         <button id="chat-button-hero" class="px-5 py-2.5 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-xl hover:bg-white/30 transition-all duration-200 border border-white/30 relative">
                             💬 Start Chat
                             <span id="hero-premium-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-xs font-bold flex items-center justify-center shadow-lg text-white">
@@ -123,6 +143,7 @@
                             </span>
                         </button>
                     </div>
+
                 </div>
                 <!-- Decorative elements -->
                 <div class="absolute top-3 right-3 w-16 h-16 bg-white/10 rounded-full"></div>

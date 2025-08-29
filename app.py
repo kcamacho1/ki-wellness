@@ -2096,29 +2096,13 @@ def _create_optimized_prompt(message, context, context_type, chat_history):
         base_prompt += f"Context: {relevant_context}\n"
         print(f"Extracted relevant context: {relevant_context}")
     
-    # Add only 1-2 most relevant resources to save space
-    resources = get_relevant_resources(context_type, _determine_topic(message))
-    if resources:
-        # Limit to 2 most relevant resources
-        limited_resources = resources[:2]
-        base_prompt += format_resources_for_prompt(limited_resources)
-        print(f"Added {len(limited_resources)} relevant resources")
-    
-    base_prompt += """Provide a short, helpful response (max 2-3 sentences) with relevant links. Format:
-    
-    [Your helpful response here]
-    
-    📚 Resources:
-    - [Link 1: Brief description]
-    - [Link 2: Brief description]
-    
-    Include Medium blog (kiwellness.medium.com) when relevant."""
+    base_prompt += """Provide a short, helpful response (max 2-3 sentences). You may include relevant links naturally in your response text when helpful, especially to the company's Medium blog (kiwellness.medium.com) when relevant. Do not include a separate resources section."""
     
     # Proactive prompt size management
     if len(base_prompt) > 800:  # Lower threshold for better optimization
         print(f"Prompt too large ({len(base_prompt)} chars), optimizing...")
         # Create ultra-concise version
-        base_prompt = f"AI Health Coach for {profile_name}. Q: {message}\n\nProvide short, helpful response with relevant links. Include Medium blog when relevant."
+        base_prompt = f"AI Health Coach for {profile_name}. Q: {message}\n\nProvide short, helpful response. You may include relevant links naturally when helpful, especially the company's Medium blog when relevant."
     
     print(f"Final prompt length: {len(base_prompt)} characters")
     return base_prompt

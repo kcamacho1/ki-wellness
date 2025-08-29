@@ -63,6 +63,9 @@ class AICoachManager {
 
         // AI usage refresh
         document.getElementById('refresh-usage').addEventListener('click', () => this.loadAIUsage());
+        
+        // AI usage details toggle
+        document.getElementById('toggle-usage-details').addEventListener('click', () => this.toggleUsageDetails());
     }
 
     openChat() {
@@ -108,6 +111,24 @@ class AICoachManager {
         container.classList.remove('expanded', 'w-[800px]', 'h-[700px]');
         container.classList.add('w-96', 'h-[600px]');
         resizeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>';
+    }
+
+    toggleUsageDetails() {
+        const details = document.getElementById('usage-details');
+        const chevron = document.getElementById('usage-chevron');
+        const button = document.getElementById('toggle-usage-details');
+        
+        if (details.classList.contains('hidden')) {
+            // Show details
+            details.classList.remove('hidden');
+            chevron.style.transform = 'rotate(180deg)';
+            button.querySelector('span').textContent = 'Hide';
+        } else {
+            // Hide details
+            details.classList.add('hidden');
+            chevron.style.transform = 'rotate(0deg)';
+            button.querySelector('span').textContent = 'Details';
+        }
     }
 
     async loadUserSummary() {
@@ -161,6 +182,11 @@ class AICoachManager {
             // Display calls
             const totalCalls = aiUsage.total_calls || 0;
             document.getElementById('usage-calls').textContent = totalCalls.toLocaleString();
+            // Also update detailed view if it exists
+            const detailedCallsElement = document.getElementById('usage-calls-detailed');
+            if (detailedCallsElement) {
+                detailedCallsElement.textContent = totalCalls.toLocaleString();
+            }
             document.getElementById('call-limit').textContent = limits.daily_calls > 0 ? `Limit: ${limits.daily_calls.toLocaleString()}` : 'Unlimited';
             
             // Display cost
@@ -229,6 +255,11 @@ class AICoachManager {
         
         // Display calls
         document.getElementById('usage-calls').textContent = usage.today.calls.toLocaleString();
+        // Also update detailed view if it exists
+        const detailedCallsElement = document.getElementById('usage-calls-detailed');
+        if (detailedCallsElement) {
+            detailedCallsElement.textContent = usage.today.calls.toLocaleString();
+        }
         document.getElementById('call-limit').textContent = limits.daily_calls > 0 ? `Limit: ${limits.daily_calls.toLocaleString()}` : 'Unlimited';
         
         // Display cost
@@ -242,6 +273,11 @@ class AICoachManager {
     displayAIUsageError() {
         document.getElementById('usage-tokens').textContent = 'Error';
         document.getElementById('usage-calls').textContent = 'Error';
+        // Also update detailed view if it exists
+        const detailedCallsElement = document.getElementById('usage-calls-detailed');
+        if (detailedCallsElement) {
+            detailedCallsElement.textContent = 'Error';
+        }
         document.getElementById('usage-cost').textContent = 'Error';
         document.getElementById('token-limit').textContent = '--';
         document.getElementById('call-limit').textContent = '--';
