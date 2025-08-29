@@ -7,11 +7,45 @@ import os
 import sys
 from datetime import datetime
 
-# Add the current directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to Python path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
-from app import app, db, User
-from sqlalchemy import text
+try:
+    from app import app, db, User
+    from sqlalchemy import text
+except ImportError:
+    # Fallback for different import structures
+    try:
+        import app as flask_app
+        app = flask_app.app
+        db = flask_app.db
+        User = flask_app.User
+        from sqlalchemy import text
+    except ImportError:
+        # Last resort - direct import
+        from database import db, User
+        from flask import Flask
+        from dotenv import load_dotenv
+        from sqlalchemy import text
+        
+        load_dotenv()
+        app = Flask(__name__)
+        app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+        
+        # Database configuration
+        database_url = os.getenv('DATABASE_URL')
+        if database_url:
+            # Use external database URL
+            app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        else:
+            # Use local database file
+            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'instance', 'ki_wellness_dev.db')
+            app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+        
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        db.init_app(app)
 
 def add_last_login_field():
     """Add last_login field to User table"""

@@ -39,7 +39,8 @@ def create_checkout_session():
         if not current_user.stripe_customer_id:
             customer = stripe_client.create_customer(
                 email=current_user.email,
-                name=current_user.name or current_user.username
+                name=current_user.name or current_user.username,
+                user_id=current_user.id
             )
             current_user.stripe_customer_id = customer.id
             db.session.commit()
