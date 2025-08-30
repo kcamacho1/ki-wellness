@@ -44,28 +44,26 @@ def nutrition_review():
 @dashboard_bp.route('/ai-coach')
 @login_required
 def ai_coach():
-    """AI Coach chat interface"""
-    # Check if user has premium access or is admin
-    if current_user.is_admin:
-        return render_template('ai_coach.html')
+    """AI Coach interface - All users can view, premium users get full access"""
+    # All users can access the AI coach page to see analysis patterns and suggestions
+    # Premium features (refresh analysis, AI chat) are controlled in the frontend
     
-    subscription = Subscription.query.filter_by(
-        user_id=current_user.id,
-        status='active'
-    ).first()
+    # Check premium access using industry-standard method
+    has_premium = current_user.has_premium_access()
     
-    if not subscription or not subscription.is_premium:
-        # Redirect to profile page with upgrade prompt
-        flash('You need a premium subscription to access the AI Health Coach. Upgrade now for just $5/month!', 'info')
-        return redirect(url_for('dashboard.profile'))
+    # For premium users, check AI usage limits
+    limits_ok = True
+    limit_message = None
+    if has_premium:
+        limits_ok, limit_message = check_ai_usage_limits(current_user.id)
+        if not limits_ok:
+            flash(f'AI usage limit exceeded: {limit_message}. Premium features temporarily limited.', 'warning')
     
-    # Check AI usage limits
-    limits_ok, limit_message = check_ai_usage_limits(current_user.id)
-    if not limits_ok:
-        flash(f'AI usage limit exceeded: {limit_message}. Please try again tomorrow or contact support.', 'error')
-        return redirect(url_for('dashboard.dashboard'))
-    
-    return render_template('ai_coach.html')
+    # Pass premium status and usage info to template
+    return render_template('ai_coach.html', 
+                         has_premium=has_premium,
+                         limits_ok=limits_ok,
+                         limit_message=limit_message)
 
 
 @dashboard_bp.route('/recipes')
