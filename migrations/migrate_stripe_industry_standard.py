@@ -147,25 +147,38 @@ def verify_migration():
         
         print(f"   Users with premium access: {users_with_premium}")
 
-if __name__ == '__main__':
-    print("🚀 Industry-Standard Stripe Migration")
-    print("=====================================")
-    
-    # Confirm before proceeding
-    response = input("\nThis will create new Stripe tables and migrate existing data.\nContinue? (y/N): ")
-    
-    if response.lower() != 'y':
-        print("❌ Migration cancelled")
-        sys.exit(0)
-    
+def main():
+    """Main migration function"""
     try:
         migrate_industry_standard_stripe()
         verify_migration()
         
         print("\n✅ Migration completed successfully!")
         print("\n🎯 Your Stripe integration is now industry-standard!")
+        return True
         
     except Exception as e:
         print(f"\n❌ Migration failed: {e}")
         print("💡 Please check the error and try again")
-        sys.exit(1)
+        return False
+
+if __name__ == '__main__':
+    print("🚀 Industry-Standard Stripe Migration")
+    print("=====================================")
+    
+    # Check for auto-confirm environment variable (for production)
+    auto_confirm = os.getenv('MIGRATION_AUTO_CONFIRM', '').lower() == 'true'
+    
+    if auto_confirm:
+        print("✅ Auto-confirm enabled - proceeding with migration...")
+        response = 'y'
+    else:
+        # Confirm before proceeding
+        response = input("\nThis will create new Stripe tables and migrate existing data.\nContinue? (y/N): ")
+    
+    if response.lower() != 'y':
+        print("❌ Migration cancelled")
+        sys.exit(0)
+    
+    success = main()
+    sys.exit(0 if success else 1)
