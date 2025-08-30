@@ -214,7 +214,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                         </tr>
                     </thead>
@@ -325,13 +325,14 @@ class AdminUsersManager {
                             <img class="h-10 w-10 rounded-full" src="${user.profile_image_url || '/static/assets/avatars/default-avatar.png'}" alt="">
                         </div>
                         <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900">${user.name}</div>
-                            <div class="text-sm text-gray-500">@${user.username}</div>
+                            <div class="text-sm font-medium text-gray-900">${user.name || 'No name'}</div>
+                            <div class="text-sm text-gray-500">@${user.username || 'no-username'}</div>
                         </div>
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">${user.email}</div>
+                    ${user.stripe_customer_id ? `<div class="text-xs text-gray-500">Stripe: ${user.stripe_customer_id.substring(0, 12)}...</div>` : ''}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${this.getRoleBadgeClass(user.role)}">
@@ -339,12 +340,11 @@ class AdminUsersManager {
                     </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.is_admin ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                        ${user.is_admin ? 'Admin' : 'User'}
-                    </span>
+                    ${this.getSubscriptionDisplay(user)}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     ${new Date(user.created_at).toLocaleDateString()}
+                    ${user.last_login ? `<div class="text-xs">Last: ${new Date(user.last_login).toLocaleDateString()}</div>` : ''}
                 </td>
             </tr>
         `).join('');
@@ -433,6 +433,68 @@ class AdminUsersManager {
             'user': 'bg-blue-100 text-blue-800'
         };
         return classes[role] || 'bg-gray-100 text-gray-800';
+    }
+
+    getSubscriptionDisplay(user) {
+        // Enhanced subscription display logic for admin dashboard
+        if (!user.has_premium_access) {
+            return '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Free</span>';
+        }
+
+        // User has premium access
+        const subscription = user.subscription;
+        
+        if (!subscription || !subscription.stripe_subscription_id) {
+            // Admin/FF user with complimentary access
+            if (user.role === 'admin' || user.role === 'ff') {
+                return '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Complimentary</span>';
+            }
+            return '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Premium (No Payment)</span>';
+        }
+
+        // Paid subscription - show renewal status
+        if (subscription.current_period_end) {
+            const endDate = new Date(subscription.current_period_end);
+            const now = new Date();
+            const daysUntilRenewal = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+            
+            const formattedDate = endDate.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            if (daysUntilRenewal > 7) {
+                // More than a week left
+                return `<div class="text-xs">
+                    <span class="inline-flex px-2 py-1 font-semibold rounded-full bg-purple-100 text-purple-800">Premium</span>
+                    <div class="text-gray-600 mt-1">Renews ${formattedDate}</div>
+                </div>`;
+            } else if (daysUntilRenewal > 0) {
+                // Less than a week left - show urgency
+                return `<div class="text-xs">
+                    <span class="inline-flex px-2 py-1 font-semibold rounded-full bg-orange-100 text-orange-800">Premium</span>
+                    <div class="text-orange-600 mt-1 font-medium">⚠️ ${daysUntilRenewal}d left</div>
+                </div>`;
+            } else if (daysUntilRenewal === 0) {
+                // Renewal today
+                return `<div class="text-xs">
+                    <span class="inline-flex px-2 py-1 font-semibold rounded-full bg-blue-100 text-blue-800">Premium</span>
+                    <div class="text-blue-600 mt-1 font-medium">🔄 Renewing today</div>
+                </div>`;
+            } else {
+                // Past due (shouldn't happen with webhooks, but just in case)
+                return `<div class="text-xs">
+                    <span class="inline-flex px-2 py-1 font-semibold rounded-full bg-red-100 text-red-800">Expired</span>
+                    <div class="text-red-600 mt-1 font-medium">❌ Expired ${formattedDate}</div>
+                </div>`;
+            }
+        } else {
+            // Has paid subscription but no end date
+            return `<div class="text-xs">
+                <span class="inline-flex px-2 py-1 font-semibold rounded-full bg-purple-100 text-purple-800">Premium</span>
+                <div class="text-gray-600 mt-1">Active subscription</div>
+            </div>`;
+        }
     }
 
     async updateSetting(key, value) {

@@ -10,10 +10,10 @@ import json
 import os
 
 # Import database models
-from database import db, User, Subscription, PaymentSession
+from database import db, User, Subscription, PaymentSession, StripeSubscription, StripeCustomer, StripeInvoice
 
-# Import services
-from services.stripe_client import get_stripe_client
+# Import services  
+from services.stripe_service_v2 import get_stripe_service
 from services.analytics_service import analytics_service
 
 # Import utilities
@@ -26,87 +26,40 @@ payments_bp = Blueprint('payments', __name__)
 @payments_bp.route('/api/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():
-    """Create Stripe checkout session for subscription - PURE WEBHOOK APPROACH"""
+    """
+    Industry-standard checkout session creation
+    Frontend responsibility only - webhook handles all backend logic
+    """
     try:
-        # Get environment variables directly - no Stripe client needed
-        stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
-        if not stripe_secret_key:
+        # Get industry-standard Stripe service
+        stripe_service = get_stripe_service()
+        
+        # Check if Stripe is enabled
+        if not stripe_service.is_enabled():
             return jsonify({
-                'success': False, 
-                'error': 'Payment system not configured.',
-                'details': 'STRIPE_SECRET_KEY not found'
+                'success': False,
+                'error': 'Payment system not available',
+                'details': f'Stripe {stripe_service.mode} mode - not configured'
             }), 503
         
-        # Set Stripe API key directly
-        stripe.api_key = stripe_secret_key
-        
-        # Use environment variable or fallback price ID
-        price_id = os.getenv('STRIPE_PREMIUM_PRICE_ID')
-        if not price_id or price_id.strip() == '':
-            price_id = 'price_1S1Wjb6d7DUvK3X6cz3XoG97'  # Your actual Ki Wellness Premium price ID
-            current_app.logger.warning(f"Using fallback price ID: {price_id}")
-        
-        # Create checkout session without any customer management
-        # Let Stripe handle EVERYTHING - webhooks will do the rest
-        checkout_session = stripe.checkout.Session.create(
-            customer_email=current_user.email,  # Just provide email, Stripe creates customer
-            payment_method_types=['card'],
-            line_items=[{
-                'price': price_id,
-                'quantity': 1,
-            }],
-            mode='subscription',
-            success_url=url_for('payments.payment_success', _external=True),
-            cancel_url=url_for('dashboard.profile', _external=True),
-            metadata={
-                "app": "ki_wellness",
-                "user_id": str(current_user.id),
-                "email": current_user.email,
-                "username": current_user.username or "unknown"
-            }
-        )
-        
-        # Store minimal payment session info
-        payment_session = PaymentSession(
-            session_id=checkout_session.id,
+        # Create checkout session (frontend responsibility only)
+        result = stripe_service.create_checkout_session(
             user_id=current_user.id,
-            email=current_user.email,
-            name=current_user.name or current_user.username,
-            payment_type='subscription',
-            amount=500,  # $5.00 in cents
-            status='pending'
+            success_url=url_for('payments.payment_success', _external=True),
+            cancel_url=url_for('dashboard.profile', _external=True)
         )
-        db.session.add(payment_session)
-        db.session.commit()
         
-        current_app.logger.info(f"✅ Pure webhook checkout session created for user {current_user.id}: {checkout_session.id}")
+        # Log environment info for debugging
+        current_app.logger.info(f"💳 Checkout created in {stripe_service.mode} mode for user {current_user.id}")
         
-        return jsonify({
-            'success': True,
-            'session_id': checkout_session.id,
-            'checkout_url': checkout_session.url
-        })
-            
-    except stripe.error.AuthenticationError as e:
-        current_app.logger.error(f"Stripe authentication error: {e}")
-        return jsonify({
-            'success': False, 
-            'error': 'Payment system authentication failed.',
-            'details': 'Invalid Stripe API key'
-        }), 503
-    except stripe.error.InvalidRequestError as e:
-        current_app.logger.error(f"Stripe invalid request: {e}")
-        return jsonify({
-            'success': False, 
-            'error': 'Invalid payment configuration.',
-            'details': str(e)
-        }), 400
+        return jsonify(result)
+        
     except Exception as e:
-        current_app.logger.error(f"Error creating checkout session: {e}")
+        current_app.logger.error(f"❌ Error creating checkout session: {e}")
         return jsonify({
-            'success': False, 
-            'error': 'Failed to create payment session.',
-            'details': 'Internal server error'
+            'success': False,
+            'error': 'Failed to create payment session',
+            'details': str(e)
         }), 500
 
 
@@ -115,8 +68,8 @@ def create_checkout_session():
 def customer_portal():
     """Create Stripe customer portal session"""
     try:
-        stripe_client = get_stripe_client()
-        if not stripe_client:
+        stripe_service = get_stripe_service()
+        if not stripe_service.is_enabled():
             return jsonify({
                 'success': False, 
                 'error': 'Payment system not ready. Please check your Stripe configuration.',
@@ -125,18 +78,12 @@ def customer_portal():
         
         return_url = url_for('dashboard.profile', _external=True)
         
-        session = stripe_client.create_customer_portal_session(
-            customer_id=current_user.stripe_customer_id,
+        result = stripe_service.create_customer_portal_session(
+            user_id=current_user.id,
             return_url=return_url
         )
         
-        if session:
-            return jsonify({
-                'success': True,
-                'portal_url': session.url
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to create customer portal session'}), 500
+        return jsonify(result)
             
     except Exception as e:
         current_app.logger.error(f"Error creating customer portal session: {e}")
@@ -146,40 +93,75 @@ def customer_portal():
 @payments_bp.route('/api/subscription-status')
 @login_required
 def subscription_status():
-    """Get current user's subscription status"""
+    """
+    Enhanced subscription status with industry-standard data
+    Always checks database (source of truth)
+    """
     try:
-        subscription = Subscription.query.filter_by(
+        # Check new industry-standard subscription table first
+        active_subscription = StripeSubscription.query.filter_by(
             user_id=current_user.id,
             status='active'
         ).first()
         
-        # Check if user has premium access (includes admin/ff users)
+        # Fallback to legacy subscription table for backward compatibility
+        if not active_subscription:
+            legacy_subscription = Subscription.query.filter_by(
+                user_id=current_user.id,
+                status='active'
+            ).first()
+        else:
+            legacy_subscription = None
+        
+        # Check premium access (includes admin/ff users)
         has_premium = current_user.has_premium_access()
         
-        if subscription:
+        # Get Stripe service for environment info
+        stripe_service = get_stripe_service()
+        
+        if active_subscription:
             return jsonify({
                 'success': True,
                 'subscription': {
-                    'id': subscription.id,
-                    'status': subscription.status,
-                    'stripe_subscription_id': subscription.stripe_subscription_id,
-                    'plan_name': subscription.plan_name,
-                    'is_premium': subscription.is_premium,
-                    'current_period_end': subscription.current_period_end.isoformat() if subscription.current_period_end else None,
-                    'created_at': subscription.created_at.isoformat() if subscription.created_at else None
+                    'id': active_subscription.id,
+                    'stripe_subscription_id': active_subscription.stripe_subscription_id,
+                    'status': active_subscription.status,
+                    'current_period_end': active_subscription.current_period_end.isoformat() if active_subscription.current_period_end else None,
+                    'current_period_start': active_subscription.current_period_start.isoformat() if active_subscription.current_period_start else None,
+                    'cancel_at_period_end': active_subscription.cancel_at_period_end,
+                    'trial_end': active_subscription.trial_end.isoformat() if active_subscription.trial_end else None,
+                    'type': 'stripe_subscription'
                 },
-                'is_premium': has_premium
+                'is_premium': has_premium,
+                'stripe_mode': stripe_service.mode
+            })
+        elif legacy_subscription:
+            return jsonify({
+                'success': True,
+                'subscription': {
+                    'id': legacy_subscription.id,
+                    'stripe_subscription_id': legacy_subscription.stripe_subscription_id,
+                    'status': legacy_subscription.status,
+                    'plan_type': legacy_subscription.plan_type,
+                    'current_period_end': legacy_subscription.current_period_end.isoformat() if legacy_subscription.current_period_end else None,
+                    'current_period_start': legacy_subscription.current_period_start.isoformat() if legacy_subscription.current_period_start else None,
+                    'cancel_at_period_end': legacy_subscription.cancel_at_period_end,
+                    'type': 'legacy_subscription'
+                },
+                'is_premium': has_premium,
+                'stripe_mode': stripe_service.mode
             })
         else:
             return jsonify({
                 'success': True,
                 'subscription': None,
-                'is_premium': has_premium
+                'is_premium': has_premium,
+                'stripe_mode': stripe_service.mode
             })
             
     except Exception as e:
-        current_app.logger.error(f"Error getting subscription status: {e}")
-        return jsonify({'success': False, 'error': 'Failed to get subscription status'}), 500
+        current_app.logger.error(f"❌ Error getting subscription status: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @payments_bp.route('/api/log-health-coaching-revenue', methods=['POST'])
@@ -224,78 +206,28 @@ def log_health_coaching_revenue():
 
 @payments_bp.route('/webhook/stripe', methods=['POST'])
 def stripe_webhook():
-    """Handle Stripe webhook events"""
+    """
+    Industry-standard webhook handler
+    Source of truth for all payment events
+    """
     try:
         payload = request.get_data(as_text=True)
         sig_header = request.headers.get('Stripe-Signature')
         
-        # Get webhook secret from environment
-        webhook_secret = current_app.config.get('STRIPE_WEBHOOK_SECRET') or os.getenv('STRIPE_WEBHOOK_SECRET')
-        if not webhook_secret:
-            current_app.logger.error("STRIPE_WEBHOOK_SECRET not configured")
-            return jsonify({'error': 'Webhook secret not configured'}), 400
+        if not sig_header:
+            return jsonify({'error': 'Missing signature'}), 400
         
-        # Verify webhook signature
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, webhook_secret
-            )
-        except ValueError:
-            current_app.logger.error("Invalid payload in webhook")
-            return jsonify({'error': 'Invalid payload'}), 400
-        except stripe.error.SignatureVerificationError:
-            current_app.logger.error("Invalid signature in webhook")
-            return jsonify({'error': 'Invalid signature'}), 400
+        # Get industry-standard Stripe service
+        stripe_service = get_stripe_service()
         
-        # Get Stripe client
-        stripe_client = get_stripe_client()
-        if not stripe_client:
-            current_app.logger.warning("Stripe client not configured, skipping webhook processing")
-            return jsonify({'status': 'ignored', 'reason': 'stripe_not_configured'}), 200
+        # Process webhook (backend source of truth)
+        result = stripe_service.handle_webhook(payload, sig_header)
         
-        # Handle the event
-        result = stripe_client.handle_webhook_event(event)
-        
-        # Update local database based on webhook events
-        event_type = event.get('type')
-        event_data = event.get('data', {}).get('object', {})
-        
-        current_app.logger.info(f"📨 Processing webhook: {event_type}")
-        
-        if event_type == 'customer.subscription.created':
-            handle_subscription_created_webhook(event_data)
-        elif event_type == 'customer.subscription.updated':
-            handle_subscription_updated_webhook(event_data)
-        elif event_type == 'customer.subscription.deleted':
-            handle_subscription_deleted_webhook(event_data)
-        elif event_type == 'invoice.payment_succeeded':
-            handle_invoice_payment_succeeded_webhook(event_data)
-        elif event_type == 'invoice.payment_failed':
-            handle_invoice_payment_failed_webhook(event_data)
-        elif event_type == 'payment_intent.succeeded':
-            handle_payment_intent_succeeded_webhook(event_data)
-        elif event_type == 'payment_intent.payment_failed':
-            handle_payment_intent_failed_webhook(event_data)
-        elif event_type == 'customer.created':
-            handle_customer_created_webhook(event_data)
-        elif event_type == 'checkout.session.completed':
-            handle_checkout_session_completed_webhook(event_data)
-        elif event_type == 'customer.updated':
-            handle_customer_updated_webhook(event_data)
-        elif event_type == 'charge.succeeded':
-            handle_charge_succeeded_webhook(event_data)
-        elif event_type == 'charge.failed':
-            handle_charge_failed_webhook(event_data)
-        elif event_type == 'charge.refunded':
-            handle_charge_refunded_webhook(event_data)
-        else:
-            current_app.logger.info(f"ℹ️ Unhandled webhook event: {event_type}")
-        
-        return jsonify({'success': True, 'result': result}), 200
+        return jsonify(result), 200
         
     except Exception as e:
-        current_app.logger.error(f"❌ Error handling webhook: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"❌ Webhook error: {e}")
+        return jsonify({'error': str(e)}), 400
 
 
 def handle_subscription_created_webhook(subscription_data):

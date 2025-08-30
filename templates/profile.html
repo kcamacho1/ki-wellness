@@ -600,20 +600,49 @@
             
             const subscription = data.subscription;
             let detailsText = 'Premium access active';
+            let statusClass = 'text-purple-700 text-sm mt-1';
+            let containerClass = 'mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg';
             
-            // Check if we have a subscription with current_period_end
+            // Enhanced monthly renewal logic
             if (subscription && subscription.current_period_end) {
                 const endDate = new Date(subscription.current_period_end);
+                const now = new Date();
+                const daysUntilRenewal = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+                
                 const formattedDate = endDate.toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
                 });
-                detailsText = `Active until ${formattedDate}`;
+                
+                if (daysUntilRenewal > 7) {
+                    // More than a week left
+                    detailsText = `Renews ${formattedDate} • $5/month`;
+                } else if (daysUntilRenewal > 0) {
+                    // Less than a week left - show urgency
+                    detailsText = `⚠️ Renews in ${daysUntilRenewal} day${daysUntilRenewal !== 1 ? 's' : ''} (${formattedDate})`;
+                    statusClass = 'text-orange-700 text-sm mt-1 font-medium';
+                    containerClass = 'mb-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg';
+                } else if (daysUntilRenewal === 0) {
+                    // Renewal today
+                    detailsText = `🔄 Renewing today • $5/month`;
+                    statusClass = 'text-blue-700 text-sm mt-1 font-medium';
+                } else {
+                    // Past due (shouldn't happen with webhooks, but just in case)
+                    detailsText = `❌ Subscription expired ${formattedDate}`;
+                    statusClass = 'text-red-700 text-sm mt-1 font-medium';
+                    containerClass = 'mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg';
+                }
+            } else if (subscription && subscription.stripe_subscription_id) {
+                // Has paid subscription but no end date
+                detailsText = 'Active subscription • $5/month';
+            } else {
+                // Admin/FF user with premium access
+                detailsText = 'Premium access (complimentary)';
             }
             
             detailsElement.textContent = detailsText;
-            detailsElement.className = 'text-purple-700 text-sm mt-1';
+            detailsElement.className = statusClass;
             
             // Show appropriate buttons based on subscription type
             if (subscription && subscription.stripe_subscription_id) {
@@ -628,13 +657,13 @@
             actionsElement.classList.remove('hidden');
             
             // Update subscription status styling
-            document.getElementById('subscription-status').className = 'mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg';
+            document.getElementById('subscription-status').className = containerClass;
             
         } else {
             // Free user
             tierElement.textContent = 'Free Plan';
             tierElement.className = 'text-gray-800 font-medium';
-            detailsElement.textContent = 'Upgrade to access AI Health Coach and premium features';
+            detailsElement.textContent = 'Upgrade to access AI Health Coach and premium features • $5/month';
             detailsElement.className = 'text-gray-700 text-sm mt-1';
             
             // Show upgrade button

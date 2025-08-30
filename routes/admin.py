@@ -15,6 +15,26 @@ from services.analytics_service import analytics_service
 admin_bp = Blueprint('admin', __name__)
 
 
+def get_user_subscription_info(user):
+    """Get subscription info for admin dashboard display"""
+    # Find the user's active subscription
+    active_subscription = next((sub for sub in user.subscriptions if sub.status == 'active'), None)
+    
+    if not active_subscription:
+        return None
+    
+    return {
+        'id': active_subscription.id,
+        'stripe_subscription_id': active_subscription.stripe_subscription_id,
+        'plan_type': active_subscription.plan_type,
+        'status': active_subscription.status,
+        'current_period_end': active_subscription.current_period_end.isoformat() if active_subscription.current_period_end else None,
+        'current_period_start': active_subscription.current_period_start.isoformat() if active_subscription.current_period_start else None,
+        'cancel_at_period_end': active_subscription.cancel_at_period_end,
+        'created_at': active_subscription.created_at.isoformat() if active_subscription.created_at else None
+    }
+
+
 @admin_bp.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -391,8 +411,12 @@ def get_admin_users():
                     'name': user.name,
                     'role': user.role or 'user',
                     'email_verified': user.email_verified,
+                    'stripe_customer_id': user.stripe_customer_id,
+                    'has_premium_access': user.has_premium_access(),
+                    'subscription': get_user_subscription_info(user),
                     'created_at': user.created_at.isoformat() if user.created_at else None,
-                    'last_login': getattr(user, 'last_login', None).isoformat() if getattr(user, 'last_login', None) else None
+                    'last_login': getattr(user, 'last_login', None).isoformat() if getattr(user, 'last_login', None) else None,
+                    'profile_image_url': f"/static/{user.profile_image}" if user.profile_image else None
                 }
                 for user in users.items
             ],

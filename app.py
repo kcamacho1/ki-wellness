@@ -72,6 +72,33 @@ else:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Stripe configuration - Auto-detect environment like database
+stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
+stripe_publishable_key = os.getenv('STRIPE_PUBLISHABLE_KEY')
+stripe_webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+# Auto-detect Stripe environment (similar to database detection)
+stripe_is_live = bool(stripe_secret_key and stripe_secret_key.startswith('sk_live_'))
+stripe_is_test = bool(stripe_secret_key and stripe_secret_key.startswith('sk_test_'))
+
+if stripe_is_live:
+    print("✅ Stripe LIVE mode detected - Production payments enabled")
+    app.config['STRIPE_MODE'] = 'live'
+    app.config['STRIPE_ENV'] = 'production'
+elif stripe_is_test:
+    print("✅ Stripe TEST mode detected - Development payments enabled")
+    app.config['STRIPE_MODE'] = 'test'
+    app.config['STRIPE_ENV'] = 'development'
+else:
+    print("⚠️ No valid Stripe keys found - Payment features disabled")
+    app.config['STRIPE_MODE'] = 'disabled'
+    app.config['STRIPE_ENV'] = 'disabled'
+
+# Store Stripe configuration in app config
+app.config['STRIPE_SECRET_KEY'] = stripe_secret_key
+app.config['STRIPE_PUBLISHABLE_KEY'] = stripe_publishable_key
+app.config['STRIPE_WEBHOOK_SECRET'] = stripe_webhook_secret
+
 # Initialize database
 db.init_app(app)
 

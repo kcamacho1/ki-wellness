@@ -65,16 +65,58 @@ class User(UserMixin, db.Model):
         return self.role == 'user'
     
     def has_premium_access(self):
-        """Check if user has access to premium features"""
+        """
+        Industry-standard premium access check
+        Checks database subscriptions (source of truth)
+        """
         # Admin and ff users always have premium access
         if self.is_admin_role() or self.is_ff_role():
             return True
         
-        # Regular users need active premium subscription
+        # Regular users need active subscription that hasn't expired
         if self.is_regular_user():
             from datetime import datetime
-            active_subscription = next((sub for sub in self.subscriptions if sub.status == 'active'), None)
-            return active_subscription is not None
+            now = datetime.utcnow()
+            
+            # Check new industry-standard subscription table first
+            try:
+                active_subscription = next(
+                    (sub for sub in self.stripe_subscriptions if sub.status == 'active'), 
+                    None
+                )
+                
+                if active_subscription:
+                    # Check if subscription hasn't expired
+                    if active_subscription.current_period_end:
+                        if now <= active_subscription.current_period_end:
+                            return True
+                    else:
+                        # No end date means it's valid
+                        return True
+            except AttributeError:
+                # stripe_subscriptions relationship may not exist yet
+                pass
+            
+            # Fallback to legacy subscription table for backward compatibility
+            for subscription in self.subscriptions:
+                # Check if subscription is active
+                if subscription.status != 'active':
+                    continue
+                
+                # Check if subscription is premium type
+                if subscription.plan_type != 'premium':
+                    continue
+                
+                # Check if subscription hasn't expired (monthly renewal logic)
+                if subscription.current_period_end:
+                    if now <= subscription.current_period_end:
+                        return True  # Valid premium subscription
+                    # If expired, subscription should be updated by webhooks
+                else:
+                    # No end date means it's a valid subscription
+                    return True
+            
+            return False  # No valid premium subscription found
         
         return False
     
@@ -425,3 +467,150 @@ class AIAnalysis(db.Model):
     analysis_data = db.Column(db.Text, nullable=False)  # JSON string of analysis
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Industry-Standard Stripe Models
+class StripeCustomer(db.Model):
+    """Stripe customer mapping - separates Stripe data from core user data"""
+    __tablename__ = 'stripe_customer'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stripe_customer_id = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship('User', backref='stripe_customer_record')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'stripe_customer_id': self.stripe_customer_id,
+            'email': self.email,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class StripeSubscription(db.Model):
+    """Industry-standard subscription tracking"""
+    __tablename__ = 'stripe_subscription'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stripe_subscription_id = db.Column(db.String(255), unique=True, nullable=False)
+    stripe_customer_id = db.Column(db.String(255), nullable=False)
+    stripe_price_id = db.Column(db.String(255), nullable=False)
+    
+    # Subscription details
+    status = db.Column(db.String(50), nullable=False)  # active, canceled, past_due, unpaid, trialing
+    current_period_start = db.Column(db.DateTime)
+    current_period_end = db.Column(db.DateTime)
+    trial_start = db.Column(db.DateTime, nullable=True)
+    trial_end = db.Column(db.DateTime, nullable=True)
+    cancel_at_period_end = db.Column(db.Boolean, default=False)
+    canceled_at = db.Column(db.DateTime, nullable=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='stripe_subscriptions')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'stripe_subscription_id': self.stripe_subscription_id,
+            'stripe_customer_id': self.stripe_customer_id,
+            'stripe_price_id': self.stripe_price_id,
+            'status': self.status,
+            'current_period_start': self.current_period_start.isoformat() if self.current_period_start else None,
+            'current_period_end': self.current_period_end.isoformat() if self.current_period_end else None,
+            'trial_start': self.trial_start.isoformat() if self.trial_start else None,
+            'trial_end': self.trial_end.isoformat() if self.trial_end else None,
+            'cancel_at_period_end': self.cancel_at_period_end,
+            'canceled_at': self.canceled_at.isoformat() if self.canceled_at else None,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class StripeInvoice(db.Model):
+    """Track all invoices for accounting and support"""
+    __tablename__ = 'stripe_invoice'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    stripe_invoice_id = db.Column(db.String(255), unique=True, nullable=False)
+    stripe_subscription_id = db.Column(db.String(255), nullable=True)
+    stripe_customer_id = db.Column(db.String(255), nullable=False)
+    
+    # Invoice details
+    amount_paid = db.Column(db.Integer, nullable=False)  # cents
+    amount_due = db.Column(db.Integer, nullable=False)   # cents
+    currency = db.Column(db.String(3), default='usd')
+    status = db.Column(db.String(50), nullable=False)    # paid, open, void, uncollectible
+    
+    # Dates
+    invoice_date = db.Column(db.DateTime)
+    due_date = db.Column(db.DateTime)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='stripe_invoices')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'stripe_invoice_id': self.stripe_invoice_id,
+            'stripe_subscription_id': self.stripe_subscription_id,
+            'stripe_customer_id': self.stripe_customer_id,
+            'amount_paid': self.amount_paid,
+            'amount_due': self.amount_due,
+            'currency': self.currency,
+            'status': self.status,
+            'invoice_date': self.invoice_date.isoformat() if self.invoice_date else None,
+            'due_date': self.due_date.isoformat() if self.due_date else None,
+            'paid_at': self.paid_at.isoformat() if self.paid_at else None,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
+class WebhookEvent(db.Model):
+    """Track webhook events for debugging and idempotency"""
+    __tablename__ = 'webhook_event'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    stripe_event_id = db.Column(db.String(255), unique=True, nullable=False)
+    event_type = db.Column(db.String(100), nullable=False)
+    processed = db.Column(db.Boolean, default=False)
+    processing_result = db.Column(db.Text, nullable=True)  # JSON result
+    retry_count = db.Column(db.Integer, default=0)
+    last_error = db.Column(db.Text, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'stripe_event_id': self.stripe_event_id,
+            'event_type': self.event_type,
+            'processed': self.processed,
+            'processing_result': self.processing_result,
+            'retry_count': self.retry_count,
+            'last_error': self.last_error,
+            'created_at': self.created_at.isoformat(),
+            'processed_at': self.processed_at.isoformat() if self.processed_at else None
+        }
