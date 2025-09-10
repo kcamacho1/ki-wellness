@@ -1,8 +1,12 @@
 // Recipe Management System
-// Recipe Management System
 if (typeof window.RecipeManager === 'undefined') {
     window.RecipeManager = class RecipeManager {
         constructor() {
+            // Prevent multiple instances
+            if (window.recipeManager) {
+                return window.recipeManager;
+            }
+            
             this.recipes = [];
             this.currentCategory = 'all';
             this.currentPage = 1;
@@ -12,6 +16,9 @@ if (typeof window.RecipeManager === 'undefined') {
             this.currentRatingRecipeId = null;
             this.isSearching = false; // Add flag to prevent multiple searches
             this.init();
+            
+            // Store instance globally
+            window.recipeManager = this;
         }
 
         init() {
@@ -97,7 +104,7 @@ if (typeof window.RecipeManager === 'undefined') {
             // Clear any cached search results that might contain stale data
             if (typeof clear_search_cache === 'function') {
                 clear_search_cache();
-                console.log('Cleared search cache due to stale data');
+                // Cache cleared due to stale data
             }
         }
 
@@ -112,8 +119,9 @@ if (typeof window.RecipeManager === 'undefined') {
             const remainingCount = ingredients.length - maxIngredients;
             
             let ingredientsHtml = displayIngredients.map(ingredient => {
-                if (typeof ingredient === 'object' && ingredient.amount && ingredient.unit && ingredient.name) {
-                    return `<span class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md mr-2 mb-1">${ingredient.amount} ${ingredient.unit} ${ingredient.name}</span>`;
+                if (typeof ingredient === 'object' && ingredient.amount && ingredient.unit && (ingredient.food_name || ingredient.name)) {
+                    const ingredientName = ingredient.food_name || ingredient.name;
+                    return `<span class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md mr-2 mb-1">${ingredient.amount} ${ingredient.unit} ${ingredientName}</span>`;
                 } else if (typeof ingredient === 'string') {
                     return `<span class="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md mr-2 mb-1">${ingredient}</span>`;
                 } else {
@@ -127,6 +135,150 @@ if (typeof window.RecipeManager === 'undefined') {
             }
             
             return ingredientsHtml;
+        }
+
+        renderNutritionalProfile(recipe) {
+            // Calculate nutrition from ingredients if not provided
+            let nutrition = recipe.nutrition;
+            if (!nutrition && recipe.ingredients && Array.isArray(recipe.ingredients)) {
+                nutrition = this.calculateNutritionFromIngredients(recipe.ingredients);
+            }
+            
+            if (nutrition && (nutrition.calories > 0 || nutrition.protein > 0 || nutrition.carbs > 0 || nutrition.fat > 0)) {
+                return `
+                    <div class="mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Nutrition (per serving):</h5>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="text-center p-2 bg-red-50 rounded-lg">
+                                <div class="font-semibold text-red-600 text-sm">${Math.round(nutrition.calories || 0)}</div>
+                                <div class="text-xs text-red-500">cal</div>
+                            </div>
+                            <div class="text-center p-2 bg-blue-50 rounded-lg">
+                                <div class="font-semibold text-blue-600 text-sm">${Math.round(nutrition.protein || 0)}g</div>
+                                <div class="text-xs text-blue-500">protein</div>
+                            </div>
+                            <div class="text-center p-2 bg-green-50 rounded-lg">
+                                <div class="font-semibold text-green-600 text-sm">${Math.round(nutrition.carbs || 0)}g</div>
+                                <div class="text-xs text-green-500">carbs</div>
+                            </div>
+                            <div class="text-center p-2 bg-yellow-50 rounded-lg">
+                                <div class="font-semibold text-yellow-600 text-sm">${Math.round(nutrition.fat || 0)}g</div>
+                                <div class="text-xs text-yellow-500">fat</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="mb-4">
+                        <div class="text-center p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                            <svg class="w-6 h-6 text-gray-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-gray-500 text-xs">Nutritional data not available</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        
+        calculateNutritionFromIngredients(ingredients) {
+            if (!ingredients || !Array.isArray(ingredients)) {
+                return null;
+            }
+            
+            let totalCalories = 0;
+            let totalProtein = 0;
+            let totalCarbs = 0;
+            let totalFat = 0;
+            let totalFiber = 0;
+            let totalSugar = 0;
+            let totalSodium = 0;
+            
+            ingredients.forEach(ingredient => {
+                if (typeof ingredient === 'object' && ingredient.amount) {
+                    let calories = ingredient.calories || 0;
+                    let protein = ingredient.protein || 0;
+                    let carbs = ingredient.carbs || 0;
+                    let fat = ingredient.fat || 0;
+                    let fiber = ingredient.fiber || 0;
+                    let sugar = ingredient.sugar || 0;
+                    let sodium = ingredient.sodium || 0;
+                    
+                    // If no nutritional data, try to estimate from common ingredients
+                    if (calories === 0 && protein === 0 && carbs === 0 && fat === 0) {
+                        const estimatedNutrition = this.estimateNutritionForIngredient(ingredient);
+                        if (estimatedNutrition) {
+                            calories = estimatedNutrition.calories;
+                            protein = estimatedNutrition.protein;
+                            carbs = estimatedNutrition.carbs;
+                            fat = estimatedNutrition.fat;
+                            fiber = estimatedNutrition.fiber;
+                            sugar = estimatedNutrition.sugar;
+                            sodium = estimatedNutrition.sodium;
+                        }
+                    }
+                    
+                    const amount = ingredient.amount || 1;
+                    totalCalories += calories * amount;
+                    totalProtein += protein * amount;
+                    totalCarbs += carbs * amount;
+                    totalFat += fat * amount;
+                    totalFiber += fiber * amount;
+                    totalSugar += sugar * amount;
+                    totalSodium += sodium * amount;
+                }
+            });
+            
+            return {
+                calories: totalCalories,
+                protein: totalProtein,
+                carbs: totalCarbs,
+                fat: totalFat,
+                fiber: totalFiber,
+                sugar: totalSugar,
+                sodium: totalSodium
+            };
+        }
+
+        estimateNutritionForIngredient(ingredient) {
+            // Basic nutritional estimates for common ingredients (per unit)
+            const ingredientName = (ingredient.food_name || ingredient.name || '').toLowerCase();
+            const unit = (ingredient.unit || '').toLowerCase();
+            
+            // Common ingredient nutritional data (per unit)
+            const commonIngredients = {
+                'chicken': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74 },
+                'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sugar: 0, sodium: 74 },
+                'rice': { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, sugar: 0.1, sodium: 1 },
+                'brown rice': { calories: 111, protein: 2.6, carbs: 23, fat: 0.9, fiber: 1.8, sugar: 0.4, sodium: 5 },
+                'pasta': { calories: 131, protein: 5, carbs: 25, fat: 1.1, fiber: 1.8, sugar: 0.6, sodium: 1 },
+                'olive oil': { calories: 119, protein: 0, carbs: 0, fat: 13.5, fiber: 0, sugar: 0, sodium: 0 },
+                'butter': { calories: 102, protein: 0.1, carbs: 0, fat: 11.5, fiber: 0, sugar: 0, sodium: 1 },
+                'onion': { calories: 40, protein: 1.1, carbs: 9.3, fat: 0.1, fiber: 1.7, sugar: 4.2, sodium: 4 },
+                'garlic': { calories: 149, protein: 6.4, carbs: 33, fat: 0.5, fiber: 2.1, sugar: 1, sodium: 17 },
+                'tomato': { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2, sugar: 2.6, sodium: 5 },
+                'carrot': { calories: 41, protein: 0.9, carbs: 9.6, fat: 0.2, fiber: 2.8, sugar: 4.7, sodium: 69 },
+                'potato': { calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2.2, sugar: 0.8, sodium: 6 },
+                'egg': { calories: 70, protein: 6, carbs: 0.6, fat: 5, fiber: 0, sugar: 0.6, sodium: 70 },
+                'milk': { calories: 42, protein: 3.4, carbs: 5, fat: 1, fiber: 0, sugar: 5, sodium: 44 },
+                'cheese': { calories: 113, protein: 7, carbs: 1, fat: 9, fiber: 0, sugar: 0.1, sodium: 174 },
+                'flour': { calories: 364, protein: 10, carbs: 76, fat: 1, fiber: 2.7, sugar: 0.3, sodium: 2 },
+                'sugar': { calories: 387, protein: 0, carbs: 100, fat: 0, fiber: 0, sugar: 100, sodium: 1 },
+                'salt': { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 38758 },
+                'pepper': { calories: 251, protein: 10, carbs: 64, fat: 3.3, fiber: 25, sugar: 0.6, sodium: 20 },
+                'lemon': { calories: 29, protein: 1.1, carbs: 9, fat: 0.3, fiber: 2.8, sugar: 2.5, sodium: 2 }
+            };
+            
+            // Try to find a match
+            for (const [key, nutrition] of Object.entries(commonIngredients)) {
+                if (ingredientName.includes(key)) {
+                    return nutrition;
+                }
+            }
+            
+            return null;
         }
 
         getCurrentUserId() {
@@ -339,6 +491,17 @@ if (typeof window.RecipeManager === 'undefined') {
                             ` : ''}
                         </div>
                         
+                        <!-- Ingredients Preview -->
+                        <div class="mb-4">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Ingredients:</h5>
+                            <div class="ingredients-preview">
+                                ${this.formatIngredientsPreview(recipe.ingredients)}
+                            </div>
+                        </div>
+                        
+                        <!-- Nutritional Profile -->
+                        ${this.renderNutritionalProfile(recipe)}
+                        
                         <!-- Action Buttons -->
                         <div class="flex space-x-2">
                             <button onclick="recipeManager.addToLog(${recipe.id})" class="flex-1 bg-ki-green-600 text-white py-2.5 px-3 rounded-lg text-sm font-medium hover:bg-ki-green-700 transition-colors">
@@ -482,11 +645,7 @@ if (typeof window.RecipeManager === 'undefined') {
                     const totalFound = data.total_count || this.recipes.length;
                     this.showToast(`Found ${totalFound} recipes matching "${query}" in ${searchTime}ms`, 'success');
                     
-                    // Log performance for monitoring
-                    console.log(`Search for "${query}" completed in ${searchTime}ms`);
-                    
-                    // Log recipe IDs for debugging
-                    console.log(`Recipe IDs found: ${this.recipes.map(r => r.id).join(', ')}`);
+                    // Search completed successfully
                 } else {
                     this.showToast(data.error || 'Search failed', 'error');
                 }
@@ -552,10 +711,7 @@ if (typeof window.RecipeManager === 'undefined') {
                     this.showToast(`Found ${totalFound} recipes matching your ingredients in ${searchTime}ms`, 'success');
                     
                     // Log performance for monitoring
-                    console.log(`Ingredient search completed in ${searchTime}ms`);
-                    
-                    // Log recipe IDs for debugging
-                    console.log(`Recipe IDs found: ${this.recipes.map(r => r.id).join(', ')}`);
+                    // Ingredient search completed successfully
                 } else {
                     this.showToast(data.error || 'Ingredient search failed', 'error');
                 }
@@ -737,10 +893,7 @@ if (typeof window.RecipeManager === 'undefined') {
                 if (data.success) {
                     this.showToast(data.message, 'success');
                     
-                    // Refresh dashboard if available
-                    if (window.dashboardManager && window.dashboardManager.loadDashboardDataOptimized) {
-                        window.dashboardManager.loadDashboardDataOptimized();
-                    }
+                    // Note: Dashboard refresh removed - recipes page is now modular
                 } else {
                     this.showToast(data.error || 'Failed to add recipe to log', 'error');
                 }
@@ -851,11 +1004,12 @@ if (typeof window.RecipeManager === 'undefined') {
                 if (recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
                     ingredientsContainer.innerHTML = recipe.ingredients.map(ingredient => {
                         // Handle both ingredient objects and simple strings
-                        if (typeof ingredient === 'object' && ingredient.amount && ingredient.unit && ingredient.name) {
+                        if (typeof ingredient === 'object' && ingredient.amount && ingredient.unit && (ingredient.food_name || ingredient.name)) {
+                            const ingredientName = ingredient.food_name || ingredient.name;
                             return `
                                 <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                                     <div class="w-2 h-2 bg-ki-green-500 rounded-full"></div>
-                                    <span class="text-gray-700">${ingredient.amount} ${ingredient.unit} ${ingredient.name}</span>
+                                    <span class="text-gray-700">${ingredient.amount} ${ingredient.unit} ${ingredientName}</span>
                                 </div>
                             `;
                         } else if (typeof ingredient === 'string') {
@@ -877,29 +1031,70 @@ if (typeof window.RecipeManager === 'undefined') {
             // Nutrition
             const nutritionContainer = document.getElementById('modal-nutrition');
             if (nutritionContainer) {
-                if (recipe.nutrition) {
+                // Calculate nutrition from ingredients if not provided
+                let nutrition = recipe.nutrition;
+                if (!nutrition && recipe.ingredients && Array.isArray(recipe.ingredients)) {
+                    nutrition = this.calculateNutritionFromIngredients(recipe.ingredients);
+                }
+                
+                if (nutrition && (nutrition.calories > 0 || nutrition.protein > 0 || nutrition.carbs > 0 || nutrition.fat > 0)) {
+                    // Count additional nutrients to determine grid layout
+                    const additionalNutrients = [nutrition.fiber, nutrition.sugar, nutrition.sodium].filter(n => n > 0).length;
+                    const totalNutrients = 4 + additionalNutrients; // 4 main nutrients + additional ones
+                    const gridCols = totalNutrients <= 4 ? 'grid-cols-2' : totalNutrients <= 6 ? 'grid-cols-3' : 'grid-cols-4';
+                    
                     nutritionContainer.innerHTML = `
-                        <div class="text-center p-4 bg-red-50 rounded-lg">
-                            <div class="font-semibold text-red-600 text-lg">${Math.round(recipe.nutrition.calories || 0)}</div>
-                            <div class="text-sm text-red-500">calories</div>
-                        </div>
-                        <div class="text-center p-4 bg-blue-50 rounded-lg">
-                            <div class="font-semibold text-blue-600 text-lg">${Math.round(recipe.nutrition.protein || 0)}g</div>
-                            <div class="text-sm text-blue-500">protein</div>
-                        </div>
-                        <div class="text-center p-4 bg-green-50 rounded-lg">
-                            <div class="font-semibold text-green-600 text-lg">${Math.round(recipe.nutrition.carbs || 0)}g</div>
-                            <div class="text-sm text-green-500">carbs</div>
-                        </div>
-                        <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                            <div class="font-semibold text-yellow-600 text-lg">${Math.round(recipe.nutrition.fat || 0)}g</div>
-                            <div class="text-sm text-yellow-500">fat</div>
+                        <div class="grid ${gridCols} gap-4">
+                            <div class="text-center p-4 bg-red-50 rounded-lg">
+                                <div class="font-semibold text-red-600 text-lg">${Math.round(nutrition.calories || 0)}</div>
+                                <div class="text-sm text-red-500">calories</div>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                <div class="font-semibold text-blue-600 text-lg">${Math.round(nutrition.protein || 0)}g</div>
+                                <div class="text-sm text-blue-500">protein</div>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <div class="font-semibold text-green-600 text-lg">${Math.round(nutrition.carbs || 0)}g</div>
+                                <div class="text-sm text-green-500">carbs</div>
+                            </div>
+                            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                                <div class="font-semibold text-yellow-600 text-lg">${Math.round(nutrition.fat || 0)}g</div>
+                                <div class="text-sm text-yellow-500">fat</div>
+                            </div>
+                            ${nutrition.fiber > 0 ? `
+                            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                <div class="font-semibold text-purple-600 text-lg">${Math.round(nutrition.fiber || 0)}g</div>
+                                <div class="text-sm text-purple-500">fiber</div>
+                            </div>
+                            ` : ''}
+                            ${nutrition.sugar > 0 ? `
+                            <div class="text-center p-4 bg-pink-50 rounded-lg">
+                                <div class="font-semibold text-pink-600 text-lg">${Math.round(nutrition.sugar || 0)}g</div>
+                                <div class="text-sm text-pink-500">sugar</div>
+                            </div>
+                            ` : ''}
+                            ${nutrition.sodium > 0 ? `
+                            <div class="text-center p-4 bg-indigo-50 rounded-lg">
+                                <div class="font-semibold text-indigo-600 text-lg">${Math.round(nutrition.sodium || 0)}mg</div>
+                                <div class="text-sm text-indigo-500">sodium</div>
+                            </div>
+                            ` : ''}
                         </div>
                     `;
                 } else {
-                    nutritionContainer.innerHTML = '<p class="text-gray-500 text-sm">Nutrition information not available</p>';
+                    nutritionContainer.innerHTML = `
+                        <div class="text-center p-6 bg-gray-50 rounded-lg">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-gray-500 text-sm mb-2">Nutrition information not available</p>
+                            <p class="text-gray-400 text-xs">Nutritional data will be calculated from ingredients when available</p>
+                        </div>
+                    `;
                 }
             }
+            
+            // Nutrition data is already displayed above using the same format as recipe cards
             
             // Instructions
             const instructionsContainer = document.getElementById('modal-instructions');

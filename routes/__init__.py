@@ -10,6 +10,7 @@ from .ai import ai_bp
 from .api import api_bp
 from .food import food_bp
 from .profile import profile_bp
+from apis.recipe_api import recipe_bp
 
 # List of all blueprints to register
 BLUEPRINTS = [
@@ -22,6 +23,7 @@ BLUEPRINTS = [
     (api_bp, {'url_prefix': ''}),        # No prefix for API routes (they have /api in route paths)
     (food_bp, {'url_prefix': ''}),       # No prefix for food routes (they have /api in route paths)
     (profile_bp, {'url_prefix': ''}),    # No prefix for profile routes (they have /api in route paths)
+    (recipe_bp, {'url_prefix': ''}),     # No prefix for recipe routes (they have /api in route paths)
 ]
 
 def register_blueprints(app):

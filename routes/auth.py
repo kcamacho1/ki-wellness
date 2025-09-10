@@ -8,7 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db, User
-from database_security import validate_user_input, sanitize_user_input
+from utils.helpers import validate_user_input, sanitize_user_input
 from security_middleware import rate_limit
 from utils.helpers import get_app_setting
 
@@ -28,11 +28,11 @@ def login():
         # Input validation
         if not validate_user_input(username, max_length=50):
             flash('Invalid username format', 'error')
-            return render_template('login.html')
+            return render_template('pages/auth/login.html')
             
         if not validate_user_input(password, max_length=100):
             flash('Invalid password format', 'error')
-            return render_template('login.html')
+            return render_template('pages/auth/login.html')
         
         # Sanitize inputs
         username = sanitize_user_input(username, max_length=50)
@@ -42,7 +42,7 @@ def login():
             # Check if email is verified
             if not user.email_verified:
                 flash('Please verify your email address before logging in. Check your inbox for the verification link.', 'warning')
-                return render_template('login.html')
+                return render_template('pages/auth/login.html')
             
             login_user(user, remember=True)  # Enable remember me functionality
             
@@ -55,7 +55,7 @@ def login():
         else:
             flash('Invalid username or password', 'error')
     
-    return render_template('login.html')
+    return render_template('pages/auth/login.html')
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -225,7 +225,7 @@ def forgot_password():
         
         if not email:
             flash('Please enter your email address.', 'error')
-            return render_template('forgot_password.html')
+            return render_template('pages/auth/forgot_password.html')
         
         # Find user by email
         user = User.query.filter_by(email=email).first()
@@ -257,7 +257,7 @@ def forgot_password():
             # For security, don't reveal whether email exists or not
             flash('If an account with that email exists, a password reset link has been sent.', 'info')
     
-    return render_template('forgot_password.html')
+    return render_template('pages/auth/forgot_password.html')
 
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])

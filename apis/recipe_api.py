@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import datetime, date
 from database import db, Recipe, RecipeIngredient, RecipeInstruction, FoodLog, RecipeRating, User
+from services.nutrition_service import nutrition_service
 import os
 from werkzeug.utils import secure_filename
 import hashlib
@@ -106,6 +107,7 @@ def get_recipe_previews():
                 'is_public': recipe.is_public,
                 'user_id': recipe.user_id,
                 'ingredients_count': len(recipe.ingredients),
+                'ingredients': [{'name': ing.food_name, 'amount': ing.amount, 'unit': ing.unit} for ing in recipe.ingredients],
                 'avg_rating': 0,
                 'rating_count': 0
             }
@@ -264,13 +266,29 @@ def create_recipe():
         
         db.session.commit()
         
+        # Automatically fetch nutritional data for all ingredients
+        try:
+            print(f"Auto-fetching nutrition for recipe {recipe.id}: {recipe.name}")
+            nutrition_result = nutrition_service.bulk_update_recipe_nutrition(recipe.id)
+            if nutrition_result['success']:
+                print(f"✅ Auto-fetched nutrition for {nutrition_result['nutrition']['ingredients_processed']}/{nutrition_result['nutrition']['ingredients_total']} ingredients")
+            else:
+                print(f"⚠️ Auto-nutrition fetch failed: {nutrition_result['message']}")
+        except Exception as nutrition_error:
+            print(f"⚠️ Auto-nutrition fetch error: {nutrition_error}")
+            # Don't fail the recipe creation if nutrition fetch fails
+        
         # Clear search cache since new recipe was added
         clear_search_cache()
+        
+        # Get the updated recipe with nutritional data
+        updated_recipe = Recipe.query.get(recipe.id)
         
         return jsonify({
             'success': True,
             'recipe_id': recipe.id,
-            'message': 'Recipe created successfully!'
+            'message': 'Recipe created successfully!',
+            'recipe': updated_recipe.to_dict()
         })
         
     except Exception as e:
@@ -347,6 +365,19 @@ def update_recipe(recipe_id):
                 db.session.add(instruction)
         
         db.session.commit()
+        
+        # Automatically fetch nutritional data if ingredients were updated
+        if 'ingredients' in data:
+            try:
+                print(f"Auto-fetching nutrition for updated recipe {recipe.id}: {recipe.name}")
+                nutrition_result = nutrition_service.bulk_update_recipe_nutrition(recipe.id)
+                if nutrition_result['success']:
+                    print(f"✅ Auto-fetched nutrition for {nutrition_result['nutrition']['ingredients_processed']}/{nutrition_result['nutrition']['ingredients_total']} ingredients")
+                else:
+                    print(f"⚠️ Auto-nutrition fetch failed: {nutrition_result['message']}")
+            except Exception as nutrition_error:
+                print(f"⚠️ Auto-nutrition fetch error: {nutrition_error}")
+                # Don't fail the recipe update if nutrition fetch fails
         
         return jsonify({
             'success': True,
@@ -536,6 +567,7 @@ def search_recipes():
                 'is_public': recipe.is_public,
                 'user_id': recipe.user_id,
                 'ingredients_count': len(recipe.ingredients),
+                'ingredients': [{'name': ing.food_name, 'amount': ing.amount, 'unit': ing.unit} for ing in recipe.ingredients],
                 'avg_rating': 0,
                 'rating_count': 0
             }
@@ -674,6 +706,7 @@ def search_recipes_by_ingredients():
                     'is_public': recipe.is_public,
                     'user_id': recipe.user_id,
                     'ingredients_count': len(recipe.ingredients),
+                    'ingredients': [{'name': ing.food_name, 'amount': ing.amount, 'unit': ing.unit} for ing in recipe.ingredients],
                     'match_percentage': round(match_percentage, 1),
                     'matching_ingredients': matching_count,
                     'avg_rating': 0,
@@ -857,3 +890,35 @@ def warm_cache():
     except Exception as e:
         print(f"Error warming cache: {e}")
         return jsonify({'success': False, 'error': 'Failed to warm cache'}), 500
+
+@recipe_bp.route('/api/recipes/<int:recipe_id>/nutrition', methods=['POST'])
+@login_required
+def update_recipe_nutrition(recipe_id):
+    """Automatically fetch and update nutritional data for recipe ingredients"""
+    try:
+        # Get the recipe
+        recipe = Recipe.query.get_or_404(recipe_id)
+        
+        # Check if user can access this recipe
+        if not recipe.is_public and recipe.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Recipe not found'})
+        
+        # Update nutritional data for all ingredients
+        result = nutrition_service.bulk_update_recipe_nutrition(recipe_id)
+        
+        if result['success']:
+            # Get updated recipe data
+            updated_recipe = Recipe.query.get(recipe_id)
+            recipe_data = updated_recipe.to_dict()
+            
+            return jsonify({
+                'success': True,
+                'message': result['message'],
+                'nutrition': result['nutrition'],
+                'recipe': recipe_data
+            })
+        else:
+            return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error updating recipe nutrition: {str(e)}'})

@@ -8,6 +8,7 @@ import os
 import stripe
 from typing import Dict, Any, Optional, List
 from dotenv import load_dotenv
+from config.environment import get_environment_detector
 
 # Load environment variables
 load_dotenv()
@@ -17,8 +18,12 @@ STRIPE_PUBLISHABLE_KEY = None
 
 class StripeClient:
     def __init__(self):
+        # Get environment detector and Stripe configuration
+        self.env_detector = get_environment_detector()
+        stripe_config = self.env_detector.get_stripe_config()
+        
         # Set Stripe API key
-        self.api_key = os.getenv('STRIPE_SECRET_KEY')
+        self.api_key = stripe_config.get('STRIPE_SECRET_KEY')
         if not self.api_key:
             raise ValueError("STRIPE_SECRET_KEY environment variable is required")
         
@@ -27,7 +32,11 @@ class StripeClient:
         
         # Set publishable key
         global STRIPE_PUBLISHABLE_KEY
-        STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+        STRIPE_PUBLISHABLE_KEY = stripe_config.get('STRIPE_PUBLISHABLE_KEY')
+        
+        # Store environment info
+        self.stripe_mode = stripe_config.get('STRIPE_MODE', 'disabled')
+        self.stripe_env = stripe_config.get('STRIPE_ENV', 'disabled')
         
         # Product and price IDs for subscription plans
         self.free_plan_price_id = None

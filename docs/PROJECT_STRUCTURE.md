@@ -7,8 +7,14 @@ This document outlines the organized structure of the Ki Wellness application.
 ### Root Directory
 - `app.py` - Main Flask application entry point
 - `database.py` - Database models and configuration
+- `security_middleware.py` - Security and rate limiting middleware
 - `requirements.txt` - Python dependencies
+- `requirements-dev.txt` - Development dependencies
+- `requirements-security.txt` - Security-related dependencies
+- `env_template` - Environment variables template
 - `.gitignore` - Git ignore rules
+- `.cursor` - Cursor AI reference file
+- `.cursorrules` - Cursor AI rules and guidelines
 
 ### Core Directories
 
@@ -54,6 +60,9 @@ This document outlines the organized structure of the Ki Wellness application.
 - `update_*.py` - Template and navigation updates
 - `add_avatar_*.py` - Avatar functionality
 - `setup_cron.sh` - Cron job setup
+- `check_production_user.py` - Production user verification
+- `check_user.py` - User verification utilities
+- `refactor_script.py` - Code refactoring utilities
 
 #### `/migrations/` - Database Migrations
 - `migrate_*.py` - All database migration scripts
@@ -67,6 +76,8 @@ This document outlines the organized structure of the Ki Wellness application.
 - `payments.py` - Stripe payment and subscription routes
 
 #### `/config/` - Configuration Files
+- `environment.py` - **NEW**: Centralized environment detection and configuration system
+- `email_config.py` - Email configuration with environment detection
 - `render.yaml` - Render deployment configuration
 - `build.sh` - Build script
 - `runtime.txt` - Python runtime specification
@@ -80,6 +91,13 @@ This document outlines the organized structure of the Ki Wellness application.
 - `STRIPE_WEBHOOK_SETUP.md` - Stripe webhook configuration
 - `PROJECT_STRUCTURE.md` - This file
 - `DATABASE_SETUP.md` - Database configuration guide
+- `ENVIRONMENT_DETECTION_SYSTEM.md` - Environment detection system documentation
+- `ENVIRONMENT_DETECTION_QUICK_REFERENCE.md` - Quick reference guide
+- `CSP_TROUBLESHOOTING.md` - Content Security Policy troubleshooting
+- `DEPLOYMENT_VALIDATION_REPORT.md` - Deployment validation report
+- `POST_DEPLOYMENT_CHECKLIST.md` - Post-deployment checklist
+- `RECAPTCHA_SETUP.md` - reCAPTCHA configuration guide
+- `SECURITY_FEATURES.md` - Security features documentation
 
 ### Data & Logs
 
@@ -91,6 +109,7 @@ This document outlines the organized structure of the Ki Wellness application.
 
 ### Database Files
 - `instance/ki_wellness.db` - Local SQLite database (development)
+- `instance/ki_wellness_dev.db` - Development SQLite database
 
 ## Import Structure
 

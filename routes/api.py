@@ -24,7 +24,7 @@ from services.analytics_service import analytics_service
 from utils.decorators import premium_required, admin_required
 from utils.helpers import get_app_setting, check_ai_usage_limits
 from security_middleware import rate_limit, sanitize_input
-from database_security import validate_user_input, sanitize_user_input, create_safe_query
+from utils.helpers import validate_user_input, sanitize_user_input
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)

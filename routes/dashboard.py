@@ -17,28 +17,28 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @login_required
 def dashboard():
     """Main dashboard page"""
-    return render_template('dashboard.html')
+    return render_template('pages/dashboard/dashboard.html')
 
 
 @dashboard_bp.route('/profile')
 @login_required
 def profile():
     """User profile page"""
-    return render_template('profile.html')
+    return render_template('pages/dashboard/profile.html')
 
 
 @dashboard_bp.route('/scan-barcode')
 @login_required  
 def scan_barcode():
     """Standalone barcode scanner page"""
-    return render_template('scan_barcode.html')
+    return render_template('pages/dashboard/scan_barcode.html')
 
 
 @dashboard_bp.route('/nutrition-review')
 @login_required
 def nutrition_review():
     """Nutrition review page for adjusting serving size and adding to log"""
-    return render_template('nutrition_review.html')
+    return render_template('pages/dashboard/nutrition_review.html')
 
 
 @dashboard_bp.route('/ai-coach')
@@ -60,7 +60,7 @@ def ai_coach():
             flash(f'AI usage limit exceeded: {limit_message}. Premium features temporarily limited.', 'warning')
     
     # Pass premium status and usage info to template
-    return render_template('ai_coach.html', 
+    return render_template('pages/ai/ai_coach.html', 
                          has_premium=has_premium,
                          limits_ok=limits_ok,
                          limit_message=limit_message)
@@ -70,7 +70,11 @@ def ai_coach():
 @login_required
 def recipes():
     """Recipe management page"""
-    return render_template('recipes/recipes.html', current_user_id=current_user.id)
+    try:
+        return render_template('recipes/recipes.html', current_user_id=current_user.id)
+    except Exception as e:
+        print(f"Error in recipes route: {e}")
+        return f"Error: {e}", 500
 
 
 @dashboard_bp.route('/api/dashboard-data')

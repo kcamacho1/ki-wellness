@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- AI-specific CSS -->
+<style>
+    .ai-chat-container {
+        max-width: 800px;
+        margin: 0 auto;
+        height: 600px;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .ai-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .ai-message {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        max-width: 80%;
+    }
+    
+    .ai-message.user {
+        background: #059669;
+        color: white;
+        margin-left: auto;
+    }
+    
+    .ai-message.assistant {
+        background: #f3f4f6;
+        color: #1f2937;
+    }
+    
+    .ai-input-container {
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .ai-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        resize: none;
+        font-family: inherit;
+    }
+    
+    .ai-input:focus {
+        outline: none;
+        border-color: #059669;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    }
+</style>
+
+<!-- AI-specific JavaScript -->
+<script src="{{ url_for('static', filename='js/ai_coach.js') }}"></script>
+{% endblock %}

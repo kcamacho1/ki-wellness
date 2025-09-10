@@ -1,0 +1,273 @@
+# Ki Wellness - Cursor AI Rules
+# =============================
+# This file provides context and rules for Cursor AI when working with the Ki Wellness application.
+
+## PROJECT OVERVIEW
+Ki Wellness is a comprehensive health and wellness tracking application built with Flask, featuring food logging, water intake tracking, mood monitoring, and AI-powered health insights. The application uses a modular Flask Blueprint architecture with a centralized environment detection system and feature flags for enabling/disabling individual pages and features.
+
+## ARCHITECTURE HIGHLIGHTS
+
+### Environment Detection System (NEW - December 2024)
+The application now uses a centralized environment detection system that automatically configures all components:
+
+- **Core Module**: `config/environment.py` - Centralized environment detection and configuration
+- **Automatic Detection**: Development (SQLite) vs Production (PostgreSQL) based on database URL
+- **Configuration Sections**: Database, Stripe, sessions, security, email, admin settings
+- **Usage**: `from config.environment import get_environment_detector, is_production, is_development`
+
+### Modular Flask Blueprint Architecture
+- **Main App**: `app.py` (simplified, uses environment detection and modular registration)
+- **Routes**: Organized in `/routes/` directory with blueprints and feature flag support
+- **Services**: External integrations in `/services/` directory
+- **Configuration**: Centralized in `/config/` directory with feature flags
+- **Utilities**: Helper functions in `/utils/` directory
+- **Templates**: Organized by feature in `/templates/pages/` with page-specific base templates
+
+### Feature Flags System (NEW - December 2024)
+The application now supports enabling/disabling individual features without affecting others:
+
+- **Core Module**: `config/feature_flags.py` - Feature flag management
+- **Modular Registration**: `routes/modular_registry.py` - Conditional route registration
+- **Page-Specific Resources**: Templates load only necessary JavaScript/CSS per page type
+- **Environment Control**: Features can be disabled via environment variables
+- **Runtime Control**: Features can be enabled/disabled programmatically
+
+## CODING STANDARDS
+
+### Python/Flask
+- Follow PEP 8 style guide
+- Use type hints where appropriate
+- Implement proper error handling with try/catch
+- Use descriptive function and variable names
+- Early returns for readability
+- Use the environment detection system for configuration
+- Use feature flags to check if features are enabled
+- Consistent naming: use 'tokens' in codebase
+- Reuse existing modules and components
+- Use page-specific base templates for new pages
+
+### Environment Detection Usage
+When working with environment-specific code:
+```python
+# Import the environment detector
+from config.environment import get_environment_detector, is_production, is_development
+
+# Get environment detector instance
+detector = get_environment_detector()
+
+# Check environment
+if detector.is_production:
+    # Production-specific code
+    pass
+elif detector.is_development:
+    # Development-specific code
+    pass
+
+# Quick checks
+if is_production():
+    # Production code
+    pass
+
+# Get configuration
+from config.environment import get_config
+flask_config = get_config('flask')
+db_config = get_config('database')
+stripe_config = get_config('stripe')
+```
+
+### Feature Flags Usage
+When working with feature-specific code:
+```python
+# Import feature flags
+from config.feature_flags import is_feature_enabled, feature_flags
+
+# Check if a feature is enabled
+if is_feature_enabled('recipes'):
+    # Show recipes functionality
+    pass
+
+# Disable/enable features at runtime
+feature_flags.disable_feature('recipes')
+feature_flags.enable_feature('recipes')
+
+# Get all feature status
+status = feature_flags.get_status()
+```
+
+### JavaScript
+- Use const over let, avoid var
+- Descriptive variable and function names
+- Prefix event handlers with "handle" (handleClick, handleKeyDown)
+- Use arrow functions for callbacks
+- Implement proper error handling
+- Use async/await for promises
+
+### HTML/CSS
+- Use TailwindCSS classes instead of custom CSS
+- Implement accessibility features (aria-label, tabindex, etc.)
+- Responsive design with mobile-first approach
+- Semantic HTML structure
+- Use "class:" instead of ternary operators where possible
+- Use page-specific base templates (auth_base.html, dashboard_base.html, etc.)
+- Load resources only for the specific page type
+
+## DATABASE CONFIGURATION
+- **Development**: SQLite (sqlite:///ki_wellness_dev.db)
+- **Production**: PostgreSQL (with quoted table names like "user")
+- **Auto-detection**: Environment detection system automatically configures the appropriate database
+- **Models**: All database models are in `database.py`
+
+## KEY COMPONENTS
+
+### Environment Detection System
+- **File**: `config/environment.py`
+- **Purpose**: Centralized environment detection and configuration
+- **Features**: Automatic detection, modular configuration, environment-specific settings
+- **Usage**: Import and use throughout the application for consistent environment handling
+
+### Services
+- **Stripe Client**: `services/stripe_client.py` (uses environment detection)
+- **Email Config**: `config/email_config.py` (uses environment detection)
+- **Security Middleware**: `security_middleware.py` (uses environment detection)
+- **AI Services**: `services/openrouter_client.py`
+- **Analytics**: `services/analytics_service.py`
+
+### Routes (Blueprints)
+- **Static Pages**: `routes/static_pages.py`
+- **Authentication**: `routes/auth.py`
+- **Admin**: `routes/admin.py`
+- **API**: `routes/api.py`
+- **Dashboard**: `routes/dashboard.py`
+- **Payments**: `routes/payments.py`
+- **Modular Registry**: `routes/modular_registry.py` - Feature flag-based route registration
+
+### Templates (Organized by Feature)
+- **Base Templates**: `templates/layouts/` - Page-specific base templates
+- **Auth Pages**: `templates/pages/auth/` - Login, register, password reset
+- **Dashboard Pages**: `templates/pages/dashboard/` - Main dashboard, profile, nutrition review
+- **Admin Pages**: `templates/pages/admin/` - Admin panel pages
+- **AI Pages**: `templates/pages/ai/` - AI coach interface
+- **Recipe Pages**: `templates/recipes/` - Recipe management
+- **Static Pages**: `templates/pages/static/` - Landing, privacy, terms, support
+
+## ENVIRONMENT VARIABLES
+The environment detection system respects these variables:
+- `FLASK_ENV`: Explicit environment setting (development/production/testing)
+- `DATABASE_URL`: PostgreSQL connection string (production indicator)
+- `SECRET_KEY`: Application secret key
+- `STRIPE_SECRET_KEY`: Stripe secret key (auto-detects live vs test)
+- `STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
+- `SENDGRID_API_KEY`: SendGrid API key
+- `FROM_EMAIL`: Email sender address
+- `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`: Admin credentials
+
+### Feature Flag Environment Variables
+Control individual features via environment variables:
+- `FEATURE_RECIPES`: Enable/disable recipe management (default: true)
+- `FEATURE_AI_COACH`: Enable/disable AI coach features (default: true)
+- `FEATURE_ADMIN`: Enable/disable admin panel (default: true)
+- `FEATURE_PAYMENTS`: Enable/disable payment processing (default: true)
+- `FEATURE_BARCODE_SCANNER`: Enable/disable barcode scanning (default: true)
+- `FEATURE_NUTRITION_REVIEW`: Enable/disable nutrition review (default: true)
+- `FEATURE_ANALYTICS`: Enable/disable analytics features (default: true)
+- `FEATURE_SUPPORT`: Enable/disable support pages (default: true)
+- `FEATURE_HUMAN_HELP`: Enable/disable human help features (default: true)
+
+## DEVELOPMENT WORKFLOW
+1. Use environment detection system for all configuration
+2. Follow modular blueprint architecture with feature flags
+3. Test in both development and production environments
+4. Use centralized configuration management
+5. Maintain backward compatibility
+6. Follow established coding standards
+7. Use page-specific base templates for new pages
+8. Check feature flags before implementing feature-specific code
+9. Test with features disabled to ensure graceful degradation
+
+## COMMON PATTERNS
+
+### Adding New Environment-Specific Configuration
+```python
+# In config/environment.py, add to EnvironmentDetector class
+def get_new_config(self) -> Dict[str, Any]:
+    if self.is_production:
+        return {'setting': 'production_value'}
+    else:
+        return {'setting': 'development_value'}
+```
+
+### Using Environment Detection in New Components
+```python
+from config.environment import get_environment_detector
+
+class NewComponent:
+    def __init__(self):
+        self.env_detector = get_environment_detector()
+        self.config = self.env_detector.get_new_config()
+```
+
+### Updating Existing Components
+Replace manual environment checks with environment detection:
+```python
+# Old way
+if os.getenv('FLASK_ENV') == 'development':
+    # development code
+
+# New way
+from config.environment import is_development
+if is_development():
+    # development code
+```
+
+### Adding New Features with Feature Flags
+```python
+# In config/feature_flags.py, add new feature
+'new_feature': self._get_flag('FEATURE_NEW_FEATURE', True),
+
+# In routes/modular_registry.py, register with feature flag
+route_registry.register_blueprint(app, new_feature_bp, '', 'new_feature')
+
+# In templates, check feature flag
+{% if is_feature_enabled('new_feature') %}
+    <!-- New feature UI -->
+{% endif %}
+```
+
+### Creating New Page Types
+```python
+# 1. Create base template in templates/layouts/
+# 2. Create page-specific templates in templates/pages/new_feature/
+# 3. Update routes to use new template paths
+# 4. Add feature flag if needed
+```
+
+## TESTING
+- Test environment detection in both development and production modes
+- Validate configuration sections work correctly
+- Ensure backward compatibility with existing code
+- Test automatic environment detection logic
+- Test feature flags functionality with `python test_modularity.py`
+- Test individual features can be disabled without affecting others
+- Test page-specific resource loading
+
+## TROUBLESHOOTING
+- Environment not detected: Check DATABASE_URL or FLASK_ENV
+- Configuration not applied: Ensure using get_config() or environment detector
+- Import errors: Check that environment detection system is properly imported
+- Backward compatibility issues: Verify existing code uses updated configuration methods
+- Feature not loading: Check if feature flag is enabled in environment variables
+- Template not found: Verify template is in correct directory structure and using correct base template
+- Resources not loading: Check if page is using correct base template for resource loading
+
+## DOCUMENTATION
+- Main documentation: `/docs/README.md`
+- Environment detection: `/docs/ENVIRONMENT_DETECTION_SYSTEM.md`
+- Modular architecture: `/docs/MODULAR_ARCHITECTURE.md`
+- Project structure: `/docs/PROJECT_STRUCTURE.md`
+- Reference file: `/.cursor` (comprehensive project reference)
+
+## VERSION INFORMATION
+- Current Version: 3.0 (Modular Architecture with Feature Flags)
+- Last Updated: December 2024
+- Major Features: Centralized environment detection, feature flags system, modular template architecture
+- Architecture: Modular Flask Blueprint with environment detection and feature flag support

@@ -4,6 +4,7 @@ from functools import wraps
 from flask import request, jsonify, current_app, g
 from datetime import datetime, timedelta
 import threading
+from config.environment import get_environment_detector
 
 class SecurityMiddleware:
     def __init__(self, app):
@@ -19,13 +20,9 @@ class SecurityMiddleware:
         }
         self.lock = threading.Lock()
         
-        # Check if we're in development mode for CSP relaxation
-        self.is_development = (
-            app.debug or 
-            app.config.get('ENV') == 'development' or
-            app.config.get('FLASK_ENV') == 'development' or
-            not app.config.get('DATABASE_URL', '').startswith('postgresql')
-        )
+        # Get environment detector for consistent environment detection
+        self.env_detector = get_environment_detector()
+        self.is_development = self.env_detector.is_development
         
         # Clear any existing blocks for development IPs if in development mode
         if self.is_development:

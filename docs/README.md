@@ -54,10 +54,11 @@ For detailed information about the project structure, see [PROJECT_STRUCTURE.md]
 ## Technology Stack
 
 ### Backend
-- **Flask**: Python web framework
+- **Flask**: Python web framework with Blueprint architecture
 - **SQLAlchemy**: Database ORM
 - **Flask-Login**: User authentication
 - **PostgreSQL/SQLite**: Database (PostgreSQL for production, SQLite for development)
+- **Environment Detection System**: Centralized configuration management
 
 ### Frontend
 - **Tailwind CSS**: Utility-first CSS framework
@@ -202,16 +203,27 @@ For detailed information about the project structure, see [PROJECT_STRUCTURE.md]
 
 ## Configuration
 
+### Environment Detection System
+The application uses a centralized environment detection system that automatically configures all components based on the environment:
+
+- **Development Mode**: Detected when using SQLite database (default)
+- **Production Mode**: Detected when using PostgreSQL database
+- **Automatic Configuration**: Database, Stripe, sessions, security, and email settings are automatically configured
+
+For detailed information, see [ENVIRONMENT_DETECTION_SYSTEM.md](ENVIRONMENT_DETECTION_SYSTEM.md).
+
 ### Environment Variables
 - `SECRET_KEY`: Flask secret key for sessions
 - `USDA_API_KEY`: USDA FoodData Central API key
 - `ADMIN_USERNAME`: Admin account username
 - `ADMIN_PASSWORD`: Admin account password
 - `ADMIN_EMAIL`: Admin account email
-- `DATABASE_URL`: Database connection string (optional, defaults to SQLite)
+- `DATABASE_URL`: Database connection string (PostgreSQL for production, SQLite for development)
+- `STRIPE_SECRET_KEY`: Stripe secret key (auto-detects live vs test mode)
+- `STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
+- `SENDGRID_API_KEY`: SendGrid API key for email
+- `FROM_EMAIL`: Email sender address
 
-### reCAPTCHA Configuration
-reCAPTCHA v2 is automatically enabled when the domain is `kiwellness.org`. For other domains, it's bypassed for development purposes.
 
 ## Development
 

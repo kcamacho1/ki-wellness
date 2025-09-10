@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Admin-specific CSS -->
+<style>
+    .admin-sidebar {
+        background: #1f2937;
+        min-height: 100vh;
+        width: 250px;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+    }
+    
+    .admin-content {
+        margin-left: 250px;
+        padding: 2rem;
+    }
+    
+    .admin-nav-item {
+        display: block;
+        padding: 1rem 1.5rem;
+        color: #d1d5db;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .admin-nav-item:hover {
+        background: #374151;
+        color: white;
+    }
+    
+    .admin-nav-item.active {
+        background: #059669;
+        color: white;
+    }
+</style>
+
+<!-- Admin-specific JavaScript -->
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+{% endblock %}

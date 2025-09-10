@@ -1,13 +1,9 @@
-{% extends "base.html" %}
+{% extends "layouts/auth_base.html" %}
 
 {% block title %}Login - Ki Wellness{% endblock %}
 
-{% block head %}
-<!-- Bot protection handled by Cloudflare -->
-{% endblock %}
-
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-ki-green-50 to-white flex items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="auth-container">
     <div class="max-w-md w-full">
         <!-- Logo and Title -->
         <div class="text-center mb-8">
@@ -17,7 +13,7 @@
         </div>
         
         <!-- Login Form -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div class="auth-card">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}

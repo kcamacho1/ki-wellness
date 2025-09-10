@@ -5,99 +5,30 @@ from flask import Flask, session
 from flask_login import LoginManager
 from dotenv import load_dotenv
 
-
 from database import db, User # Import database and models
-from routes import register_blueprints # Import route blueprints
+from routes.modular_registry import register_modular_blueprints # Import modular route blueprints
 from services.stripe_client import get_stripe_client # Import stripe client
 from services.analytics_service import analytics_service # Import analytics service
 from security_middleware import SecurityMiddleware # Import security middleware
 from utils.helpers import initialize_default_settings # Import utilities and decorators
+from config.environment import get_environment_detector, get_config # Import environment detection
 
 load_dotenv() # Load environment variables
 
+# Initialize environment detector
+env_detector = get_environment_detector()
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Apply configuration from environment detector
+app.config.update(get_config('flask'))
 
 # Fix MIME types for static files
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-# Session configuration - Auto-logout after 24 hours of inactivity
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # Keep HttpOnly for security
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-# Database configuration - Multi-driver approach
-db_url = os.getenv('DATABASE_URL')
-is_production = bool(db_url and 'postgresql' in db_url)
-
-if is_production:
-    # Production - PostgreSQL with driver detection
-    if db_url.startswith('postgres://'):
-        db_url = db_url.replace('postgres://', 'postgresql://', 1)
-    
-    # Try to use the best available driver
-    try:
-        import psycopg2
-        print("✅ Using psycopg2 (maximum compatibility)")
-        # Use standard postgresql:// URL - SQLAlchemy will auto-detect
-    except ImportError:
-        try:
-            import psycopg
-            print("✅ Using psycopg3 (Python 3.13+ compatible)")
-            # Force psycopg dialect
-            if '+psycopg' not in db_url:
-                db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
-        except ImportError:
-            print("⚠️ No PostgreSQL driver found - falling back to SQLite")
-            db_url = None
-            is_production = False
-    
-    if is_production:
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'connect_args': {
-                'connect_timeout': 10
-            },
-            'pool_timeout': 20,
-            'pool_recycle': 3600,
-            'pool_pre_ping': True
-        }
-        print(f"✅ Production database configured with PostgreSQL")
-else:
-    # Development - SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ki_wellness_dev.db'
-    print(f"✅ Development database configured with SQLite")
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Stripe configuration - Auto-detect environment like database
-stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
-stripe_publishable_key = os.getenv('STRIPE_PUBLISHABLE_KEY')
-stripe_webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
-
-# Auto-detect Stripe environment (similar to database detection)
-stripe_is_live = bool(stripe_secret_key and stripe_secret_key.startswith('sk_live_'))
-stripe_is_test = bool(stripe_secret_key and stripe_secret_key.startswith('sk_test_'))
-
-if stripe_is_live:
-    print("✅ Stripe LIVE mode detected - Production payments enabled")
-    app.config['STRIPE_MODE'] = 'live'
-    app.config['STRIPE_ENV'] = 'production'
-elif stripe_is_test:
-    print("✅ Stripe TEST mode detected - Development payments enabled")
-    app.config['STRIPE_MODE'] = 'test'
-    app.config['STRIPE_ENV'] = 'development'
-else:
-    print("⚠️ No valid Stripe keys found - Payment features disabled")
-    app.config['STRIPE_MODE'] = 'disabled'
-    app.config['STRIPE_ENV'] = 'disabled'
-
-# Store Stripe configuration in app config
-app.config['STRIPE_SECRET_KEY'] = stripe_secret_key
-app.config['STRIPE_PUBLISHABLE_KEY'] = stripe_publishable_key
-app.config['STRIPE_WEBHOOK_SECRET'] = stripe_webhook_secret
+# Print environment information
+env_detector.print_environment_info()
 
 # Initialize database
 db.init_app(app)
@@ -126,9 +57,10 @@ security = SecurityMiddleware(app)
 
 def create_admin_user():
     """Create admin user if it doesn't exist"""
-    admin_username = os.getenv('ADMIN_USERNAME')
-    admin_password = os.getenv('ADMIN_PASSWORD')
-    admin_email = os.getenv('ADMIN_EMAIL')
+    admin_config = get_config('admin')
+    admin_username = admin_config.get('ADMIN_USERNAME')
+    admin_password = admin_config.get('ADMIN_PASSWORD')
+    admin_email = admin_config.get('ADMIN_EMAIL')
     
     if not all([admin_username, admin_password, admin_email]):
         print("⚠️ Admin credentials not set in environment variables")
@@ -159,8 +91,8 @@ def create_admin_user():
         print(f"❌ Error creating admin user: {e}")
         db.session.rollback()
 
-# Register all route blueprints
-register_blueprints(app)
+# Register all route blueprints with feature flag support
+register_modular_blueprints(app)
 
 if __name__ == '__main__':
     with app.app_context():
@@ -182,7 +114,7 @@ if __name__ == '__main__':
         print("🚀 Ki Wellness application started successfully!")
     
     app.run(
-        debug=os.getenv('FLASK_ENV') == 'development',
-        host='0.0.0.0',
-        port=int(os.getenv('PORT', 5000))
+        debug=env_detector.is_development,
+        host=app.config.get('HOST', '0.0.0.0'),
+        port=app.config.get('PORT', 5000)
     )
