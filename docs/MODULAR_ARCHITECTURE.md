@@ -22,7 +22,7 @@ if is_feature_enabled('recipes'):
 **Available Features:**
 - `auth` - Authentication system (always enabled)
 - `dashboard` - Main dashboard
-- `recipes` - Recipe management
+- `recipes` - Recipe management with community rating system
 - `ai_coach` - AI coaching features
 - `admin` - Admin panel
 - `payments` - Payment processing
@@ -32,7 +32,27 @@ if is_feature_enabled('recipes'):
 - `support` - Support pages
 - `human_help` - Human help features
 
-### 2. Modular Template Structure
+### 2. Recipe Rating System Architecture
+
+The recipe system includes a community-focused rating architecture:
+
+**Database Schema:**
+- `Recipe.average_rating` - Stored average rating for performance
+- `Recipe.rating_count` - Number of users who rated the recipe
+- `RecipeRating` - Individual user ratings (1-5 stars)
+
+**Key Features:**
+- Community-first approach (all recipes are public)
+- Real-time rating updates
+- Contributor recognition system
+- Permission-based editing (owners only)
+
+**API Endpoints:**
+- `POST /api/recipes/<id>/rate` - Submit/update rating
+- `GET /api/recipes/<id>` - Get recipe with rating info
+- All recipe endpoints include `contributor` and `is_owner` fields
+
+### 3. Modular Template Structure
 
 Templates are now organized by feature:
 
@@ -54,7 +74,7 @@ templates/
 └── components/       # Reusable components
 ```
 
-### 3. Modular Route Registration
+### 4. Modular Route Registration
 
 Routes are registered conditionally based on feature flags (`routes/modular_registry.py`):
 

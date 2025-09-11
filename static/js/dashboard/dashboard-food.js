@@ -4,7 +4,9 @@ class DashboardFood {
     constructor(core) {
         this.core = core;
         this.currentEditingFood = null;
+        this.currentCopyFoodId = null;
         this.setupEditEventListeners();
+        this.setupCopyModalListeners();
     }
 
     displayFoodLog(foodLogs) {
@@ -116,6 +118,39 @@ class DashboardFood {
             if (e.target.matches('#edit-food-form')) {
                 e.preventDefault();
                 this.saveEditedFood();
+            }
+        });
+    }
+
+    setupCopyModalListeners() {
+        // Handle copy modal close events
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#close-copy-modal') || e.target.matches('#cancel-copy')) {
+                this.hideCopyModal();
+            }
+        });
+
+        // Handle confirm copy button
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#confirm-copy')) {
+                this.confirmCopyFood();
+            }
+        });
+
+        // Handle "Use dashboard date" button
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#copy-use-current-date')) {
+                const dateInput = document.getElementById('copy-date');
+                if (dateInput) {
+                    dateInput.value = this.core.currentDate.toISOString().split('T')[0];
+                }
+            }
+        });
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#copy-food-modal')) {
+                this.hideCopyModal();
             }
         });
     }
@@ -516,45 +551,107 @@ class DashboardFood {
 
     async showCopyConfirmation(foodId) {
         try {
-            const response = await fetch(`/api/food-log/${foodId}`);
-            const data = await response.json();
+            // Find the food item in the current dashboard data
+            const foodItem = this.core.currentData?.food_logs?.find(log => log.id == foodId);
             
-            if (data.success) {
-                const food = data.food_log;
-                const confirmed = confirm(`Copy "${food.food_name}" (${food.amount} ${food.unit}) to today?`);
-                
-                if (confirmed) {
-                    this.confirmCopyFood(foodId);
-                }
+            if (!foodItem) {
+                this.core.ui.showToast('Food item not found', 'error');
+                return;
             }
+            
+            // Store the food ID for the copy operation
+            this.currentCopyFoodId = foodId;
+            
+            // Update the modal with food details
+            const foodNameElement = document.getElementById('copy-food-name');
+            if (foodNameElement) {
+                const quantity = foodItem.quantity || 1;
+                const servingSize = foodItem.serving_size || 100;
+                const unit = 'g'; // Default unit
+                foodNameElement.textContent = `"${foodItem.name}" (${quantity} serving${quantity > 1 ? 's' : ''}, ${servingSize}${unit} each)`;
+            }
+            
+            // Set default values
+            const dateInput = document.getElementById('copy-date');
+            const timeSelect = document.getElementById('copy-time-of-day');
+            
+            if (dateInput) {
+                // Default to today's date
+                dateInput.value = this.core.currentDate.toISOString().split('T')[0];
+            }
+            
+            if (timeSelect) {
+                // Default to the original time of day
+                timeSelect.value = foodItem.time_of_day || 'snack';
+            }
+            
+            // Show the modal
+            const modal = document.getElementById('copy-food-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+            
         } catch (error) {
-            console.error('Error fetching food details:', error);
-            this.core.ui.showToast('Failed to get food details', 'error');
+            console.error('Error showing copy confirmation:', error);
+            this.core.ui.showToast('Failed to show copy confirmation', 'error');
         }
     }
 
-    async confirmCopyFood(foodId) {
+    async confirmCopyFood() {
         try {
+            const foodId = this.currentCopyFoodId;
+            if (!foodId) {
+                this.core.ui.showToast('No food item selected', 'error');
+                return;
+            }
+            
+            // Get selected date and time from modal
+            const dateInput = document.getElementById('copy-date');
+            const timeSelect = document.getElementById('copy-time-of-day');
+            
+            if (!dateInput || !timeSelect) {
+                this.core.ui.showToast('Modal elements not found', 'error');
+                return;
+            }
+            
+            const selectedDate = dateInput.value;
+            const selectedTime = timeSelect.value;
+            
+            if (!selectedDate) {
+                this.core.ui.showToast('Please select a date', 'warning');
+                return;
+            }
+            
             const response = await fetch(`/api/food-log/${foodId}/copy`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    date: this.core.currentDate.toISOString().split('T')[0]
+                    date: selectedDate,
+                    time_of_day: selectedTime
                 })
             });
 
             const data = await response.json();
             
             if (data.success) {
-                this.core.ui.showToast('Food copied to today!', 'success');
+                this.core.ui.showToast(`Food copied to ${selectedDate} (${selectedTime})!`, 'success');
+                this.hideCopyModal();
                 this.core.debouncedReload();
             } else {
-                this.core.ui.showToast('Failed to copy food item', 'error');
+                this.core.ui.showToast(data.message || 'Failed to copy food item', 'error');
             }
         } catch (error) {
             console.error('Error copying food item:', error);
             this.core.ui.showToast('Failed to copy food item', 'error');
         }
+    }
+    
+    hideCopyModal() {
+        const modal = document.getElementById('copy-food-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        this.currentCopyFoodId = null;
     }
 
     async confirmDeleteFood(foodId) {

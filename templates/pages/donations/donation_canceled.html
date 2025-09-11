@@ -1,0 +1,161 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}Donation Canceled - Ki Wellness{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cancel-card {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.2);
+    }
+    
+    .info-card {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Canceled Card -->
+        <div class="cancel-card p-8 mb-8 text-center text-white">
+            <div class="mb-6">
+                <svg class="w-24 h-24 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            
+            <h1 class="text-4xl font-bold mb-4">Donation Canceled</h1>
+            <p class="text-xl opacity-90 mb-6">
+                No worries! Your donation was not processed and no charges were made.
+            </p>
+        </div>
+
+        <!-- Why Support Us -->
+        <div class="info-card p-8 mb-8 text-center text-white">
+            <h2 class="text-2xl font-bold mb-6">Why Support Ki Wellness?</h2>
+            <div class="space-y-4 text-left">
+                <div class="flex items-start space-x-3">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="text-white font-semibold text-sm">1</span>
+                    </div>
+                    <p class="opacity-90">Help us maintain and improve the platform you love</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="text-white font-semibold text-sm">2</span>
+                    </div>
+                    <p class="opacity-90">Support the development of new features and improvements</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span class="text-white font-semibold text-sm">3</span>
+                    </div>
+                    <p class="opacity-90">Help us reach more people and make health tracking accessible to everyone</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alternative Ways to Support -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Other Ways to Support</h2>
+            <div class="space-y-6">
+                <div class="text-center p-6 border border-gray-200 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Try Again</h3>
+                    <p class="text-gray-600 mb-4">Sometimes technical issues can occur. Feel free to try donating again.</p>
+                    <a 
+                        href="{{ url_for('donations.donate') }}" 
+                        class="inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    >
+                        Donate Again
+                    </a>
+                </div>
+                
+                <div class="text-center p-6 border border-gray-200 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Direct Stripe Link</h3>
+                    <p class="text-gray-600 mb-4">Use our direct Stripe donation link for a different payment experience.</p>
+                    <a 
+                        href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02" 
+                        target="_blank"
+                        class="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                        Donate via Stripe
+                    </a>
+                </div>
+                
+                <div class="text-center p-6 border border-gray-200 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Share with Friends</h3>
+                    <p class="text-gray-600 mb-4">Help us grow by sharing Ki Wellness with your network.</p>
+                    <button 
+                        onclick="shareApp()"
+                        class="inline-block bg-purple-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                    >
+                        Share App
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Help Us Improve</h2>
+            <p class="text-gray-600 text-center mb-6">
+                Was there something that made you cancel? We'd love to hear your feedback to improve the donation experience.
+            </p>
+            <div class="text-center">
+                <a 
+                    href="{{ url_for('static_pages.support') if True else 'mailto:support@ki-wellness.com' }}" 
+                    class="inline-block bg-gray-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+                >
+                    Send Feedback
+                </a>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center space-y-4">
+            <a 
+                href="{{ url_for('dashboard.dashboard') if user else url_for('static_pages.index') }}" 
+                class="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors"
+            >
+                Continue to Dashboard
+            </a>
+            
+            <div class="text-center">
+                <a 
+                    href="{{ url_for('donations.donate') }}" 
+                    class="text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                    Try Donating Again
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareApp() {
+    const shareData = {
+        title: 'Ki Wellness - Self Health Simplified',
+        text: 'Check out Ki Wellness, a comprehensive health and wellness tracking app!',
+        url: window.location.origin
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData);
+    } else {
+        // Fallback: copy to clipboard
+        const shareText = `${shareData.text} ${shareData.url}`;
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('App link copied to clipboard!');
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -20,7 +20,7 @@ def index():
     """Homepage - redirect to dashboard if logged in, otherwise show landing page"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.dashboard'))
-    return render_template('landing.html')
+    return render_template('pages/static/landing.html')
 
 
 @static_bp.route('/privacy')

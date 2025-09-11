@@ -3,7 +3,7 @@
 # This file provides context and rules for Cursor AI when working with the Ki Wellness application.
 
 ## PROJECT OVERVIEW
-Ki Wellness is a comprehensive health and wellness tracking application built with Flask, featuring food logging, water intake tracking, mood monitoring, and AI-powered health insights. The application uses a modular Flask Blueprint architecture with a centralized environment detection system and feature flags for enabling/disabling individual pages and features.
+Ki Wellness is a comprehensive health and wellness tracking application built with Flask, featuring food logging, water intake tracking, mood monitoring, AI-powered health insights, and a community recipe system with rating architecture. The application uses a modular Flask Blueprint architecture with a centralized environment detection system and feature flags for enabling/disabling individual pages and features.
 
 ## ARCHITECTURE HIGHLIGHTS
 
@@ -32,6 +32,17 @@ The application now supports enabling/disabling individual features without affe
 - **Environment Control**: Features can be disabled via environment variables
 - **Runtime Control**: Features can be enabled/disabled programmatically
 
+### Recipe Rating System (NEW - December 2024)
+The application includes a comprehensive community recipe system with rating functionality:
+
+- **Community-First**: All recipes are public by default (no private recipes)
+- **Rating Architecture**: Average rating + count stored in Recipe model for performance
+- **Database Fields**: `average_rating` (FLOAT), `rating_count` (INTEGER)
+- **Rating API**: `/api/recipes/<id>/rate` (POST) - allows all users to rate public recipes
+- **Permission System**: Only recipe owners can edit/delete, all users can rate
+- **Rating Display**: Stars + numeric value + count "(15 ratings)" across all UI components
+- **Real-time Updates**: Rating stats update immediately after submission
+
 ## CODING STANDARDS
 
 ### Python/Flask
@@ -45,6 +56,14 @@ The application now supports enabling/disabling individual features without affe
 - Consistent naming: use 'tokens' in codebase
 - Reuse existing modules and components
 - Use page-specific base templates for new pages
+
+### Recipe System Standards
+- Always use stored `average_rating` and `rating_count` fields for performance
+- Call `recipe.update_rating_stats()` after rating changes to update stored values
+- Include `contributor` (username) and `is_owner` fields in API responses
+- Check `recipe.is_public` before allowing rating operations
+- Use consistent rating display format: stars + numeric + count
+- Validate rating values (1-5) on both frontend and backend
 
 ### Environment Detection Usage
 When working with environment-specific code:
@@ -241,6 +260,45 @@ route_registry.register_blueprint(app, new_feature_bp, '', 'new_feature')
 # 4. Add feature flag if needed
 ```
 
+### Working with Recipe Ratings
+```python
+# Update recipe rating stats after rating changes
+def rate_recipe(recipe_id, rating_value):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    
+    # Create or update rating
+    existing_rating = RecipeRating.query.filter_by(
+        recipe_id=recipe_id, user_id=current_user.id
+    ).first()
+    
+    if existing_rating:
+        existing_rating.rating = rating_value
+    else:
+        rating = RecipeRating(
+            recipe_id=recipe_id,
+            user_id=current_user.id,
+            rating=rating_value
+        )
+        db.session.add(rating)
+    
+    # Update stored rating stats
+    recipe.update_rating_stats()
+    db.session.commit()
+    
+    return {
+        'average_rating': recipe.average_rating,
+        'rating_count': recipe.rating_count
+    }
+```
+
+### Recipe API Response Format
+```python
+# Include contributor and ownership info in all recipe responses
+recipe_data = recipe.to_dict()
+recipe_data['contributor'] = recipe.user.username if recipe.user else 'Unknown'
+recipe_data['is_owner'] = (recipe.user_id == current_user.id)
+```
+
 ## TESTING
 - Test environment detection in both development and production modes
 - Validate configuration sections work correctly
@@ -267,7 +325,7 @@ route_registry.register_blueprint(app, new_feature_bp, '', 'new_feature')
 - Reference file: `/.cursor` (comprehensive project reference)
 
 ## VERSION INFORMATION
-- Current Version: 3.0 (Modular Architecture with Feature Flags)
+- Current Version: 3.1 (Community Recipe System with Rating Architecture)
 - Last Updated: December 2024
-- Major Features: Centralized environment detection, feature flags system, modular template architecture
-- Architecture: Modular Flask Blueprint with environment detection and feature flag support
+- Major Features: Centralized environment detection, feature flags system, modular template architecture, community recipe rating system
+- Architecture: Modular Flask Blueprint with environment detection, feature flags, and community recipe rating system

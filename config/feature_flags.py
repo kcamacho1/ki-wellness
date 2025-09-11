@@ -20,6 +20,7 @@ class FeatureFlags:
             'ai_coach': self._get_flag('FEATURE_AI_COACH', True),
             'admin': self._get_flag('FEATURE_ADMIN', True),
             'payments': self._get_flag('FEATURE_PAYMENTS', True),
+            'donations': self._get_flag('FEATURE_DONATIONS', True),
             'barcode_scanner': self._get_flag('FEATURE_BARCODE_SCANNER', True),
             'nutrition_review': self._get_flag('FEATURE_NUTRITION_REVIEW', True),
             'analytics': self._get_flag('FEATURE_ANALYTICS', True),

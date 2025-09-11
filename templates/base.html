@@ -106,6 +106,11 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     
+    <!-- Donation Module -->
+    {% if is_feature_enabled('donations') %}
+    <script src="{{ url_for('static', filename='js/donations/donation-module.js') }}"></script>
+    {% endif %}
+    
     {% block head %}{% endblock %}
 </head>
 <body class="font-quicksand bg-gray-50 text-gray-900 min-h-screen">

@@ -69,6 +69,7 @@ def register_modular_blueprints(app: Flask):
     from .admin import admin_bp
     from .dashboard import dashboard_bp
     from .payments import payments_bp
+    from .donations import donations_bp
     from .ai import ai_bp
     from .api import api_bp
     from .food import food_bp
@@ -84,6 +85,7 @@ def register_modular_blueprints(app: Flask):
     route_registry.register_blueprint(app, dashboard_bp, '', 'dashboard')
     route_registry.register_blueprint(app, admin_bp, '', 'admin')
     route_registry.register_blueprint(app, payments_bp, '', 'payments')
+    route_registry.register_blueprint(app, donations_bp, '', 'donations')
     route_registry.register_blueprint(app, ai_bp, '', 'ai_coach')
     route_registry.register_blueprint(app, food_bp, '', 'nutrition_review')
     route_registry.register_blueprint(app, profile_bp, '', 'profile')

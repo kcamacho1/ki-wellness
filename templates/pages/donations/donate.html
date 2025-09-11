@@ -1,0 +1,240 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}Support Ki Wellness{% endblock %}
+
+{% block extra_css %}
+<style>
+    .donation-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    
+    .donation-amount-btn {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .donation-amount-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .donation-amount-btn.selected {
+        border-color: #10b981;
+        background-color: #ecfdf5;
+        color: #065f46;
+    }
+    
+    .custom-amount-input {
+        transition: all 0.3s ease;
+    }
+    
+    .custom-amount-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    
+    .donate-btn {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .donate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+    }
+    
+    .donate-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                Support Ki Wellness
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Help us continue building amazing health and wellness features. 
+                Your support helps us maintain and improve the platform for everyone.
+            </p>
+            
+            {% if not donation_config %}
+            <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-yellow-800">
+                    <strong>Note:</strong> The donation service is currently unavailable. 
+                    Please use our direct Stripe link below for donations.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Donation Card -->
+        <div class="donation-card p-8 mb-8">
+            <!-- Donate Button -->
+            <div class="text-center">
+                <a 
+                    href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="donate-btn text-white py-4 px-12 rounded-lg font-bold text-xl inline-block hover:shadow-lg transition-all duration-200"
+                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); text-shadow: 0 1px 2px rgba(0,0,0,0.2);"
+                >
+                    <svg class="w-6 h-6 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    Donate via Stripe
+                </a>
+            </div>
+        </div>
+
+        <!-- Why Donate Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Why Support Ki Wellness?</h3>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Continuous Development</h4>
+                    <p class="text-gray-600">We're constantly adding new features and improving existing ones based on user feedback.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Reliable Service</h4>
+                    <p class="text-gray-600">Your support helps us maintain server uptime and provide reliable access to your health data.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Community Impact</h4>
+                    <p class="text-gray-600">Help us reach more people and make health tracking accessible to everyone.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alternative Donation Methods -->
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Other Ways to Support</h3>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="text-center p-6 border border-gray-200 rounded-lg">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Direct Stripe Link</h4>
+                    <p class="text-gray-600 mb-4">Use our direct Stripe donation link for a quick contribution.</p>
+                    <a 
+                        href="{{ donation_config.donation_url if donation_config else 'https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02' }}" 
+                        target="_blank"
+                        class="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                        Donate via Stripe
+                    </a>
+                </div>
+                <div class="text-center p-6 border border-gray-200 rounded-lg">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Share with Friends</h4>
+                    <p class="text-gray-600 mb-4">Help us grow by sharing Ki Wellness with your network.</p>
+                    <button 
+                        onclick="shareApp()"
+                        class="inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                    >
+                        Share App
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareApp() {
+    const shareData = {
+        title: 'Ki Wellness - Self Health Simplified',
+        text: 'Check out Ki Wellness, a comprehensive health and wellness tracking app! Track your food, water, mood, and get AI-powered health insights.',
+        url: window.location.origin
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        navigator.share(shareData).catch((error) => {
+            console.log('Error sharing:', error);
+            // Fallback to clipboard if sharing fails
+            copyToClipboard();
+        });
+    } else {
+        // Fallback: copy to clipboard
+        copyToClipboard();
+    }
+}
+
+function copyToClipboard() {
+    const shareText = `${shareData.title}\n\n${shareData.text}\n\n${shareData.url}`;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            showToast('App info copied to clipboard!', 'success');
+        }).catch(() => {
+            fallbackCopyToClipboard(shareText);
+        });
+    } else {
+        fallbackCopyToClipboard(shareText);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showToast('App info copied to clipboard!', 'success');
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        showToast('Unable to copy to clipboard. Please copy manually: ' + text, 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-semibold z-50 ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        'bg-blue-500'
+    }`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

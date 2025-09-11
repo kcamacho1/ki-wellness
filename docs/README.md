@@ -1,6 +1,6 @@
 # Ki Wellness - Self Health Simplified
 
-A comprehensive self-health application that helps users track nutrition, water intake, and mood with an intuitive and interactive dashboard.
+A comprehensive self-health application that helps users track nutrition, water intake, mood, and share recipes with a community rating system through an intuitive and interactive dashboard.
 
 ## Features
 
@@ -10,6 +10,14 @@ A comprehensive self-health application that helps users track nutrition, water 
 - **Manual Entry**: Add custom foods with nutritional data
 - **Serving Size Conversion**: Automatically convert nutrition data based on your serving size
 - **Food Journal**: View and manage your daily food intake
+
+### 🍳 Community Recipe System
+- **Recipe Sharing**: Share your favorite recipes with the community
+- **Rating System**: Rate recipes from 1-5 stars with average rating display
+- **Recipe Search**: Search recipes by name or ingredients
+- **Nutritional Analysis**: Automatic calculation of recipe nutrition facts
+- **Contributor Recognition**: See who created each recipe
+- **Recipe Management**: Edit and delete your own recipes
 
 ### 💧 Water Intake Monitoring
 - **Daily Goal Tracking**: Monitor progress toward 64 oz daily water goal

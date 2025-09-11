@@ -1,0 +1,18 @@
+<!-- Reusable Donation Button Component -->
+<!-- Usage: include 'components/donation_button.html' with context -->
+
+<div class="donation-button-container">
+    <a 
+        href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="donation-button bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 inline-flex items-center"
+        {% if donation_text %}title="{{ donation_text }}"{% endif %}
+    >
+        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        {{ donation_text or 'Support Ki Wellness' }}
+    </a>
+</div>
+

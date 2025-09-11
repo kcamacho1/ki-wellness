@@ -1,0 +1,71 @@
+<!-- Reusable Donation Banner Component -->
+<!-- Usage: include 'components/donation_banner.html' with context -->
+
+<div class="donation-banner bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg mb-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="flex-shrink-0">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-semibold text-lg">{{ banner_title or 'Support Ki Wellness' }}</h3>
+                <p class="text-sm opacity-90">{{ banner_message or 'Help us continue building amazing health and wellness features for everyone.' }}</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a 
+                href="https://donate.stripe.com/7sYdR95ld0R9byt8VU3Je02"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="bg-white text-green-600 hover:bg-gray-100 font-semibold py-2 px-4 rounded-lg transition-colors inline-flex items-center"
+            >
+                {{ banner_button_text or 'Donate Now' }}
+            </a>
+            <button 
+                onclick="dismissDonationBanner()"
+                class="text-white hover:text-gray-200 transition-colors"
+                title="Dismiss"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function dismissDonationBanner() {
+    const banner = document.querySelector('.donation-banner');
+    if (banner) {
+        banner.style.display = 'none';
+        // Store dismissal in localStorage to avoid showing again for a while
+        localStorage.setItem('donation_banner_dismissed', Date.now().toString());
+    }
+}
+
+// Check if banner should be shown (not dismissed recently)
+function shouldShowDonationBanner() {
+    const dismissed = localStorage.getItem('donation_banner_dismissed');
+    if (!dismissed) return true;
+    
+    const dismissedTime = parseInt(dismissed);
+    const now = Date.now();
+    const hoursSinceDismissed = (now - dismissedTime) / (1000 * 60 * 60);
+    
+    // Show banner again after 24 hours
+    return hoursSinceDismissed >= 24;
+}
+
+// Auto-hide banner if it was recently dismissed
+document.addEventListener('DOMContentLoaded', function() {
+    if (!shouldShowDonationBanner()) {
+        const banner = document.querySelector('.donation-banner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
+    }
+});
+</script>

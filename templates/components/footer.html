@@ -1,4 +1,9 @@
 <footer class="bg-gray-800 text-white mt-auto">
+    <!-- Donation Footer -->
+    {% if is_feature_enabled('donations') %}
+    {% include 'components/donation_footer.html' %}
+    {% endif %}
+    
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <!-- Company Info -->

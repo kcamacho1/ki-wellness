@@ -19,12 +19,16 @@ from services.openrouter_client import get_openrouter_client, generate_ai_respon
 from services.food_data import BASIC_FOODS, COMMON_FOODS_DB
 from services.health_resources import get_relevant_resources, format_resources_for_prompt
 from services.analytics_service import analytics_service
+# Pexels client removed - only used in separate script
+from services.r2_client import r2_client
+from botocore.exceptions import ClientError
 
 # Import utilities
 from utils.decorators import premium_required, admin_required
 from utils.helpers import get_app_setting, check_ai_usage_limits
 from security_middleware import rate_limit, sanitize_input
 from utils.helpers import validate_user_input, sanitize_user_input
+import re
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -423,6 +427,332 @@ def get_stored_analysis():
         current_app.logger.error(f"Error getting stored analysis: {e}")
         return jsonify({'success': False, 'error': 'Failed to get stored analysis'}), 500
 
+
+# Pexels API endpoints removed - only used in separate script
+
+
+@api_bp.route('/r2/stats', methods=['GET'])
+@login_required
+@admin_required
+def get_r2_stats():
+    """
+    Get R2 storage statistics (admin only)
+    """
+    try:
+        stats = r2_client.get_storage_stats()
+        return jsonify({
+            'success': True,
+            'stats': stats
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error getting R2 stats: {e}")
+        return jsonify({'success': False, 'error': 'Failed to get R2 stats'}), 500
+
+
+@api_bp.route('/r2/upload', methods=['POST'])
+@login_required
+@rate_limit(max_requests=10, window=60)  # Reduced rate limit for security
+def upload_to_r2():
+    """
+    Upload file to R2 storage with enhanced security
+    """
+    try:
+        # CSRF protection
+        if not request.form.get('csrf_token'):
+            return jsonify({'success': False, 'error': 'CSRF token required'}), 400
+        
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Validate file size (basic validation only since we'll transform the image)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        if file_size < 1024:  # At least 1KB
+            return jsonify({'success': False, 'error': 'File too small (min 1KB). Please select a valid image file.'}), 400
+        
+        # Sanitize folder name to prevent path traversal
+        folder = request.form.get('folder', 'uploads')
+        folder = sanitize_folder_name(folder)
+        
+        # Read file data
+        file_data = file.read()
+        
+        # Validate file content and ensure it's a food image
+        validation_result = validate_food_image(file_data, file.filename)
+        if not validation_result['valid']:
+            return jsonify({'success': False, 'error': validation_result['error']}), 400
+        
+        # Upload to R2
+        result = r2_client.upload_file(
+            file_data=file_data,
+            filename=file.filename,
+            folder=folder
+        )
+        
+        if result:
+            # Log successful upload for security monitoring
+            current_app.logger.info(f"File uploaded to R2 by user {current_user.id}: {file.filename}")
+            return jsonify({
+                'success': True,
+                'file': result
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Upload failed'
+            }), 500
+            
+    except Exception as e:
+        current_app.logger.error(f"Error uploading to R2: {e}")
+        return jsonify({'success': False, 'error': 'Upload failed'}), 500
+
+
+@api_bp.route('/api/r2/proxy/<path:object_key>', methods=['GET'])
+def proxy_r2_image(object_key):
+    """
+    Proxy R2 images to avoid CORS issues
+    This endpoint serves R2 images through the Flask app to bypass CORS restrictions
+    """
+    try:
+        if not r2_client.is_available():
+            return jsonify({'error': 'R2 storage not available'}), 503
+        
+        # Get file from R2
+        response = r2_client.s3_client.get_object(
+            Bucket=r2_client.bucket_name,
+            Key=object_key
+        )
+        
+        # Get file content and metadata
+        file_data = response['Body'].read()
+        content_type = response.get('ContentType', 'application/octet-stream')
+        
+        # Create Flask response with proper headers
+        from flask import Response
+        return Response(
+            file_data,
+            mimetype=content_type,
+            headers={
+                'Cache-Control': 'public, max-age=31536000',  # Cache for 1 year
+                'Access-Control-Allow-Origin': '*',  # Allow CORS
+                'Access-Control-Allow-Methods': 'GET',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            }
+        )
+        
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            return jsonify({'error': 'Image not found'}), 404
+        return jsonify({'error': 'Failed to retrieve image'}), 500
+    except Exception as e:
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+# Security helper functions for R2 uploads
+def sanitize_folder_name(folder_name: str) -> str:
+    """
+    Sanitize folder name to prevent path traversal attacks
+    """
+    if not folder_name:
+        return 'uploads'
+    
+    # Remove dangerous characters and path traversal attempts
+    folder_name = re.sub(r'[^a-zA-Z0-9_-]', '', folder_name)
+    
+    # Prevent path traversal
+    if '..' in folder_name or '/' in folder_name or '\\' in folder_name:
+        return 'uploads'
+    
+    # Limit length
+    if len(folder_name) > 50:
+        folder_name = folder_name[:50]
+    
+    return folder_name or 'uploads'
+
+def validate_file_content(file_data: bytes, filename: str) -> bool:
+    """
+    Validate file content to ensure it's a safe image file
+    """
+    try:
+        # File size validation removed since we'll transform the image
+        
+        # Check file signature (magic bytes)
+        if len(file_data) < 4:
+            return False
+        
+        # Image file signatures
+        image_signatures = {
+            b'\xFF\xD8\xFF': 'jpeg',
+            b'\x89PNG\r\n\x1a\n': 'png',
+            b'GIF87a': 'gif',
+            b'GIF89a': 'gif',
+            b'RIFF': 'webp',  # WebP starts with RIFF
+        }
+        
+        # Check for valid image signatures
+        is_valid_image = False
+        for signature, file_type in image_signatures.items():
+            if file_data.startswith(signature):
+                is_valid_image = True
+                break
+        
+        if not is_valid_image:
+            return False
+        
+        # Additional validation for WebP
+        if file_data.startswith(b'RIFF') and b'WEBP' not in file_data[:12]:
+            return False
+        
+        # Check file extension matches content
+        file_ext = os.path.splitext(filename)[1].lower()
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+        
+        if file_ext not in allowed_extensions:
+            return False
+        
+        # Basic content validation - check for executable content
+        dangerous_patterns = [
+            b'<script',
+            b'javascript:',
+            b'vbscript:',
+            b'data:text/html',
+            b'<?php',
+            b'#!/bin/',
+            b'MZ',  # PE executable
+        ]
+        
+        for pattern in dangerous_patterns:
+            if pattern in file_data.lower():
+                return False
+        
+        return True
+        
+    except Exception as e:
+        current_app.logger.error(f"File validation error: {e}")
+        return False
+
+def validate_food_image(file_data: bytes, filename: str) -> dict:
+    """
+    Validate that the uploaded image is actually a food image
+    Returns dict with 'valid' boolean and 'error' message
+    """
+    try:
+        # First, basic file validation
+        if not validate_file_content(file_data, filename):
+            return {'valid': False, 'error': 'Invalid file type or content'}
+        
+        # File size validation removed since we'll transform the image
+        if len(file_data) < 1024:  # At least 1KB
+            return {'valid': False, 'error': 'File too small (min 1KB)'}
+        
+        # Check filename for food-related keywords
+        filename_lower = filename.lower()
+        food_keywords = [
+            'food', 'meal', 'dish', 'recipe', 'cooking', 'kitchen', 'dinner', 'lunch', 'breakfast',
+            'snack', 'dessert', 'soup', 'salad', 'pasta', 'pizza', 'burger', 'sandwich',
+            'chicken', 'beef', 'fish', 'vegetable', 'fruit', 'bread', 'cake', 'cookie'
+        ]
+        
+        # Check if filename contains food-related keywords
+        has_food_keyword = any(keyword in filename_lower for keyword in food_keywords)
+        
+        # Check for non-food keywords that should be rejected
+        non_food_keywords = [
+            'document', 'pdf', 'text', 'screenshot', 'photo', 'image', 'picture', 'selfie',
+            'portrait', 'landscape', 'nature', 'animal', 'person', 'face', 'body',
+            'logo', 'icon', 'banner', 'advertisement', 'ad', 'promo'
+        ]
+        
+        has_non_food_keyword = any(keyword in filename_lower for keyword in non_food_keywords)
+        
+        # If filename has non-food keywords but no food keywords, reject
+        if has_non_food_keyword and not has_food_keyword:
+            return {'valid': False, 'error': 'Please upload food-related images only'}
+        
+        # Check image dimensions (basic validation)
+        try:
+            from PIL import Image
+            import io
+            
+            # Open image to check dimensions
+            image = Image.open(io.BytesIO(file_data))
+            width, height = image.size
+            
+            # Check if image is too small (likely not a proper food photo)
+            if width < 100 or height < 100:
+                return {'valid': False, 'error': 'Image too small (min 100x100 pixels)'}
+            
+            # Check if image is too large (likely not a food photo)
+            if width > 8000 or height > 8000:
+                return {'valid': False, 'error': 'Image too large (max 8000x8000 pixels). Please use a smaller image.'}
+            
+            # Check aspect ratio (food images should be reasonable)
+            aspect_ratio = width / height
+            if aspect_ratio > 5 or aspect_ratio < 0.2:  # Very wide or very tall
+                return {'valid': False, 'error': 'Please upload properly proportioned food images'}
+            
+        except ImportError:
+            # PIL not available, skip dimension checks
+            pass
+        except Exception as e:
+            # If we can't read the image, it's probably not a valid image
+            return {'valid': False, 'error': 'Invalid image format'}
+        
+        # Basic content analysis for food-related patterns
+        # Look for common food-related metadata or content patterns
+        content_lower = file_data.lower()
+        
+        # Check for common non-food content patterns
+        non_food_patterns = [
+            b'screenshot', b'desktop', b'window', b'dialog', b'menu',
+            b'button', b'text', b'document', b'pdf', b'office',
+            b'person', b'face', b'portrait', b'selfie'
+        ]
+        
+        for pattern in non_food_patterns:
+            if pattern in content_lower:
+                return {'valid': False, 'error': 'Please upload food-related images only'}
+        
+        # If we get here, the image passes basic validation
+        return {'valid': True, 'error': None}
+        
+    except Exception as e:
+        current_app.logger.error(f"Food image validation error: {e}")
+        return {'valid': False, 'error': 'Image validation failed'}
+
+def sanitize_recipe_data(recipe: dict) -> dict:
+    """
+    Sanitize recipe data to prevent injection attacks
+    """
+    sanitized = {}
+    
+    for key, value in recipe.items():
+        if isinstance(value, str):
+            # Remove potentially dangerous characters
+            sanitized[key] = re.sub(r'[<>"\';(){}[\]\\]', '', value)[:500]  # Limit length
+        elif isinstance(value, list):
+            # Sanitize list items
+            sanitized[key] = []
+            for item in value:
+                if isinstance(item, str):
+                    sanitized[key].append(re.sub(r'[<>"\';(){}[\]\\]', '', item)[:200])
+                elif isinstance(item, dict):
+                    sanitized[key].append(sanitize_recipe_data(item))
+                else:
+                    sanitized[key].append(item)
+        elif isinstance(value, dict):
+            # Recursively sanitize nested dicts
+            sanitized[key] = sanitize_recipe_data(value)
+        else:
+            sanitized[key] = value
+    
+    return sanitized
 
 # Note: /api/generate-ai-analysis route moved to routes/ai.py to avoid duplication
 # Note: /api/food-log, /api/water-log, /api/mood-log, /api/notes routes moved to routes/food.py to avoid duplication

@@ -346,6 +346,31 @@ class EnvironmentDetector:
         self._config_cache['admin_config'] = config
         return config
     
+    # Pexels configuration removed - only used in separate script
+    
+    def get_r2_config(self) -> Dict[str, Any]:
+        """
+        Get Cloudflare R2 configuration
+        """
+        if 'r2_config' in self._config_cache:
+            return self._config_cache['r2_config']
+        
+        config = {
+            'R2_ACCOUNT_ID': os.getenv('R2_ACCOUNT_ID'),
+            'R2_ACCESS_KEY_ID': os.getenv('R2_ACCESS_KEY_ID'),
+            'R2_SECRET_ACCESS_KEY': os.getenv('R2_SECRET_ACCESS_KEY'),
+            'R2_BUCKET_NAME': os.getenv('R2_BUCKET_NAME'),
+            'R2_PUBLIC_URL': os.getenv('R2_PUBLIC_URL'),  # Custom domain or R2.dev URL
+            'R2_REGION': os.getenv('R2_REGION', 'auto'),
+            'R2_ENDPOINT_URL': f"https://{os.getenv('R2_ACCOUNT_ID', '')}.r2.cloudflarestorage.com",
+            'R2_MAX_FILE_SIZE': 100 * 1024 * 1024,  # 100MB max file size since we'll transform images
+            'R2_ALLOWED_EXTENSIONS': {'png', 'jpg', 'jpeg', 'gif', 'webp'},
+            'R2_FOLDER_PREFIX': 'ki-wellness/recipes/',  # Folder structure in bucket
+        }
+        
+        self._config_cache['r2_config'] = config
+        return config
+    
     def print_environment_info(self):
         """
         Print environment detection information

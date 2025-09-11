@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from datetime import datetime, date
 from database import db, Recipe, RecipeIngredient, RecipeInstruction, FoodLog, RecipeRating, User
 from services.nutrition_service import nutrition_service
+from services.r2_client import r2_client
 import os
 from werkzeug.utils import secure_filename
 import hashlib
@@ -14,6 +15,36 @@ recipe_bp = Blueprint('recipe', __name__)
 # Simple in-memory cache for search results (in production, use Redis)
 search_cache = {}
 CACHE_TTL = 300  # 5 minutes cache TTL
+
+def _save_local_image(file, filename):
+    """Helper function to save image locally as fallback"""
+    try:
+        # Create upload directory if it doesn't exist
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'recipes')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        # Save file
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        # Return relative path for database
+        return f'uploads/recipes/{filename}'
+    except Exception as e:
+        print(f"❌ Local image save failed: {e}")
+        return None
+
+def _convert_image_path_to_url(image_path):
+    """Convert image path to proper URL"""
+    if not image_path:
+        return None
+    
+    if image_path.startswith('http'):
+        # It's already a full URL (from R2 or external source)
+        return image_path
+    else:
+        # It's a local path, convert to URL
+        from flask import url_for
+        return url_for('static', filename=image_path)
 
 def get_cache_key(query, include_public, category, page, per_page):
     """Generate a cache key for search results"""
@@ -102,7 +133,8 @@ def get_recipe_previews():
                 'name': recipe.name,
                 'category': recipe.category,
                 'difficulty': recipe.difficulty,
-                'image_path': recipe.image_path,
+                'image_path': _convert_image_path_to_url(recipe.image_path),
+                'dynamic_image_url': recipe.dynamic_image_url,
                 'is_favorite': recipe.is_favorite,
                 'is_public': recipe.is_public,
                 'user_id': recipe.user_id,
@@ -115,7 +147,11 @@ def get_recipe_previews():
             # Add creator name for public recipes
             if recipe.user_id != current_user.id:
                 creator = User.query.get(recipe.user_id)
-                recipe_data['creator_name'] = creator.name if creator else 'Unknown'
+                recipe_data['creator_name'] = creator.username if creator else 'Unknown'
+                recipe_data['contributor'] = creator.username if creator else 'Unknown'
+            else:
+                recipe_data['contributor'] = current_user.username
+                recipe_data['is_owner'] = True
             
             # Calculate rating if exists
             if recipe.ratings:
@@ -137,6 +173,81 @@ def get_recipe_previews():
     except Exception as e:
         print(f"Error fetching recipe previews: {e}")
         return jsonify({'success': False, 'error': 'Failed to fetch recipe previews'}), 500
+
+
+@recipe_bp.route('/api/recipes/favorites', methods=['GET'])
+@login_required
+def get_favorite_recipes():
+    """Get user's favorite recipes"""
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 12))
+        
+        # Get user's favorite recipes (both own and public recipes that are favorited)
+        recipes_query = Recipe.query.filter(
+            db.and_(
+                Recipe.is_favorite == True,
+                db.or_(
+                    Recipe.user_id == current_user.id,
+                    db.and_(Recipe.is_public == True, Recipe.user_id != current_user.id)
+                )
+            )
+        )
+        
+        # Get total count for pagination
+        total_count = recipes_query.count()
+        
+        # Apply pagination
+        recipes = recipes_query.order_by(Recipe.updated_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+        
+        recipe_list = []
+        for recipe in recipes:
+            # Only include minimal data for preview
+            recipe_data = {
+                'id': recipe.id,
+                'name': recipe.name,
+                'category': recipe.category,
+                'difficulty': recipe.difficulty,
+                'image_path': _convert_image_path_to_url(recipe.image_path),
+                'dynamic_image_url': recipe.dynamic_image_url,
+                'is_favorite': recipe.is_favorite,
+                'is_public': recipe.is_public,
+                'user_id': recipe.user_id,
+                'ingredients_count': len(recipe.ingredients),
+                'ingredients': [{'name': ing.food_name, 'amount': ing.amount, 'unit': ing.unit} for ing in recipe.ingredients],
+                'avg_rating': 0,
+                'rating_count': 0
+            }
+            
+            # Add creator name for public recipes
+            if recipe.user_id != current_user.id:
+                creator = User.query.get(recipe.user_id)
+                recipe_data['creator_name'] = creator.username if creator else 'Unknown'
+                recipe_data['contributor'] = creator.username if creator else 'Unknown'
+            else:
+                recipe_data['contributor'] = current_user.username
+                recipe_data['is_owner'] = True
+            
+            # Calculate average rating
+            if recipe.ratings:
+                avg_rating = sum(r.rating for r in recipe.ratings) / len(recipe.ratings)
+                recipe_data['avg_rating'] = round(avg_rating, 1)
+                recipe_data['rating_count'] = len(recipe.ratings)
+            
+            recipe_list.append(recipe_data)
+        
+        return jsonify({
+            'success': True, 
+            'recipes': recipe_list,
+            'total_count': total_count,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total_count + per_page - 1) // per_page
+        })
+        
+    except Exception as e:
+        print(f"Error fetching favorite recipes: {e}")
+        return jsonify({'success': False, 'error': 'Failed to fetch favorite recipes'}), 500
 
 @recipe_bp.route('/api/recipes/<int:recipe_id>', methods=['GET'])
 @login_required
@@ -161,9 +272,21 @@ def get_recipe(recipe_id):
         if not recipe:
             return jsonify({'success': False, 'error': 'Recipe not found or not accessible'}), 404
         
+        # Get recipe data with contributor information
+        recipe_data = recipe.to_dict()
+        
+        # Add contributor information
+        if recipe.user_id != current_user.id:
+            creator = User.query.get(recipe.user_id)
+            recipe_data['contributor'] = creator.username if creator else 'Unknown'
+            recipe_data['is_owner'] = False
+        else:
+            recipe_data['contributor'] = current_user.username
+            recipe_data['is_owner'] = True
+        
         return jsonify({
             'success': True,
-            'recipe': recipe.to_dict()
+            'recipe': recipe_data
         })
         
     except Exception as e:
@@ -193,34 +316,88 @@ def create_recipe():
                 'instructions': request.form.get('instructions')
             }
             
-            # Handle image upload
+            # Handle image upload - R2 storage as primary method
             image_path = None
             if 'image' in request.files:
                 file = request.files['image']
                 if file and file.filename:
                     # Validate file type
-                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
                     if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
                         filename = secure_filename(f"recipe_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
                         
-                        # Create upload directory if it doesn't exist
-                        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'recipes')
-                        os.makedirs(upload_folder, exist_ok=True)
-                        
-                        # Save file
-                        file_path = os.path.join(upload_folder, filename)
-                        file.save(file_path)
-                        
-                        # Store relative path for database
-                        image_path = f'uploads/recipes/{filename}'
+                        # Always try R2 first (primary storage method)
+                        if r2_client.is_available():
+                            try:
+                                # Read file data
+                                file_data = file.read()
+                                file.seek(0)  # Reset file pointer
+                                
+                                # Upload to R2 with image processing
+                                result = r2_client.upload_file(
+                                    file_data=file_data,
+                                    filename=filename,
+                                    folder="user-uploads",
+                                    process_image=True  # Enable image optimization
+                                )
+                                
+                                if result:
+                                    image_path = result['public_url']
+                                    print(f"✅ Uploaded image to R2: {image_path}")
+                                    if result.get('compression_stats'):
+                                        stats = result['compression_stats']
+                                        print(f"📊 Image optimized: {stats['original_size_mb']}MB -> {stats['optimized_size_mb']}MB ({stats['reduction_percent']}% reduction)")
+                                else:
+                                    print("❌ R2 upload failed completely")
+                                    return jsonify({'success': False, 'error': 'Failed to upload image to storage'}), 500
+                                    
+                            except Exception as e:
+                                print(f"❌ R2 upload error: {e}")
+                                return jsonify({'success': False, 'error': f'Image upload failed: {str(e)}'}), 500
+                        else:
+                            # R2 not available - this should not happen in production
+                            print("❌ R2 not available - this is a configuration error")
+                            return jsonify({'success': False, 'error': 'Image storage not available. Please contact support.'}), 500
+        
+        # Process ingredients from form data
+        ingredients_data = []
+        if request.is_json:
+            ingredients_data = data.get('ingredients', [])
+        else:
+            # Process form data ingredients
+            i = 0
+            while f'ingredients[{i}][food_name]' in request.form:
+                ingredients_data.append({
+                    'food_name': request.form.get(f'ingredients[{i}][food_name]'),
+                    'amount': float(request.form.get(f'ingredients[{i}][amount]', 0)),
+                    'unit': request.form.get(f'ingredients[{i}][unit]')
+                })
+                i += 1
+        
+        # Process instructions from form data
+        instructions_data = []
+        if request.is_json:
+            instructions_data = data.get('instructions', [])
+        else:
+            # Process form data instructions
+            i = 0
+            while f'instructions[{i}]' in request.form:
+                instruction = request.form.get(f'instructions[{i}]')
+                if instruction and instruction.strip():
+                    instructions_data.append(instruction.strip())
+                i += 1
         
         # Validate required fields
-        if not data.get('name') or not data.get('ingredients'):
+        if not data.get('name') or not ingredients_data:
             return jsonify({'success': False, 'error': 'Recipe name and ingredients are required'}), 400
         
-
+        # Create recipe - user-created recipes default to community
+        is_public = data.get('is_public', True)  # Default to community (public)
         
-        # Create recipe
+        # Admin recipes are always community
+        if current_user.username == 'admin' or current_user.email == 'admin@kiwellness.com':
+            is_public = True
+        
         recipe = Recipe(
             user_id=current_user.id,
             name=data['name'],
@@ -230,14 +407,15 @@ def create_recipe():
             cook_time=data.get('cook_time'),
             difficulty=data.get('difficulty', 'Easy'),
             category=data.get('category', 'Dinner'),
-            image_path=image_path
+            image_path=image_path,
+            is_public=is_public  # Default to community, but allow user choice
         )
         
         db.session.add(recipe)
         db.session.flush()  # Get the recipe ID
         
         # Add ingredients
-        for ingredient_data in data['ingredients']:
+        for ingredient_data in ingredients_data:
             ingredient = RecipeIngredient(
                 recipe_id=recipe.id,
                 food_name=ingredient_data['food_name'],
@@ -255,8 +433,8 @@ def create_recipe():
             db.session.add(ingredient)
         
         # Add instructions if provided
-        if data.get('instructions'):
-            for i, instruction_text in enumerate(data['instructions'], 1):
+        if instructions_data:
+            for i, instruction_text in enumerate(instructions_data, 1):
                 instruction = RecipeInstruction(
                     recipe_id=recipe.id,
                     step_number=i,
@@ -299,12 +477,12 @@ def create_recipe():
 @recipe_bp.route('/api/recipes/<int:recipe_id>', methods=['PUT'])
 @login_required
 def update_recipe(recipe_id):
-    """Update an existing recipe"""
+    """Update an existing recipe - only the original submitter can edit"""
     try:
         recipe = Recipe.query.filter_by(id=recipe_id, user_id=current_user.id).first()
         
         if not recipe:
-            return jsonify({'success': False, 'error': 'Recipe not found'}), 404
+            return jsonify({'success': False, 'error': 'Recipe not found or you do not have permission to edit this recipe'}), 404
         
         data = request.get_json()
         
@@ -389,15 +567,92 @@ def update_recipe(recipe_id):
         print(f"Error updating recipe: {e}")
         return jsonify({'success': False, 'error': 'Failed to update recipe'}), 500
 
-@recipe_bp.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+@recipe_bp.route('/api/recipes/<int:recipe_id>/image', methods=['PUT'])
 @login_required
-def delete_recipe(recipe_id):
-    """Delete a recipe"""
+def update_recipe_image(recipe_id):
+    """Update recipe image - only the original submitter can edit"""
     try:
         recipe = Recipe.query.filter_by(id=recipe_id, user_id=current_user.id).first()
         
         if not recipe:
-            return jsonify({'success': False, 'error': 'Recipe not found'}), 404
+            return jsonify({'success': False, 'error': 'Recipe not found or you do not have permission to edit this recipe'}), 404
+        
+        # Handle image upload
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image file provided'}), 400
+        
+        file = request.files['image']
+        if not file or not file.filename:
+            return jsonify({'success': False, 'error': 'No image file selected'}), 400
+        
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+            filename = secure_filename(f"recipe_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+            
+            # Try to upload to R2 first
+            if r2_client.is_available():
+                try:
+                    # Read file data
+                    file_data = file.read()
+                    file.seek(0)  # Reset file pointer
+                    
+                    # Upload to R2
+                    result = r2_client.upload_file(
+                        file_data=file_data,
+                        filename=filename,
+                        folder="user-uploads"
+                    )
+                    
+                    if result:
+                        recipe.image_path = result['public_url']
+                        print(f"✅ Updated recipe image to R2: {recipe.image_path}")
+                    else:
+                        print("⚠️ R2 upload failed, falling back to local storage")
+                        raise Exception("R2 upload failed")
+                        
+                except Exception as e:
+                    print(f"⚠️ R2 upload error: {e}, falling back to local storage")
+                    # Fallback to local storage
+                    image_path = _save_local_image(file, filename)
+                    if image_path:
+                        recipe.image_path = image_path
+                    else:
+                        return jsonify({'success': False, 'error': 'Failed to save image'}), 500
+            else:
+                # R2 not available, use local storage
+                print("⚠️ R2 not available, using local storage")
+                image_path = _save_local_image(file, filename)
+                if image_path:
+                    recipe.image_path = image_path
+                else:
+                    return jsonify({'success': False, 'error': 'Failed to save image'}), 500
+        else:
+            return jsonify({'success': False, 'error': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP'}), 400
+        
+        recipe.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Recipe image updated successfully!',
+            'image_path': recipe.image_path
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating recipe image: {e}")
+        return jsonify({'success': False, 'error': 'Failed to update recipe image'}), 500
+
+@recipe_bp.route('/api/recipes/<int:recipe_id>', methods=['DELETE'])
+@login_required
+def delete_recipe(recipe_id):
+    """Delete a recipe - only the original submitter can delete"""
+    try:
+        recipe = Recipe.query.filter_by(id=recipe_id, user_id=current_user.id).first()
+        
+        if not recipe:
+            return jsonify({'success': False, 'error': 'Recipe not found or you do not have permission to delete this recipe'}), 404
         
         db.session.delete(recipe)
         db.session.commit()
@@ -424,12 +679,21 @@ def add_recipe_to_log(recipe_id):
         servings = data.get('servings', 1)
         time_of_day = data.get('time_of_day', 'dinner')
         
-        recipe = Recipe.query.filter_by(id=recipe_id, user_id=current_user.id).first()
+        # Allow adding any public recipe or user's own recipes to food log
+        recipe = Recipe.query.filter(
+            db.and_(
+                Recipe.id == recipe_id,
+                db.or_(
+                    Recipe.user_id == current_user.id,  # User's own recipes
+                    Recipe.is_public == True  # Public community recipes
+                )
+            )
+        ).first()
         
         if not recipe:
-            return jsonify({'success': False, 'error': 'Recipe not found'}), 404
+            return jsonify({'success': False, 'error': 'Recipe not found or not accessible'}), 404
         
-        # Calculate nutrition per serving
+        # Calculate total nutrition for the entire recipe
         total_calories = sum(ing.calories for ing in recipe.ingredients)
         total_protein = sum(ing.protein for ing in recipe.ingredients)
         total_carbs = sum(ing.carbs for ing in recipe.ingredients)
@@ -438,20 +702,28 @@ def add_recipe_to_log(recipe_id):
         total_sugar = sum(ing.sugar for ing in recipe.ingredients)
         total_sodium = sum(ing.sodium for ing in recipe.ingredients)
         
-
+        # Calculate nutrition per serving (divide by recipe's total servings)
+        recipe_servings = recipe.servings or 1  # Default to 1 if not set
+        calories_per_serving = total_calories / recipe_servings
+        protein_per_serving = total_protein / recipe_servings
+        carbs_per_serving = total_carbs / recipe_servings
+        fat_per_serving = total_fat / recipe_servings
+        fiber_per_serving = total_fiber / recipe_servings
+        sugar_per_serving = total_sugar / recipe_servings
+        sodium_per_serving = total_sodium / recipe_servings
         
-        # Create food log entry for the recipe
+        # Create food log entry for the recipe (multiply by user's selected servings)
         food_log = FoodLog(
             user_id=current_user.id,
             name=f"{recipe.name} (Recipe)",
             brand="Homemade",
-            calories=total_calories * servings,
-            protein=total_protein * servings,
-            carbs=total_carbs * servings,
-            fat=total_fat * servings,
-            fiber=total_fiber * servings,
-            sugar=total_sugar * servings,
-            sodium=total_sodium * servings,
+            calories=calories_per_serving * servings,
+            protein=protein_per_serving * servings,
+            carbs=carbs_per_serving * servings,
+            fat=fat_per_serving * servings,
+            fiber=fiber_per_serving * servings,
+            sugar=sugar_per_serving * servings,
+            sodium=sodium_per_serving * servings,
             serving_size=100 * servings,  # Approximate
             original_amount=1,
             original_unit="serving",
@@ -472,7 +744,9 @@ def add_recipe_to_log(recipe_id):
     except Exception as e:
         db.session.rollback()
         print(f"Error adding recipe to log: {e}")
-        return jsonify({'success': False, 'error': 'Failed to add recipe to log'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Failed to add recipe to log: {str(e)}'}), 500
 
 @recipe_bp.route('/api/recipes/<int:recipe_id>/toggle-favorite', methods=['POST'])
 @login_required
@@ -562,7 +836,8 @@ def search_recipes():
                 'name': recipe.name,
                 'category': recipe.category,
                 'difficulty': recipe.difficulty,
-                'image_path': recipe.image_path,
+                'image_path': _convert_image_path_to_url(recipe.image_path),
+                'dynamic_image_url': recipe.dynamic_image_url,
                 'is_favorite': recipe.is_favorite,
                 'is_public': recipe.is_public,
                 'user_id': recipe.user_id,
@@ -575,7 +850,11 @@ def search_recipes():
             # Add creator name for public recipes
             if recipe.user_id != current_user.id:
                 creator = User.query.get(recipe.user_id)
-                recipe_dict['creator_name'] = creator.name if creator else 'Unknown'
+                recipe_dict['creator_name'] = creator.username if creator else 'Unknown'
+                recipe_dict['contributor'] = creator.username if creator else 'Unknown'
+            else:
+                recipe_dict['contributor'] = current_user.username
+                recipe_dict['is_owner'] = True
             
             # Calculate rating if exists
             if recipe.ratings:
@@ -666,9 +945,18 @@ def search_recipes_by_ingredients():
         matching_recipes = []
         
         # Get all recipes and their ingredients in one query
-        recipes_with_ingredients = recipes_query.join(RecipeIngredient).filter(
-            RecipeIngredient.food_name.ilike(db.or_(*[f'%{ing}%' for ing in search_ingredients]))
-        ).distinct().all()
+        try:
+            # Build the ilike conditions
+            ilike_conditions = []
+            for ing in search_ingredients:
+                ilike_conditions.append(RecipeIngredient.food_name.ilike(f'%{ing}%'))
+            
+            recipes_with_ingredients = recipes_query.join(RecipeIngredient).filter(
+                db.or_(*ilike_conditions)
+            ).distinct().all()
+        except Exception as query_error:
+            print(f"Database query error: {query_error}")
+            return jsonify({'success': False, 'error': f'Database query failed: {str(query_error)}'}), 500
         
         # Process matches with optimized algorithm
         for recipe in recipes_with_ingredients:
@@ -701,7 +989,8 @@ def search_recipes_by_ingredients():
                     'name': recipe.name,
                     'category': recipe.category,
                     'difficulty': recipe.difficulty,
-                    'image_path': recipe.image_path,
+                    'image_path': _convert_image_path_to_url(recipe.image_path),
+                    'dynamic_image_url': recipe.dynamic_image_url,
                     'is_favorite': recipe.is_favorite,
                     'is_public': recipe.is_public,
                     'user_id': recipe.user_id,
@@ -716,7 +1005,11 @@ def search_recipes_by_ingredients():
                 # Add creator name for public recipes
                 if recipe.user_id != current_user.id:
                     creator = User.query.get(recipe.user_id)
-                    recipe_dict['creator_name'] = creator.name if creator else 'Unknown'
+                    recipe_dict['creator_name'] = creator.username if creator else 'Unknown'
+                    recipe_dict['contributor'] = creator.username if creator else 'Unknown'
+                else:
+                    recipe_dict['contributor'] = current_user.username
+                    recipe_dict['is_owner'] = True
                 
                 # Calculate rating if exists
                 if recipe.ratings:
@@ -746,12 +1039,14 @@ def search_recipes_by_ingredients():
         
     except Exception as e:
         print(f"Error searching recipes by ingredients: {e}")
-        return jsonify({'success': False, 'error': 'Failed to search recipes by ingredients'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Failed to search recipes by ingredients: {str(e)}'}), 500
 
 @recipe_bp.route('/api/recipes/<int:recipe_id>/rate', methods=['POST'])
 @login_required
 def rate_recipe(recipe_id):
-    """Rate a recipe (1-5 stars)"""
+    """Rate a recipe (1-5 stars) - allows all users to rate any recipe"""
     try:
         data = request.get_json()
         rating_value = data.get('rating')
@@ -760,10 +1055,10 @@ def rate_recipe(recipe_id):
         if not rating_value or not isinstance(rating_value, int) or rating_value < 1 or rating_value > 5:
             return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'}), 400
         
-        # Check if recipe exists and is public
-        recipe = Recipe.query.filter_by(id=recipe_id, is_public=True).first()
+        # Check if recipe exists (allow rating any recipe)
+        recipe = Recipe.query.filter_by(id=recipe_id).first()
         if not recipe:
-            return jsonify({'success': False, 'error': 'Recipe not found or not public'}), 404
+            return jsonify({'success': False, 'error': 'Recipe not found'}), 404
         
         # Check if user has already rated this recipe
         existing_rating = RecipeRating.query.filter_by(recipe_id=recipe_id, user_id=current_user.id).first()
@@ -783,11 +1078,17 @@ def rate_recipe(recipe_id):
             )
             db.session.add(rating)
         
+        # Update recipe's average rating and count
+        recipe.update_rating_stats()
+        recipe.updated_at = datetime.utcnow()
+        
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': 'Recipe rated successfully'
+            'message': 'Recipe rated successfully',
+            'average_rating': recipe.average_rating,
+            'rating_count': recipe.rating_count
         })
         
     except Exception as e:

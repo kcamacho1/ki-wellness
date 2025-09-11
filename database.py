@@ -185,7 +185,10 @@ class Recipe(db.Model):
     category = db.Column(db.String(50))  # Breakfast, Lunch, Dinner, Snack
     is_favorite = db.Column(db.Boolean, default=False)
     image_path = db.Column(db.String(255))  # Path to recipe image
+    dynamic_image_url = db.Column(db.String(500))  # URL for dynamically fetched images
     is_public = db.Column(db.Boolean, default=False)  # Whether recipe is shared publicly
+    average_rating = db.Column(db.Float, default=0.0)  # Average rating from all users
+    rating_count = db.Column(db.Integer, default=0)  # Number of users who rated this recipe
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -193,6 +196,16 @@ class Recipe(db.Model):
     ingredients = db.relationship('RecipeIngredient', backref='recipe', lazy=True, cascade='all, delete-orphan')
     instructions = db.relationship('RecipeInstruction', backref='recipe', lazy=True, cascade='all, delete-orphan', order_by='RecipeInstruction.step_number')
     ratings = db.relationship('RecipeRating', backref='recipe', lazy=True, cascade='all, delete-orphan')
+    
+    def update_rating_stats(self):
+        """Update average_rating and rating_count based on current ratings"""
+        if self.ratings:
+            total_rating = sum(r.rating for r in self.ratings)
+            self.average_rating = round(total_rating / len(self.ratings), 1)
+            self.rating_count = len(self.ratings)
+        else:
+            self.average_rating = 0.0
+            self.rating_count = 0
     
     def to_dict(self):
         """Convert recipe to dictionary with calculated nutrition"""
@@ -204,11 +217,30 @@ class Recipe(db.Model):
         total_sugar = sum(ing.sugar for ing in self.ingredients)
         total_sodium = sum(ing.sodium for ing in self.ingredients)
         
-        # Calculate average rating
-        avg_rating = 0
-        rating_count = len(self.ratings)
-        if rating_count > 0:
-            avg_rating = sum(r.rating for r in self.ratings) / rating_count
+        # Use stored average rating and count (calculated when ratings are updated)
+        avg_rating = self.average_rating or 0
+        rating_count = self.rating_count or 0
+        
+        # Convert image_path to proper URL if it exists
+        image_url = None
+        if self.image_path:
+            if self.image_path.startswith('http'):
+                # It's already a full URL (from R2 or external source)
+                image_url = self.image_path
+            else:
+                # It's a local path, convert to URL
+                from flask import url_for
+                image_url = url_for('static', filename=self.image_path)
+        
+        # Calculate nutrition per serving
+        recipe_servings = self.servings or 1  # Default to 1 if not set
+        calories_per_serving = total_calories / recipe_servings
+        protein_per_serving = total_protein / recipe_servings
+        carbs_per_serving = total_carbs / recipe_servings
+        fat_per_serving = total_fat / recipe_servings
+        fiber_per_serving = total_fiber / recipe_servings
+        sugar_per_serving = total_sugar / recipe_servings
+        sodium_per_serving = total_sodium / recipe_servings
         
         return {
             'id': self.id,
@@ -220,7 +252,7 @@ class Recipe(db.Model):
             'difficulty': self.difficulty,
             'category': self.category,
             'is_favorite': self.is_favorite,
-            'image_path': self.image_path,
+            'image_path': image_url,  # Now returns proper URL
             'is_public': self.is_public,
             'user_id': self.user_id,
             'created_at': self.created_at.isoformat(),
@@ -231,13 +263,13 @@ class Recipe(db.Model):
             'avg_rating': round(avg_rating, 1),
             'rating_count': rating_count,
             'nutrition': {
-                'calories': total_calories,
-                'protein': total_protein,
-                'carbs': total_carbs,
-                'fat': total_fat,
-                'fiber': total_fiber,
-                'sugar': total_sugar,
-                'sodium': total_sodium
+                'calories': calories_per_serving,
+                'protein': protein_per_serving,
+                'carbs': carbs_per_serving,
+                'fat': fat_per_serving,
+                'fiber': fiber_per_serving,
+                'sugar': sugar_per_serving,
+                'sodium': sodium_per_serving
             }
         }
 

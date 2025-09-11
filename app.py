@@ -55,6 +55,18 @@ def check_session_expiry():
 # Initialize security middleware
 security = SecurityMiddleware(app)
 
+# Make feature flags available in templates
+@app.context_processor
+def inject_feature_flags():
+    def is_feature_enabled(feature: str) -> bool:
+        """Check if a feature is enabled"""
+        from config.feature_flags import is_feature_enabled as _is_feature_enabled
+        return _is_feature_enabled(feature)
+    
+    return {
+        'is_feature_enabled': is_feature_enabled
+    }
+
 def create_admin_user():
     """Create admin user if it doesn't exist"""
     admin_config = get_config('admin')

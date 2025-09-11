@@ -29,3 +29,8 @@ stripe==8.11.0
 
 # Email functionality
 Flask-Mail==0.9.1
+
+# Cloud storage
+boto3==1.34.0
+Pillow==10.0.1
+imageio==2.31.5

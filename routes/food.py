@@ -608,6 +608,7 @@ def copy_food_log(food_id):
     
     data = request.get_json()
     target_date_str = data.get('date')
+    target_time_of_day = data.get('time_of_day')
     
     if not target_date_str:
         return jsonify({'success': False, 'message': 'Target date is required'})
@@ -617,7 +618,10 @@ def copy_food_log(food_id):
     except ValueError:
         return jsonify({'success': False, 'message': 'Invalid date format'})
     
-    # Create a new food log entry with the same data but different date
+    # Use provided time_of_day or fall back to original
+    final_time_of_day = target_time_of_day if target_time_of_day else original_food_log.time_of_day
+    
+    # Create a new food log entry with the same data but different date and time
     new_food_log = FoodLog(
         user_id=current_user.id,
         name=original_food_log.name,
@@ -633,7 +637,7 @@ def copy_food_log(food_id):
         original_amount=original_food_log.original_amount,
         original_unit=original_food_log.original_unit,
         quantity=original_food_log.quantity,
-        time_of_day=original_food_log.time_of_day,
+        time_of_day=final_time_of_day,
         date=target_date
     )
     
