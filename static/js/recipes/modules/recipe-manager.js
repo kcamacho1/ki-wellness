@@ -581,24 +581,269 @@ if (typeof window.RecipeManager !== 'undefined') {
 
     async editRecipe(recipeId) {
         try {
-            // Close the detail modal first
-            this.closeRecipeDetailModal();
+            // Close the detail modal first using the global function
+            if (typeof window.closeRecipeDetailModal === 'function') {
+                window.closeRecipeDetailModal();
+            }
             
-            // Show a simple edit modal or redirect to edit page
-            // For now, we'll show an alert with instructions
-            this.utils.showToast('Recipe editing feature coming soon! For now, you can delete and recreate the recipe.', 'info');
-            
-            // TODO: Implement full recipe editing modal
-            // This would involve:
-            // 1. Creating an edit modal similar to the create modal
-            // 2. Pre-populating the form with existing recipe data
-            // 3. Handling image updates via the new image endpoint
-            // 4. Updating the recipe via PUT request
+            // Show edit modal
+            this.showEditRecipeModal(recipeId);
             
         } catch (error) {
             console.error('Error editing recipe:', error);
             this.utils.showToast('Failed to edit recipe', 'error');
         }
+    }
+
+    async showEditRecipeModal(recipeId) {
+        try {
+            // Fetch the recipe details
+            const response = await fetch(`/api/recipes/${recipeId}`);
+            
+            if (!response.ok) {
+                this.utils.showToast('Failed to load recipe details', 'error');
+                return;
+            }
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.populateEditModal(data.recipe);
+                document.getElementById('edit-recipe-modal').classList.remove('hidden');
+            } else {
+                this.utils.showToast(data.error || 'Failed to load recipe details', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading recipe for editing:', error);
+            this.utils.showToast('Failed to load recipe details', 'error');
+        }
+    }
+
+    populateEditModal(recipe) {
+        // Populate the edit form with existing recipe data
+        document.getElementById('edit-recipe-name').value = recipe.name || '';
+        document.getElementById('edit-recipe-category').value = recipe.category || '';
+        document.getElementById('edit-recipe-difficulty').value = recipe.difficulty || '';
+        document.getElementById('edit-recipe-servings').value = recipe.servings || 1;
+        document.getElementById('edit-recipe-description').value = recipe.description || '';
+        document.getElementById('edit-recipe-prep-time').value = recipe.prep_time || '';
+        document.getElementById('edit-recipe-cook-time').value = recipe.cook_time || '';
+        
+        // Populate ingredients
+        const ingredientsContainer = document.getElementById('edit-ingredients-container');
+        ingredientsContainer.innerHTML = '';
+        
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+            recipe.ingredients.forEach((ingredient, index) => {
+                this.addEditIngredientRow(ingredient, index);
+            });
+        } else {
+            this.addEditIngredientRow();
+        }
+        
+        // Populate instructions
+        const instructionsText = recipe.instructions ? 
+            recipe.instructions.map(inst => inst.instruction || inst).join('\n') : '';
+        document.getElementById('edit-recipe-instructions').value = instructionsText;
+        
+        // Set current recipe ID for the form
+        window.currentEditRecipeId = recipe.id;
+        
+        // Show current image if exists
+        const imagePreview = document.getElementById('edit-image-preview');
+        const previewImg = document.getElementById('edit-preview-img');
+        if (recipe.image_path) {
+            previewImg.src = recipe.image_path;
+            imagePreview.classList.remove('hidden');
+        } else {
+            imagePreview.classList.add('hidden');
+        }
+    }
+
+    addEditIngredientRow(ingredient = null, index = 0) {
+        const container = document.getElementById('edit-ingredients-container');
+        const rowCount = container.children.length;
+        
+        const row = document.createElement('div');
+        row.className = 'ingredient-row flex space-x-2 items-center';
+        row.innerHTML = `
+            <input type="text" class="ingredient-name flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500" placeholder="e.g., Chicken breast" value="${ingredient ? ingredient.name || ingredient.food_name || '' : ''}" required>
+            <input type="number" class="ingredient-amount w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500" placeholder="1" min="0" step="0.1" value="${ingredient ? ingredient.amount || '' : ''}" required>
+            <select class="ingredient-unit w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ki-green-500 focus:border-ki-green-500" required>
+                <option value="">Unit</option>
+                <option value="g" ${ingredient && ingredient.unit === 'g' ? 'selected' : ''}>grams</option>
+                <option value="kg" ${ingredient && ingredient.unit === 'kg' ? 'selected' : ''}>kilograms</option>
+                <option value="oz" ${ingredient && ingredient.unit === 'oz' ? 'selected' : ''}>ounces</option>
+                <option value="lb" ${ingredient && ingredient.unit === 'lb' ? 'selected' : ''}>pounds</option>
+                <option value="cup" ${ingredient && ingredient.unit === 'cup' ? 'selected' : ''}>cups</option>
+                <option value="tbsp" ${ingredient && ingredient.unit === 'tbsp' ? 'selected' : ''}>tablespoons</option>
+                <option value="tsp" ${ingredient && ingredient.unit === 'tsp' ? 'selected' : ''}>teaspoons</option>
+                <option value="whole" ${ingredient && ingredient.unit === 'whole' ? 'selected' : ''}>whole</option>
+                <option value="slice" ${ingredient && ingredient.unit === 'slice' ? 'selected' : ''}>slices</option>
+                <option value="piece" ${ingredient && ingredient.unit === 'piece' ? 'selected' : ''}>pieces</option>
+            </select>
+            ${rowCount > 0 ? `
+                <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200" title="Remove ingredient">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            ` : ''}
+        `;
+        
+        container.appendChild(row);
+    }
+
+    async updateRecipe() {
+        try {
+            const recipeId = window.currentEditRecipeId;
+            if (!recipeId) {
+                this.utils.showToast('No recipe selected for editing', 'error');
+                return;
+            }
+
+            // Validate form
+            if (!this.validateEditRecipeForm()) {
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            const imageFile = document.getElementById('edit-recipe-image').files[0];
+            
+            // Add form data
+            formData.append('name', document.getElementById('edit-recipe-name').value.trim());
+            formData.append('category', document.getElementById('edit-recipe-category').value);
+            formData.append('difficulty', document.getElementById('edit-recipe-difficulty').value);
+            formData.append('servings', document.getElementById('edit-recipe-servings').value);
+            formData.append('description', document.getElementById('edit-recipe-description').value.trim());
+            
+            // Add prep and cook time
+            const prepTime = document.getElementById('edit-recipe-prep-time').value;
+            const cookTime = document.getElementById('edit-recipe-cook-time').value;
+            if (prepTime) formData.append('prep_time', prepTime);
+            if (cookTime) formData.append('cook_time', cookTime);
+            
+            // Process instructions
+            const instructionsText = document.getElementById('edit-recipe-instructions').value.trim();
+            const instructions = instructionsText.split('\n')
+                .map(step => step.trim())
+                .filter(step => step.length > 0);
+            
+            instructions.forEach((instruction, index) => {
+                formData.append(`instructions[${index}]`, instruction);
+            });
+            
+            // Add image if selected
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            // Add ingredients
+            const ingredientsContainer = document.getElementById('edit-ingredients-container');
+            const ingredientRows = ingredientsContainer.querySelectorAll('.ingredient-row');
+            
+            ingredientRows.forEach((row, index) => {
+                const name = row.querySelector('.ingredient-name').value.trim();
+                const amount = row.querySelector('.ingredient-amount').value;
+                const unit = row.querySelector('.ingredient-unit').value;
+                
+                if (name && amount && unit) {
+                    formData.append(`ingredients[${index}][food_name]`, name);
+                    formData.append(`ingredients[${index}][amount]`, amount);
+                    formData.append(`ingredients[${index}][unit]`, unit);
+                }
+            });
+            
+            // Update recipe
+            const response = await fetch(`/api/recipes/${recipeId}`, {
+                method: 'PUT',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.utils.showToast('Recipe updated successfully!', 'success');
+                this.closeEditModal();
+                this.loadRecipes(); // Refresh the recipe list
+            } else {
+                this.utils.showToast(data.error || 'Failed to update recipe', 'error');
+            }
+        } catch (error) {
+            console.error('Error updating recipe:', error);
+            this.utils.showToast('Failed to update recipe', 'error');
+        }
+    }
+
+    validateEditRecipeForm() {
+        // Check required fields
+        const name = document.getElementById('edit-recipe-name').value.trim();
+        const category = document.getElementById('edit-recipe-category').value;
+        const difficulty = document.getElementById('edit-recipe-difficulty').value;
+        const servings = document.getElementById('edit-recipe-servings').value;
+        const instructions = document.getElementById('edit-recipe-instructions').value.trim();
+        
+        if (!name) {
+            this.utils.showToast('Recipe name is required', 'error');
+            document.getElementById('edit-recipe-name').focus();
+            return false;
+        }
+        
+        if (!category) {
+            this.utils.showToast('Please select a category', 'error');
+            document.getElementById('edit-recipe-category').focus();
+            return false;
+        }
+        
+        if (!difficulty) {
+            this.utils.showToast('Please select a difficulty level', 'error');
+            document.getElementById('edit-recipe-difficulty').focus();
+            return false;
+        }
+        
+        if (!servings || servings < 1) {
+            this.utils.showToast('Please enter a valid number of servings', 'error');
+            document.getElementById('edit-recipe-servings').focus();
+            return false;
+        }
+        
+        if (!instructions) {
+            this.utils.showToast('Instructions are required', 'error');
+            document.getElementById('edit-recipe-instructions').focus();
+            return false;
+        }
+        
+        // Check ingredients
+        const ingredientsContainer = document.getElementById('edit-ingredients-container');
+        const ingredientRows = ingredientsContainer.querySelectorAll('.ingredient-row');
+        let validIngredients = 0;
+        
+        ingredientRows.forEach((row, index) => {
+            const name = row.querySelector('.ingredient-name').value.trim();
+            const amount = row.querySelector('.ingredient-amount').value;
+            const unit = row.querySelector('.ingredient-unit').value;
+            
+            if (name && amount && unit) {
+                validIngredients++;
+            }
+        });
+        
+        if (validIngredients === 0) {
+            this.utils.showToast('Please add at least one ingredient', 'error');
+            return false;
+        }
+        
+        return true;
+    }
+
+    closeEditModal() {
+        document.getElementById('edit-recipe-modal').classList.add('hidden');
+        // Reset form
+        document.getElementById('edit-recipe-form').reset();
+        document.getElementById('edit-ingredients-container').innerHTML = '';
+        document.getElementById('edit-image-preview').classList.add('hidden');
+        window.currentEditRecipeId = null;
     }
 
     async deleteRecipe(recipeId) {

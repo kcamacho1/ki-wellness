@@ -112,7 +112,7 @@ if (typeof window.RecipeDisplay !== 'undefined') {
         return `
             <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
                 <div class="relative">
-                    <div class="aspect-w-16 aspect-h-9 bg-gray-200">
+                    <div class="aspect-w-16 aspect-h-9 bg-gray-200 cursor-pointer hover:ring-2 hover:ring-ki-green-500 hover:ring-opacity-50 transition-all duration-300 rounded-t-2xl overflow-hidden" onclick="window.recipeManager.viewRecipe(${recipe.id})" title="Click to view recipe details">
                         <img 
                             src="${imageUrl}" 
                             alt="${recipe.name}"
@@ -120,6 +120,15 @@ if (typeof window.RecipeDisplay !== 'undefined') {
                             loading="lazy"
                             onerror="this.src='${this.getDefaultImageForCategory(recipe.category)}'"
                         >
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity duration-300 text-center">
+                                <svg class="w-8 h-8 text-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <p class="text-white text-sm font-medium">View Details</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="absolute top-3 right-3">
                         <button 
@@ -137,7 +146,7 @@ if (typeof window.RecipeDisplay !== 'undefined') {
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex-1">
-                            <h4 class="font-bold text-gray-900 text-lg mb-2 leading-tight">${recipe.name}</h4>
+                            <h4 class="font-bold text-gray-900 text-lg mb-2 leading-tight cursor-pointer hover:text-ki-green-600 transition-colors duration-200" onclick="window.recipeManager.viewRecipe(${recipe.id})" title="Click to view recipe details">${recipe.name}</h4>
                             <div class="flex items-center space-x-2 mb-3">
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     ${recipe.category || 'Uncategorized'}

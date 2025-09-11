@@ -484,35 +484,130 @@ def update_recipe(recipe_id):
         if not recipe:
             return jsonify({'success': False, 'error': 'Recipe not found or you do not have permission to edit this recipe'}), 404
         
-        data = request.get_json()
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            image_path = None
+        else:
+            # Handle multipart form data for image upload
+            data = {
+                'name': request.form.get('name'),
+                'description': request.form.get('description'),
+                'servings': request.form.get('servings'),
+                'prep_time': request.form.get('prep_time'),
+                'cook_time': request.form.get('cook_time'),
+                'difficulty': request.form.get('difficulty'),
+                'category': request.form.get('category'),
+                'ingredients': request.form.get('ingredients'),
+                'instructions': request.form.get('instructions')
+            }
+            
+            # Handle image upload if provided
+            image_path = None
+            if 'image' in request.files:
+                file = request.files['image']
+                if file and file.filename:
+                    # Validate file type
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions:
+                        filename = secure_filename(f"recipe_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}")
+                        
+                        # Try to upload to R2 first
+                        if r2_client.is_available():
+                            try:
+                                # Read file data
+                                file_data = file.read()
+                                file.seek(0)  # Reset file pointer
+                                
+                                # Upload to R2 with image processing
+                                result = r2_client.upload_file(
+                                    file_data=file_data,
+                                    filename=filename,
+                                    folder="user-uploads",
+                                    process_image=True  # Enable image optimization
+                                )
+                                
+                                if result:
+                                    image_path = result['public_url']
+                                    print(f"✅ Updated recipe image to R2: {image_path}")
+                                else:
+                                    print("⚠️ R2 upload failed, falling back to local storage")
+                                    raise Exception("R2 upload failed")
+                                    
+                            except Exception as e:
+                                print(f"⚠️ R2 upload error: {e}, falling back to local storage")
+                                # Fallback to local storage
+                                image_path = _save_local_image(file, filename)
+                                if not image_path:
+                                    return jsonify({'success': False, 'error': 'Failed to save image'}), 500
+                        else:
+                            # R2 not available, use local storage
+                            print("⚠️ R2 not available, using local storage")
+                            image_path = _save_local_image(file, filename)
+                            if not image_path:
+                                return jsonify({'success': False, 'error': 'Failed to save image'}), 500
+                    else:
+                        return jsonify({'success': False, 'error': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP'}), 400
+        
+        # Process ingredients from form data
+        ingredients_data = []
+        if request.is_json:
+            ingredients_data = data.get('ingredients', [])
+        else:
+            # Process form data ingredients
+            i = 0
+            while f'ingredients[{i}][food_name]' in request.form:
+                ingredients_data.append({
+                    'food_name': request.form.get(f'ingredients[{i}][food_name]'),
+                    'amount': float(request.form.get(f'ingredients[{i}][amount]', 0)),
+                    'unit': request.form.get(f'ingredients[{i}][unit]')
+                })
+                i += 1
+        
+        # Process instructions from form data
+        instructions_data = []
+        if request.is_json:
+            instructions_data = data.get('instructions', [])
+        else:
+            # Process form data instructions
+            i = 0
+            while f'instructions[{i}]' in request.form:
+                instruction = request.form.get(f'instructions[{i}]')
+                if instruction and instruction.strip():
+                    instructions_data.append(instruction.strip())
+                i += 1
         
         # Update basic recipe info
-        if 'name' in data:
+        if data.get('name'):
             recipe.name = data['name']
-        if 'description' in data:
+        if data.get('description') is not None:
             recipe.description = data['description']
-        if 'servings' in data:
-            recipe.servings = data['servings']
-        if 'prep_time' in data:
-            recipe.prep_time = data['prep_time']
-        if 'cook_time' in data:
-            recipe.cook_time = data['cook_time']
-        if 'difficulty' in data:
+        if data.get('servings'):
+            recipe.servings = int(data['servings'])
+        if data.get('prep_time'):
+            recipe.prep_time = int(data['prep_time'])
+        if data.get('cook_time'):
+            recipe.cook_time = int(data['cook_time'])
+        if data.get('difficulty'):
             recipe.difficulty = data['difficulty']
-        if 'category' in data:
+        if data.get('category'):
             recipe.category = data['category']
-        if 'is_favorite' in data:
+        if data.get('is_favorite') is not None:
             recipe.is_favorite = data['is_favorite']
+        
+        # Update image if provided
+        if image_path:
+            recipe.image_path = image_path
         
         recipe.updated_at = datetime.utcnow()
         
         # Update ingredients if provided
-        if 'ingredients' in data:
+        if ingredients_data:
             # Remove existing ingredients
             RecipeIngredient.query.filter_by(recipe_id=recipe.id).delete()
             
             # Add new ingredients
-            for ingredient_data in data['ingredients']:
+            for ingredient_data in ingredients_data:
                 ingredient = RecipeIngredient(
                     recipe_id=recipe.id,
                     food_name=ingredient_data['food_name'],
@@ -529,12 +624,12 @@ def update_recipe(recipe_id):
                 db.session.add(ingredient)
         
         # Update instructions if provided
-        if 'instructions' in data:
+        if instructions_data:
             # Remove existing instructions
             RecipeInstruction.query.filter_by(recipe_id=recipe.id).delete()
             
             # Add new instructions
-            for i, instruction_text in enumerate(data['instructions'], 1):
+            for i, instruction_text in enumerate(instructions_data, 1):
                 instruction = RecipeInstruction(
                     recipe_id=recipe.id,
                     step_number=i,
@@ -545,7 +640,7 @@ def update_recipe(recipe_id):
         db.session.commit()
         
         # Automatically fetch nutritional data if ingredients were updated
-        if 'ingredients' in data:
+        if ingredients_data:
             try:
                 print(f"Auto-fetching nutrition for updated recipe {recipe.id}: {recipe.name}")
                 nutrition_result = nutrition_service.bulk_update_recipe_nutrition(recipe.id)
