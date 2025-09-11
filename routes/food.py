@@ -33,47 +33,213 @@ def cleanup_cache():
     
     print(f"Cache cleanup: removed {len(keys_to_remove)} expired entries")
 
-def rank_food_search_results(results, query):
-    """Rank food search results by relevance to query"""
+def normalize_query(query):
+    """Normalize user input by lowercase, trim, and split into tokens"""
+    if not query:
+        return [], ""
+    
+    # Clean and normalize
+    normalized = query.lower().strip()
+    
+    # Split into tokens, removing empty strings
+    tokens = [token.strip() for token in normalized.split() if token.strip()]
+    
+    return tokens, normalized
+
+def extract_core_keywords(tokens):
+    """Extract core keywords from tokens, removing common descriptors"""
+    # Common descriptors that can be removed for fallback search
+    descriptors = {
+        'black', 'white', 'red', 'green', 'blue', 'yellow', 'fresh', 'frozen',
+        'dried', 'cooked', 'raw', 'organic', 'natural', 'sliced', 'diced',
+        'chopped', 'ground', 'whole', 'half', 'large', 'small', 'medium',
+        'extra', 'premium', 'deluxe', 'classic', 'traditional', 'original',
+        'low', 'fat', 'free', 'reduced', 'sodium', 'sugar', 'light', 'virgin',
+        'forest', 'wild', 'farm', 'fresh', 'pure', 'premium', 'deluxe'
+    }
+    
+    # Filter out descriptors, keeping core food terms
+    core_keywords = [token for token in tokens if token not in descriptors]
+    
+    # If no core keywords remain, return the first token
+    return core_keywords if core_keywords else [tokens[0]] if tokens else []
+
+def rank_food_search_results(results, query_tokens, original_query=""):
+    """Enhanced ranking algorithm that prioritizes foods with all query tokens"""
     if not results:
         return []
     
-    query_lower = query.lower().strip()
     scored_results = []
     
     for result in results:
         name_lower = result['name'].lower()
+        brand_lower = result.get('brand', '').lower()
+        
         score = 0
         
-        # Exact match gets highest score
-        if name_lower == query_lower:
-            score += 100
-        # Starts with query gets high score
-        elif name_lower.startswith(query_lower):
-            score += 80
-        # Contains query gets medium score
-        elif query_lower in name_lower:
-            score += 60
-        # Query words in result name
-        else:
-            query_words = query_lower.split()
-            for word in query_words:
-                if word in name_lower:
-                    score += 20
+        # Calculate token-based scoring
+        name_words = name_lower.split()
+        brand_words = brand_lower.split()
+        all_searchable_words = name_words + brand_words
         
-        # Bonus for shorter names (more specific)
-        if len(name_lower) < 30:
-            score += 10
+        # Perfect token match - all query tokens found in name/brand
+        tokens_found = 0
+        for token in query_tokens:
+            if any(token in word for word in all_searchable_words):
+                tokens_found += 1
         
-        # Bonus for having complete nutrition info
-        if result.get('calories', 0) > 0 and result.get('protein', 0) >= 0:
-            score += 5
+        # Score based on percentage of tokens found
+        if tokens_found > 0:
+            token_score = (tokens_found / len(query_tokens)) * 100
+            score += token_score
+        
+        # Exact match bonus
+        if original_query and name_lower == original_query.lower():
+            score += 50
+        
+        # Starts with query bonus
+        elif original_query and name_lower.startswith(original_query.lower()):
+            score += 30
+        
+        # Brand match bonus
+        if brand_lower and any(token in brand_lower for token in query_tokens):
+            score += 20
+        
+        # Source reliability bonus
+        source_bonus = {
+            'common_foods': 15,  # Highest - curated data
+            'usda': 10,          # High - authoritative
+            'openfoodfacts': 5   # Medium - crowd-sourced
+        }
+        score += source_bonus.get(result.get('source', ''), 0)
+        
+        # Data completeness bonus
+        if result.get('calories', 0) > 0:
+            score += 2
         
         scored_results.append((score, result))
     
-    # Sort by score (highest first) and return results
+    # Sort by score (highest first)
     scored_results.sort(key=lambda x: x[0], reverse=True)
+    
     return [result for score, result in scored_results]
+
+def get_generic_categories(core_keywords):
+    """Generate generic category matches for core keywords"""
+    generic_categories = {
+        'ham': {
+            'name': 'Ham, sliced, deli',
+            'brand': 'Generic',
+            'calories': 145,
+            'protein': 18.0,
+            'carbs': 1.5,
+            'fat': 7.0,
+            'fiber': 0,
+            'sugar': 1.0,
+            'sodium': 1.2,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['meat', 'deli', 'protein']
+        },
+        'chicken': {
+            'name': 'Chicken breast, cooked',
+            'brand': 'Generic',
+            'calories': 165,
+            'protein': 31.0,
+            'carbs': 0,
+            'fat': 3.6,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 0.074,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['meat', 'protein', 'poultry']
+        },
+        'cheese': {
+            'name': 'Cheese, cheddar',
+            'brand': 'Generic',
+            'calories': 113,
+            'protein': 7.0,
+            'carbs': 0.4,
+            'fat': 9.0,
+            'fiber': 0,
+            'sugar': 0.4,
+            'sodium': 0.176,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['dairy', 'protein', 'cheese']
+        },
+        'bread': {
+            'name': 'Bread, whole wheat',
+            'brand': 'Generic',
+            'calories': 247,
+            'protein': 13.0,
+            'carbs': 41.0,
+            'fat': 4.2,
+            'fiber': 7.0,
+            'sugar': 6.0,
+            'sodium': 0.4,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['grain', 'carbohydrate', 'bread']
+        },
+        'turkey': {
+            'name': 'Turkey breast, cooked',
+            'brand': 'Generic',
+            'calories': 135,
+            'protein': 29.0,
+            'carbs': 0,
+            'fat': 1.0,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 0.05,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['meat', 'protein', 'poultry']
+        },
+        'beef': {
+            'name': 'Beef, ground, cooked',
+            'brand': 'Generic',
+            'calories': 250,
+            'protein': 26.0,
+            'carbs': 0,
+            'fat': 15.0,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 0.07,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['meat', 'protein', 'beef']
+        },
+        'pork': {
+            'name': 'Pork, cooked',
+            'brand': 'Generic',
+            'calories': 242,
+            'protein': 27.0,
+            'carbs': 0,
+            'fat': 14.0,
+            'fiber': 0,
+            'sugar': 0,
+            'sodium': 0.06,
+            'serving_size': 100,
+            'serving_unit': 'g',
+            'source': 'generic_category',
+            'categories': ['meat', 'protein', 'pork']
+        }
+    }
+    
+    results = []
+    for keyword in core_keywords:
+        if keyword in generic_categories:
+            results.append(generic_categories[keyword])
+    
+    return results
 
 def search_usda_api(query):
     """Search USDA FoodData Central API"""
@@ -97,6 +263,20 @@ def search_usda_api(query):
         for food in data.get('foods', [])[:3]:  # Limit to top 3
             nutrients = {n['nutrientName']: n.get('value', 0) for n in food.get('foodNutrients', [])}
             
+            # Extract categories from food description
+            categories = []
+            description = food.get('description', '').lower()
+            if 'meat' in description or 'beef' in description or 'pork' in description:
+                categories.append('meat')
+            if 'dairy' in description or 'milk' in description or 'cheese' in description:
+                categories.append('dairy')
+            if 'vegetable' in description or 'carrot' in description or 'broccoli' in description:
+                categories.append('vegetable')
+            if 'fruit' in description or 'apple' in description or 'banana' in description:
+                categories.append('fruit')
+            if 'grain' in description or 'bread' in description or 'rice' in description:
+                categories.append('grain')
+            
             result = {
                 'name': food.get('description', 'Unknown'),
                 'brand': food.get('brandOwner', ''),
@@ -109,7 +289,8 @@ def search_usda_api(query):
                 'sodium': round((nutrients.get('Sodium, Na', 0) or 0) / 1000, 1),  # Convert mg to g
                 'serving_size': 100,
                 'serving_unit': 'g',
-                'source': 'usda'
+                'source': 'usda',
+                'categories': categories
             }
             results.append(result)
         
@@ -128,7 +309,7 @@ def search_openfoodfacts_api(query):
             'action': 'process',
             'json': 1,
             'page_size': 8,
-            'fields': 'product_name,brands,nutriments,serving_size,serving_quantity'
+            'fields': 'product_name,brands,nutriments,serving_size,serving_quantity,categories'
         }
         headers = {
             'User-Agent': 'KiWellness/1.0 (https://kiwellness.org)'
@@ -142,6 +323,28 @@ def search_openfoodfacts_api(query):
         for product in data.get('products', [])[:5]:  # Limit to top 5
             nutriments = product.get('nutriments', {})
             
+            # Extract categories from OpenFoodFacts categories
+            categories = []
+            categories_str = product.get('categories', '')
+            if categories_str:
+                # Parse categories string and extract meaningful ones
+                category_list = [cat.strip().lower() for cat in categories_str.split(',')]
+                for cat in category_list:
+                    if any(keyword in cat for keyword in ['meat', 'dairy', 'vegetable', 'fruit', 'grain', 'bread']):
+                        if 'meat' in cat or 'beef' in cat or 'pork' in cat or 'chicken' in cat:
+                            categories.append('meat')
+                        elif 'dairy' in cat or 'milk' in cat or 'cheese' in cat:
+                            categories.append('dairy')
+                        elif 'vegetable' in cat or 'carrot' in cat or 'broccoli' in cat:
+                            categories.append('vegetable')
+                        elif 'fruit' in cat or 'apple' in cat or 'banana' in cat:
+                            categories.append('fruit')
+                        elif 'grain' in cat or 'bread' in cat or 'rice' in cat:
+                            categories.append('grain')
+            
+            # Remove duplicates
+            categories = list(set(categories))
+            
             result = {
                 'name': product.get('product_name', 'Unknown Product'),
                 'brand': product.get('brands', ''),
@@ -152,9 +355,10 @@ def search_openfoodfacts_api(query):
                 'fiber': round(nutriments.get('fiber_100g', 0) or 0, 1),
                 'sugar': round(nutriments.get('sugars_100g', 0) or 0, 1),
                 'sodium': round(nutriments.get('sodium_100g', 0) or 0, 1),
-                'serving_size': int(product.get('serving_quantity', 100) or 100),
+                'serving_size': int(float(product.get('serving_quantity', 100) or 100)),
                 'serving_unit': product.get('serving_size', 'g') or 'g',
-                'source': 'openfoodfacts'
+                'source': 'openfoodfacts',
+                'categories': categories
             }
             results.append(result)
         
@@ -163,9 +367,165 @@ def search_openfoodfacts_api(query):
         print(f"Open Food Facts API error: {e}")
         return []
 
+def smartFoodSearch(query):
+    """
+    Smart food search function that handles normalization, API calls, fallback, and ranking.
+    
+    Args:
+        query (str): The search query from the user
+        
+    Returns:
+        list: Clean list of food objects with fields: source, name, brand, categories
+    """
+    if not query or not query.strip():
+        return []
+    
+    # Step 1: Normalize input
+    query_tokens, normalized_query = normalize_query(query)
+    if not query_tokens:
+        return []
+    
+    # Step 2: Check fallback database first for exact matches (instant)
+    fallback_results = []
+    exact_matches = []
+    partial_matches = []
+    
+    for food_key, food_data in COMMON_FOODS_DB.items():
+        # Add categories to common foods data
+        food_data_with_categories = food_data.copy()
+        food_data_with_categories['categories'] = []
+        
+        # Infer categories from food name
+        name_lower = food_data['name'].lower()
+        if any(keyword in name_lower for keyword in ['meat', 'beef', 'pork', 'chicken', 'turkey', 'fish', 'salmon']):
+            food_data_with_categories['categories'].append('meat')
+        if any(keyword in name_lower for keyword in ['milk', 'cheese', 'yogurt', 'dairy']):
+            food_data_with_categories['categories'].append('dairy')
+        if any(keyword in name_lower for keyword in ['apple', 'banana', 'orange', 'berry', 'fruit']):
+            food_data_with_categories['categories'].append('fruit')
+        if any(keyword in name_lower for keyword in ['carrot', 'broccoli', 'spinach', 'tomato', 'vegetable']):
+            food_data_with_categories['categories'].append('vegetable')
+        if any(keyword in name_lower for keyword in ['bread', 'rice', 'oat', 'quinoa', 'grain']):
+            food_data_with_categories['categories'].append('grain')
+        
+        if normalized_query == food_key.lower():
+            exact_matches.append(food_data_with_categories)
+        elif any(token in food_key.lower() for token in query_tokens):
+            partial_matches.append(food_data_with_categories)
+    
+    fallback_results = exact_matches + partial_matches
+    
+    # Step 3: Run API searches in parallel
+    all_results = fallback_results.copy()
+    
+    # Determine if this is a basic food for USDA search
+    is_basic_food = any(basic_food in normalized_query for basic_food in BASIC_FOODS)
+    
+    # Run API searches in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {}
+        
+        # Submit USDA search if applicable
+        if is_basic_food and USDA_API_KEY:
+            futures['usda'] = executor.submit(search_usda_api, normalized_query)
+        
+        # Submit Open Food Facts search
+        futures['openfoodfacts'] = executor.submit(search_openfoodfacts_api, normalized_query)
+        
+        # Collect results
+        for name, future in futures.items():
+            try:
+                result = future.result(timeout=3)
+                all_results.extend(result)
+            except concurrent.futures.TimeoutError:
+                print(f"Timeout for {name} API")
+            except Exception as e:
+                print(f"Error in {name} API: {e}")
+    
+    # Step 4: Rank results using enhanced algorithm
+    ranked_results = rank_food_search_results(all_results, query_tokens, normalized_query)
+    
+    # Step 5: Check if we have strong matches (score > 50)
+    strong_matches = [r for r in ranked_results if any(r.get('name', '').lower() == token for token in query_tokens)]
+    
+    # Step 6: If no strong matches, try fallback with core keywords
+    if not strong_matches or len(ranked_results) < 3:
+        core_keywords = extract_core_keywords(query_tokens)
+        
+        if core_keywords != query_tokens:  # Only if we actually extracted different keywords
+            print(f"Trying fallback search with core keywords: {core_keywords}")
+            
+            # Run fallback searches
+            fallback_all_results = []
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                futures = {}
+                
+                if is_basic_food and USDA_API_KEY:
+                    futures['usda_fallback'] = executor.submit(search_usda_api, ' '.join(core_keywords))
+                
+                futures['openfoodfacts_fallback'] = executor.submit(search_openfoodfacts_api, ' '.join(core_keywords))
+                
+                for name, future in futures.items():
+                    try:
+                        result = future.result(timeout=3)
+                        fallback_all_results.extend(result)
+                    except concurrent.futures.TimeoutError:
+                        print(f"Timeout for {name} fallback API")
+                    except Exception as e:
+                        print(f"Error in {name} fallback API: {e}")
+            
+            # Add generic category matches for core keywords
+            generic_results = get_generic_categories(core_keywords)
+            fallback_all_results.extend(generic_results)
+            
+            # Rank fallback results
+            fallback_ranked = rank_food_search_results(fallback_all_results, core_keywords, ' '.join(core_keywords))
+            
+            # Combine with original results, prioritizing original if they exist
+            if ranked_results:
+                # Keep best original results and add good fallback results
+                combined_results = ranked_results[:3] + [r for r in fallback_ranked if r not in ranked_results][:5]
+                ranked_results = combined_results
+            else:
+                ranked_results = fallback_ranked
+    
+    # Step 7: Remove duplicates while preserving ranking
+    unique_results = []
+    seen_names = set()
+    
+    for result in ranked_results:
+        normalized_name = result['name'].lower().strip()
+        if normalized_name not in seen_names:
+            unique_results.append(result)
+            seen_names.add(normalized_name)
+    
+    # Step 8: Return clean results with consistent structure
+    final_results = []
+    for result in unique_results[:8]:  # Limit to top 8
+        clean_result = {
+            'source': result.get('source', 'unknown'),
+            'name': result.get('name', 'Unknown'),
+            'brand': result.get('brand', ''),
+            'categories': result.get('categories', []),
+            'calories': result.get('calories', 0),
+            'protein': result.get('protein', 0),
+            'carbs': result.get('carbs', 0),
+            'fat': result.get('fat', 0),
+            'fiber': result.get('fiber', 0),
+            'sugar': result.get('sugar', 0),
+            'sodium': result.get('sodium', 0),
+            'serving_size': int(float(result.get('serving_size', 100))),
+            'serving_unit': result.get('serving_unit', 'g')
+        }
+        final_results.append(clean_result)
+    
+    return final_results
+
 @food_bp.route('/api/search-food', methods=['POST'])
 @login_required
 def search_food():
+    """Enhanced food search endpoint using smartFoodSearch function"""
     data = request.get_json()
     query = data.get('query', '').strip()
     
@@ -184,87 +544,28 @@ def search_food():
         if current_time - cache_time < CACHE_DURATION:
             return jsonify({'success': True, 'results': cached_result, 'cached': True})
     
-    # Check fallback database first for exact matches (instant)
-    fallback_results = []
-    exact_matches = []
-    partial_matches = []
-    query_lower = query.lower()
-    
-    for food_key, food_data in COMMON_FOODS_DB.items():
-        if query_lower == food_key.lower():
-            # Exact match - highest priority
-            exact_matches.append(food_data)
-        elif query_lower in food_key.lower() or food_key.lower() in query_lower:
-            # Partial match - lower priority
-            partial_matches.append(food_data)
-    
-    # Combine results with exact matches first
-    fallback_results = exact_matches + partial_matches
-    
-    # If we have good fallback results, rank them and return immediately
-    if len(fallback_results) >= 3:
-        ranked_fallback = rank_food_search_results(fallback_results, query)
-        result = ranked_fallback[:8]
-        food_search_cache[cache_key] = (result, current_time)
-        return jsonify({'success': True, 'results': result, 'fast': True, 'exact_matches': len(exact_matches)})
-    
-    # Determine if this is a basic food
-    is_basic_food = any(basic_food in query.lower() for basic_food in BASIC_FOODS)
-    
-    # Run API searches in parallel using ThreadPoolExecutor
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        futures = {}
+    try:
+        # Use the new smartFoodSearch function
+        results = smartFoodSearch(query)
         
-        # Submit USDA search if applicable
-        if is_basic_food and USDA_API_KEY:
-            futures['usda'] = executor.submit(search_usda_api, query)
+        # Cache the results
+        food_search_cache[cache_key] = (results, current_time)
         
-        # Submit Open Food Facts search
-        futures['openfoodfacts'] = executor.submit(search_openfoodfacts_api, query)
+        return jsonify({
+            'success': True,
+            'results': results,
+            'cached': False,
+            'query': query,
+            'count': len(results)
+        })
         
-        # Collect results as they complete
-        usda_results = []
-        openfoodfacts_results = []
-        
-        for name, future in futures.items():
-            try:
-                result = future.result(timeout=3)  # 3 second timeout per API
-                if name == 'usda':
-                    usda_results = result
-                elif name == 'openfoodfacts':
-                    openfoodfacts_results = result
-            except concurrent.futures.TimeoutError:
-                print(f"Timeout for {name} API")
-            except Exception as e:
-                print(f"Error in {name} API: {e}")
-    
-    # Combine all results for ranking
-    all_results = fallback_results + usda_results + openfoodfacts_results
-    
-    # Rank results by match quality (exact matches first)
-    ranked_results = rank_food_search_results(all_results, query)
-    
-    # Remove duplicates while preserving ranking
-    unique_results = []
-    seen_names = set()
-    
-    for result in ranked_results:
-        # Use normalized name for duplicate detection
-        normalized_name = result['name'].lower().strip()
-        if normalized_name not in seen_names:
-            unique_results.append(result)
-            seen_names.add(normalized_name)
-    
-    final_results = unique_results[:8]
-    
-    # Cache the results
-    food_search_cache[cache_key] = (final_results, current_time)
-    
-    return jsonify({
-        'success': True,
-        'results': final_results,
-        'cached': False
-    })
+    except Exception as e:
+        print(f"Error in smartFoodSearch: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Search failed. Please try again.',
+            'error': str(e)
+        }), 500
 
 @food_bp.route('/api/search-food-barcode', methods=['POST'])
 @login_required
